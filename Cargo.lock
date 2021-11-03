@@ -698,7 +698,7 @@ dependencies = [
 [[package]]
 name = "hltas-cleaner"
 version = "0.1.0"
-source = "git+https://github.com/Eddio0141/hltas-cleaner#edcd7c4e986d74a544c26ba20871b2a690ca6ef9"
+source = "git+https://github.com/Eddio0141/hltas-cleaner#ae48befdce3f5d137d48b21d6fb0dc837ecc1def"
 dependencies = [
  "hltas",
 ]

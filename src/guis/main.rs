@@ -1,12 +1,15 @@
+use std::{fs::File, path::PathBuf};
+
 use eframe::{
     egui::{self, menu, Color32, Widget},
     epi,
 };
 use hltas::HLTAS;
+use native_dialog::FileDialog;
 
 struct TabWidget<'a> {
     title: String,
-    path: Option<String>,
+    path: Option<PathBuf>,
     hltas: HLTAS<'a>,
 
     index: usize,
@@ -30,11 +33,13 @@ impl<'a> Widget for &TabWidget<'a> {
 }
 
 impl<'a> TabWidget<'a> {
-    fn open_path(path: Option<String>, index: usize) -> Self {
+    fn open_path(path: PathBuf, index: usize) -> Self {
         // TODO
         Self {
-            title: "".to_owned(),
-            path,
+            // this is file so its fine
+            // TODO error check?
+            title: path.file_name().unwrap().to_str().unwrap().to_owned(),
+            path: Some(path),
             hltas: HLTAS::default(),
             index,
         }
@@ -67,7 +72,13 @@ impl MainGUI {
     }
 
     pub fn open_file(&mut self) {
-        self.tabs.push(TabWidget::new_file(self.tabs.len()));
+        if let Ok(Some(pathbuf)) = FileDialog::new()
+            .add_filter("HLTAS Files", &["hltas", "txt"])
+            .show_open_single_file()
+        {
+            self.tabs
+                .push(TabWidget::open_path(pathbuf, self.tabs.len()));
+        }
     }
 
     pub fn close_file(&mut self, index: usize) {

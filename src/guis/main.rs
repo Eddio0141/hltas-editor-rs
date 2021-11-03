@@ -2,37 +2,44 @@ use eframe::{egui::{self, menu}, epi};
 use hltas::HLTAS;
 
 struct Tab<'a> {
-    title: String,
-    hltas: HLTAS<'a>,
+    pub title: String,
+    pub hltas: HLTAS<'a>,
 }
 
-impl Tab {
-    /// Get a mutable reference to the tab's title.
-    fn title_mut(&mut self) -> &String {
-        &mut self.title
+impl Default for Tab<'_> {
+    fn default() -> Self {
+        // TODO, translation
+        Self {
+            title: "New file".to_owned(),
+            hltas: HLTAS::default(),
+        }
     }
 }
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 // #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 // #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
-pub struct MainGUI {
+pub struct MainGUI<'a> {
+    tabs: Vec<Tab<'a>>,
 }
 
-impl MainGUI {
-    pub fn new_file(&self) {
-        
+impl<'a> MainGUI<'a> {
+    pub fn new_file(&mut self) {
+        self.tabs.push(Tab::default());
     }
 }
 
-impl Default for MainGUI {
+impl<'a> Default for MainGUI<'a> {
     fn default() -> Self {
-        Self {
-        }
+        let mut gui = Self {
+            tabs: Vec::new(),
+        };
+        gui.new_file();
+        gui
     }
 }
 
-impl epi::App for MainGUI {
+impl<'a> epi::App for MainGUI<'a> {
     fn setup(
         &mut self,
         _ctx: &egui::CtxRef,
@@ -84,8 +91,11 @@ impl epi::App for MainGUI {
             });
 
             ui.separator();
-
-            ui.label("test");
+            
+            // all tabs
+            for tab in &self.tabs {
+                ui.label(&tab.title);
+            }
         });
     }
 

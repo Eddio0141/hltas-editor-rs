@@ -56,11 +56,17 @@ impl<'a> TabWidget<'a> {
 // #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct MainGUI {
     tabs: Vec<TabWidget<'static>>,
-    test: String,
+    // might have a chance to not have any tabs opened
+    current_tab: Option<usize>,
 }
 
 impl MainGUI {
     pub fn new_file(&mut self) {
+        self.tabs.push(TabWidget::new_file(self.tabs.len()));
+        self.current_tab = Some(self.tabs.len() - 1);
+    }
+
+    pub fn open_file(&mut self) {
         self.tabs.push(TabWidget::new_file(self.tabs.len()));
     }
 
@@ -73,22 +79,11 @@ impl MainGUI {
 }
 
 impl Default for MainGUI {
+    // first time opened will always show a new tab
     fn default() -> Self {
         let mut gui = Self {
             tabs: Vec::new(),
-            test: "\
-s03----c--|------|------|0.001|90|-|13
-----------|------|--u---|0.0000000001|225|-|11
-----------|------|------|0.0000000001|0|-|1
-s03----c--|------|------|0.001|90|-|7
-----------|------|--u---|0.0000000001|225|-|11
-----------|------|------|0.0000000001|0|-|1
-s03----c--|------|------|0.001|90|-|12
-s03----c--|------|------|0.001|180|-|1
-----------|------|--u---|0.0000000001|225|-|20
-----------|------|------|0.0000000001|0|-|1
-s03----c--|------|------|0.001|180|-|13"
-                .to_owned(),
+            current_tab: None,
         };
         gui.new_file();
         gui
@@ -138,6 +133,9 @@ impl epi::App for MainGUI {
                     if ui.button("New").clicked() {
                         self.new_file();
                     }
+                    if ui.button("Open").clicked() {
+                        self.open_file();
+                    }
                 })
             });
 
@@ -152,7 +150,7 @@ impl epi::App for MainGUI {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.text_edit_multiline(&mut self.test);
+            //ui.text_edit_multiline(&mut self.test);
         });
     }
 

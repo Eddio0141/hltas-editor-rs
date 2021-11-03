@@ -698,7 +698,7 @@ dependencies = [
 [[package]]
 name = "hltas-cleaner"
 version = "0.1.0"
-source = "git+https://github.com/Eddio0141/hltas-cleaner#ae48befdce3f5d137d48b21d6fb0dc837ecc1def"
+source = "git+https://github.com/Eddio0141/hltas-cleaner#148a69531131744bad4c235e4273cb6ecfb21d53"
 dependencies = [
  "hltas",
 ]
@@ -708,6 +708,7 @@ name = "hltas-editor-rs"
 version = "0.1.0"
 dependencies = [
  "eframe",
+ "hltas",
  "hltas-cleaner",
 ]
 

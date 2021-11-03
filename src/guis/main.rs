@@ -1,9 +1,28 @@
-use eframe::{egui, epi};
+use eframe::{egui::{self, menu}, epi};
+use hltas::HLTAS;
+
+struct Tab<'a> {
+    title: String,
+    hltas: HLTAS<'a>,
+}
+
+impl Tab {
+    /// Get a mutable reference to the tab's title.
+    fn title_mut(&mut self) -> &String {
+        &mut self.title
+    }
+}
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 // #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 // #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct MainGUI {
+}
+
+impl MainGUI {
+    pub fn new_file(&self) {
+        
+    }
 }
 
 impl Default for MainGUI {
@@ -55,9 +74,22 @@ impl epi::App for MainGUI {
     }
 
     fn update(&mut self, ctx: &egui::CtxRef, frame: &mut epi::Frame<'_>) {
+        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            menu::bar(ui, |ui| {
+                menu::menu(ui, "File", |ui| {
+                    if ui.button("New").clicked() {
+                        self.new_file();
+                    }
+                })
+            });
+
+            ui.separator();
+
+            ui.label("test");
+        });
     }
 
     fn name(&self) -> &str {
-        "hltas editor"
+        "HLTAS Editor"
     }
 }

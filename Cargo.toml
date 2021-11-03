@@ -8,3 +8,4 @@ edition = "2018"
 [dependencies]
 hltas-cleaner = { git = "https://github.com/Eddio0141/hltas-cleaner" }
 eframe = "0.15.0"
+hltas = { git = "https://github.com/HLTAS/hltas" }

@@ -1,107 +1,71 @@
-use std::{fs::File, path::PathBuf};
+use std::{borrow::BorrowMut, fs::{self, File}, io::Cursor, path::PathBuf};
 
 use eframe::{
-    egui::{self, menu, Color32, Widget},
+    egui::{self, menu, Button, Color32, Widget},
     epi,
 };
 use hltas::HLTAS;
 use native_dialog::FileDialog;
 
-struct TabWidget<'a> {
-    title: String,
-    path: Option<PathBuf>,
-    hltas: HLTAS<'a>,
+fn hltas_to_str(hltas: &HLTAS) -> String {
+    let mut file_u8: Vec<u8> = Vec::new();
+    hltas.to_writer(&mut file_u8).unwrap();
 
-    index: usize,
-}
-
-impl<'a> Widget for &TabWidget<'a> {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        ui.group(|ui| {
-            ui.label(&self.title);
-            let close_button = egui::Button::new("x")
-                .small()
-                .text_color(Color32::from_rgb(255, 0, 0));
-
-            if ui.add(close_button).clicked() {
-                // TODO
-                //self.tabs_vec.remove(self.index);
-            }
-        })
-        .response
+    // always has to work
+    if let Ok(content) = String::from_utf8(file_u8) {
+        return content;
     }
-}
-
-impl<'a> TabWidget<'a> {
-    fn open_path(path: PathBuf, index: usize) -> Self {
-        // TODO
-        Self {
-            // this is file so its fine
-            // TODO error check?
-            title: path.file_name().unwrap().to_str().unwrap().to_owned(),
-            path: Some(path),
-            hltas: HLTAS::default(),
-            index,
-        }
-    }
-
-    fn new_file(index: usize) -> Self {
-        // TODO, translation support
-        Self {
-            title: "New file".to_owned(),
-            path: None,
-            hltas: HLTAS::default(),
-            index,
-        }
-    }
+    String::new()
 }
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 // #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 // #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
-pub struct MainGUI {
-    tabs: Vec<TabWidget<'static>>,
-    // might have a chance to not have any tabs opened
-    current_tab: Option<usize>,
+pub struct MainGUI<'a> {
+    current_file: Option<PathBuf>,
+    hltas: HLTAS<'a>,
+    raw_content: String ,
 }
 
-impl MainGUI {
+impl<'a> MainGUI<'a> {
     pub fn new_file(&mut self) {
-        self.tabs.push(TabWidget::new_file(self.tabs.len()));
-        self.current_tab = Some(self.tabs.len() - 1);
+        *self = MainGUI::default();
     }
 
-    pub fn open_file(&mut self) {
+    pub fn open_file(&'a mut self) {
         if let Ok(Some(pathbuf)) = FileDialog::new()
             .add_filter("HLTAS Files", &["hltas", "txt"])
             .show_open_single_file()
         {
-            self.tabs
-                .push(TabWidget::open_path(pathbuf, self.tabs.len()));
-        }
-    }
+            self.current_file = Some(pathbuf);
 
-    pub fn close_file(&mut self, index: usize) {
-        if let Some(_) = self.tabs.get(index) {
-            self.tabs.remove(index);
-            // TODO save handling
+            if let Ok(hltas_file_str) = fs::read_to_string(self.current_file.as_ref().unwrap()) {
+                self.raw_content = hltas_file_str.to_owned();
+                match HLTAS::from_str(&self.raw_content) {
+                    Ok(file) => self.hltas = file.to_owned(),
+                    Err(_) => todo!(),
+                }
+                // if let Ok(hltas_file_content) = HLTAS::from_str(hltas_file_str) {
+                //     self.hltas = hltas_file_content.clone();
+                // }
+            }
+            // TODO, failed to open
         }
     }
 }
 
-impl Default for MainGUI {
+impl<'a> Default for MainGUI<'a> {
     // first time opened will always show a new tab
     fn default() -> Self {
-        let mut gui = Self {
-            tabs: Vec::new(),
-            current_tab: None,
-        };
-        gui.new_file();
-        gui
+        Self {
+            current_file: None,
+            hltas: HLTAS::default(),
+            raw_content: hltas_to_str(&HLTAS::default()),
+        }
     }
 }
 
-impl epi::App for MainGUI {
+impl<'a> epi::App for MainGUI<'a> {
     fn setup(
         &mut self,
         _ctx: &egui::CtxRef,
@@ -149,19 +113,10 @@ impl epi::App for MainGUI {
                     }
                 })
             });
-
-            ui.separator();
-
-            // tabs
-            ui.horizontal(|ui| {
-                for tab in &self.tabs {
-                    ui.add(tab);
-                }
-            });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            //ui.text_edit_multiline(&mut self.test);
+            ui.text_edit_multiline(&mut self.raw_content);
         });
     }
 

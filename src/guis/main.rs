@@ -13,6 +13,7 @@ struct TabWidget<'a> {
     hltas: HLTAS<'a>,
 
     index: usize,
+    is_clicked: bool,
 }
 
 impl<'a> Widget for &TabWidget<'a> {
@@ -23,10 +24,8 @@ impl<'a> Widget for &TabWidget<'a> {
                 .small()
                 .text_color(Color32::from_rgb(255, 0, 0));
 
-            if ui.add(close_button).clicked() {
-                // TODO
-                //self.tabs_vec.remove(self.index);
-            }
+            let mut is_clicked = &mut self.is_clicked;
+            self.is_clicked = ui.add(close_button).clicked();
         })
         .response
     }
@@ -42,6 +41,7 @@ impl<'a> TabWidget<'a> {
             path: Some(path),
             hltas: HLTAS::default(),
             index,
+            is_clicked: false,
         }
     }
 
@@ -52,6 +52,7 @@ impl<'a> TabWidget<'a> {
             path: None,
             hltas: HLTAS::default(),
             index,
+            is_clicked: false,
         }
     }
 }
@@ -67,7 +68,8 @@ pub struct MainGUI {
 
 impl MainGUI {
     pub fn new_file(&mut self) {
-        self.tabs.push(TabWidget::new_file(self.tabs.len()));
+        self.tabs
+            .push(TabWidget::new_file(self.tabs.len()));
         self.current_tab = Some(self.tabs.len() - 1);
     }
 

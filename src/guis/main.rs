@@ -69,6 +69,7 @@ pub struct MainGUI {
     // might have a chance to not have any tabs opened
     // TODO use direct reference
     current_tab_index: Option<usize>,
+    title: String,
 }
 
 impl MainGUI {
@@ -92,6 +93,22 @@ impl MainGUI {
             self.tabs.push(tab);
         }
     }
+
+    // pub fn set_current_tab_title(&mut self) {
+    //     if let Some(index) = self.current_tab_index {
+    //         // println!("current index {}", index);
+    //         self.title = Self::default_title().to_string() + " - " + &self.tabs[index].title;
+    //         return;
+    //     } else {
+    //         // println!("none");
+    //         self.title = Self::default_title().to_string();
+    //     }
+    //     println!("title is {}", &self.title);
+    // }
+
+    fn default_title() -> &'static str {
+        "HLTAS Editor"
+    }
 }
 
 impl Default for MainGUI {
@@ -100,6 +117,7 @@ impl Default for MainGUI {
         Self {
             tabs: vec![Tab::default()],
             current_tab_index: Some(0),
+            title: Self::default_title().to_string(),
         }
     }
 }
@@ -242,10 +260,13 @@ impl epi::App for MainGUI {
                 }
             });
         });
+
+        // self.set_current_tab_title();
     }
 
     // TODO show current tab file
     fn name(&self) -> &str {
-        "HLTAS Editor"
+        // println!("title is {}", &self.title);
+        &self.title
     }
 }

@@ -25,7 +25,7 @@ struct Tab {
 }
 
 impl Tab {
-    fn open_path(path: PathBuf) -> Result<Self, String> {
+    fn open_path(path: &PathBuf) -> Result<Self, String> {
         if let Ok(file_content) = fs::read_to_string(&path) {
             match HLTAS::from_str(&file_content) {
                 Ok(_) => {}
@@ -103,10 +103,18 @@ impl MainGUI {
     }
 
     pub fn open_file(&mut self, path: PathBuf) {
+        println!("attempt to open file with {:?}", &path);
+        // println!("{}", Tab::open_path(&path).err().unwrap());
         // TODO better error handling
-        if let Ok(tab) = Tab::open_path(path) {
-            self.tabs.push(tab);
-            self.current_tab_index = Some(self.tabs.len() - 1);
+        match Tab::open_path(&path) {
+            Ok(tab) => {
+                self.tabs.push(tab);
+                self.current_tab_index = Some(self.tabs.len() - 1);
+    
+                println!("new file path {:?}", self.tabs[self.current_tab_index.unwrap()].path);
+                println!("new index {:?}", self.current_tab_index);
+            }
+            Err(err) => println!("Error: {}", err),
         }
     }
 

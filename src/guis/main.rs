@@ -1,9 +1,6 @@
 use std::{path::PathBuf};
 
-use eframe::{
-    egui::{self, menu, Color32},
-    epi,
-};
+use eframe::{egui::{self, Color32, Sense, menu}, epi};
 use hltas::HLTAS;
 use native_dialog::FileDialog;
 
@@ -66,13 +63,17 @@ impl<'a> MainGUI<'a> {
         self.current_tab = Some(self.tabs.len() - 1);
     }
 
-    pub fn open_file(&mut self) {
+    pub fn open_file_by_dialog(&mut self) {
         if let Ok(Some(pathbuf)) = FileDialog::new()
             .add_filter("HLTAS Files", &["hltas", "txt"])
             .show_open_single_file()
         {
-            self.tabs.push(Tab::open_path(pathbuf));
+            self.open_file(pathbuf);
         }
+    }
+
+    pub fn open_file(&mut self, path: PathBuf) {
+        self.tabs.push(Tab::open_path(path));
     }
 }
 
@@ -130,7 +131,7 @@ impl<'a> epi::App for MainGUI<'a> {
                         self.new_file();
                     }
                     if ui.button("Open").clicked() {
-                        self.open_file();
+                        self.open_file_by_dialog();
                     }
                 })
             });
@@ -166,6 +167,15 @@ impl<'a> epi::App for MainGUI<'a> {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // ui.text_edit_multiline(&mut self.raw_content);
+            // accept file drops
+            // TODO finish this feature
+            for file in &ui.input().raw.dropped_files {
+                println!("new file dropped");
+                if let Some(path) = &file.path {
+                    println!("path: {}", &path.to_string_lossy());
+                    self.open_file(path.to_owned());
+                }
+            }
         });
     }
 

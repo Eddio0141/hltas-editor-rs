@@ -45,6 +45,19 @@ impl Tab {
         }
     }
 
+    fn title_from_path(path: &PathBuf) -> String {
+        if let Some(os_str) = path.file_name() {
+            if let Some(str) = os_str.to_str() {
+                return str.to_owned();
+            }
+        }
+        Tab::default_title().to_owned()
+    }
+
+    fn default_title() -> &'static str {
+        "New file"
+    }
+
     fn new_file() -> Self {
         Self::default()
     }
@@ -54,7 +67,7 @@ impl Default for Tab {
     // TODO translation support
     fn default() -> Self {
         Self {
-            title: "New file".to_owned(),
+            title: Tab::default_title().to_owned(),
             path: None,
             raw_content: hltas_to_str(&HLTAS::default()),
         }
@@ -90,6 +103,44 @@ impl MainGUI {
         // TODO better error handling
         if let Ok(tab) = Tab::open_path(path) {
             self.tabs.push(tab);
+            self.current_tab_index = Some(self.tabs.len() - 1);
+        }
+    }
+
+    fn ask_hltas_save_location() -> Result<Option<PathBuf>, native_dialog::Error> {
+        FileDialog::new()
+            .add_filter("HLTAS Files", &["hltas"])
+            .show_save_single_file()
+    }
+
+    pub fn save_current_tab(&mut self) {
+        if let Some(current_tab) = self.current_tab_index {
+            let tab = &mut self.tabs[current_tab];
+            let mut save_path: Option<PathBuf> = None;
+            let mut new_file = false;
+            println!("current tab index {:#?}", &self.current_tab_index);
+            println!("current tab path {:#?}", &tab.path);
+            if let Some(path) = &tab.path {
+                save_path = Some(path.to_owned());
+            } else {
+                // no file, save as new file
+                if let Ok(path) = Self::ask_hltas_save_location() {
+                    save_path = path;
+                    new_file = true;
+                }
+            }
+
+            if let Some(path) = save_path {
+                match fs::write(&path, &tab.raw_content) {
+                    Ok(_) => {
+                        if new_file {
+                            tab.title = Tab::title_from_path(&path);
+                        }
+                    }
+                    // TODO handle saving error
+                    Err(_) => ()
+                };
+            }
         }
     }
 }
@@ -150,6 +201,9 @@ impl epi::App for MainGUI {
                     }
                     if ui.button("Open").clicked() {
                         self.open_file_by_dialog();
+                    }
+                    if ui.button("Save").clicked() {
+                        self.save_current_tab();
                     }
                 })
             });

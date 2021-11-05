@@ -1,58 +1,42 @@
-use std::{fs::File, path::PathBuf};
+use std::path::PathBuf;
 
 use eframe::{
-    egui::{self, menu, Color32, Widget},
+    egui::{self, menu, Color32},
     epi,
 };
 use hltas::HLTAS;
 use native_dialog::FileDialog;
 
-struct TabWidget<'a> {
+struct Tab<'a> {
     title: String,
     path: Option<PathBuf>,
     hltas: HLTAS<'a>,
-
-    index: usize,
-    is_clicked: bool,
 }
 
-impl<'a> Widget for &TabWidget<'a> {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        ui.group(|ui| {
-            ui.label(&self.title);
-            let close_button = egui::Button::new("x")
-                .small()
-                .text_color(Color32::from_rgb(255, 0, 0));
-
-            let mut is_clicked = &mut self.is_clicked;
-            self.is_clicked = ui.add(close_button).clicked();
-        })
-        .response
-    }
-}
-
-impl<'a> TabWidget<'a> {
-    fn open_path(path: PathBuf, index: usize) -> Self {
+impl<'a> Tab<'a> {
+    fn open_path(path: PathBuf) -> Self {
         // TODO
         Self {
             // this is file so its fine
             // TODO error check?
             title: path.file_name().unwrap().to_str().unwrap().to_owned(),
             path: Some(path),
-            hltas: HLTAS::default(),
-            index,
-            is_clicked: false,
+            ..Default::default()
         }
     }
 
-    fn new_file(index: usize) -> Self {
-        // TODO, translation support
+    fn new_file() -> Self {
+        Self::default()
+    }
+}
+
+impl<'a> Default for Tab<'a> {
+    // TODO, translation support
+    fn default() -> Self {
         Self {
             title: "New file".to_owned(),
             path: None,
-            hltas: HLTAS::default(),
-            index,
-            is_clicked: false,
+            hltas: Default::default(),
         }
     }
 }
@@ -61,15 +45,14 @@ impl<'a> TabWidget<'a> {
 // #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 // #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct MainGUI {
-    tabs: Vec<TabWidget<'static>>,
+    tabs: Vec<Tab<'static>>,
     // might have a chance to not have any tabs opened
     current_tab: Option<usize>,
 }
 
 impl MainGUI {
     pub fn new_file(&mut self) {
-        self.tabs
-            .push(TabWidget::new_file(self.tabs.len()));
+        self.tabs.push(Tab::new_file());
         self.current_tab = Some(self.tabs.len() - 1);
     }
 
@@ -78,8 +61,7 @@ impl MainGUI {
             .add_filter("HLTAS Files", &["hltas", "txt"])
             .show_open_single_file()
         {
-            self.tabs
-                .push(TabWidget::open_path(pathbuf, self.tabs.len()));
+            self.tabs.push(Tab::open_path(pathbuf));
         }
     }
 
@@ -155,11 +137,30 @@ impl epi::App for MainGUI {
             ui.separator();
 
             // tabs
+            let mut stale_tabs: Vec<usize> = Vec::new();
             ui.horizontal(|ui| {
-                for tab in &self.tabs {
-                    ui.add(tab);
+                for (index, tab) in self.tabs.iter().enumerate() {
+                    // tab design
+                    ui.group(|ui| {
+                        ui.label(&tab.title);
+                        let close_button = egui::Button::new("x")
+                            .small()
+                            .text_color(Color32::from_rgb(255, 0, 0));
+
+                        if ui.add(close_button).clicked() {
+                            // mark as stale
+                            stale_tabs.push(index);
+                        }
+                    });
                 }
             });
+
+            stale_tabs.reverse();
+
+            // remove stale tabs
+            for index in stale_tabs {
+                self.tabs.remove(index);
+            }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {

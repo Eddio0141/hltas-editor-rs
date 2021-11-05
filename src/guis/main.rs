@@ -1,6 +1,9 @@
 use std::{fs, path::PathBuf};
 
-use eframe::{egui::{self, Color32, Label, Sense, menu}, epi};
+use eframe::{
+    egui::{self, menu, Color32, Key, Label, Sense},
+    epi,
+};
 use hltas::HLTAS;
 use native_dialog::FileDialog;
 
@@ -138,7 +141,7 @@ impl MainGUI {
                         }
                     }
                     // TODO handle saving error
-                    Err(_) => ()
+                    Err(_) => (),
                 };
             }
         }
@@ -193,16 +196,28 @@ impl epi::App for MainGUI {
     // }
 
     fn update(&mut self, ctx: &egui::CtxRef, _frame: &mut epi::Frame<'_>) {
+        // menu input checks
+        // TODO better way of making this work, use of struct?
+        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::N) {
+            self.new_file();
+        }
+        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::O) {
+            self.open_file_by_dialog();
+        }
+        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::S) {
+            self.save_current_tab();
+        }
+
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
                 menu::menu(ui, "File", |ui| {
-                    if ui.button("New").clicked() {
+                    if ui.button("New    Ctrl+N").clicked() {
                         self.new_file();
                     }
-                    if ui.button("Open").clicked() {
+                    if ui.button("Open    Ctrl+O").clicked() {
                         self.open_file_by_dialog();
                     }
-                    if ui.button("Save").clicked() {
+                    if ui.button("Save    Ctrl+S").clicked() {
                         self.save_current_tab();
                     }
                 })
@@ -227,18 +242,18 @@ impl epi::App for MainGUI {
                                 // self.current_tab_index = Some(index);
                                 new_index = Some(index);
                             }
-    
+
                             let close_button = egui::Button::new("x")
                                 .small()
                                 .text_color(Color32::from_rgb(255, 0, 0));
-    
+
                             if ui.add(close_button).clicked() {
                                 // mark as stale
                                 stale_tabs.push(index);
                             }
                         });
                     }
-    
+
                     if let Some(_) = new_index {
                         self.current_tab_index = new_index;
                     }
@@ -280,7 +295,6 @@ impl epi::App for MainGUI {
             // };
             // ui.add(egui::TextEdit::multiline(&mut my_code).layouter(&mut layouter));
 
-
             egui::ScrollArea::both().show(ui, |ui| {
                 if let Some(current_tab_index) = self.current_tab_index {
                     let current_tab = &mut self.tabs[current_tab_index];
@@ -290,8 +304,7 @@ impl epi::App for MainGUI {
                             .code_editor()
                             .desired_rows(1)
                             .lock_focus(true)
-                            .desired_width(f32::INFINITY)
-                            // .layouter(&mut layouter)
+                            .desired_width(f32::INFINITY), // .layouter(&mut layouter)
                     );
                 }
             });

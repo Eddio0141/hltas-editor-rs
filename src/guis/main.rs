@@ -22,6 +22,8 @@ struct Tab {
     title: String,
     path: Option<PathBuf>,
     raw_content: String,
+    // TODO got_modified implementation
+    // got_modified: bool,
 }
 
 impl Tab {
@@ -154,6 +156,13 @@ impl MainGUI {
             }
         }
     }
+
+    // TODO add check if changed. if it is, save it properly
+    pub fn close_current_tab(&mut self) {
+        if let Some(index) = self.current_tab_index {
+            self.tabs.remove(index);
+        }
+    }
 }
 
 impl Default for MainGUI {
@@ -214,6 +223,9 @@ impl epi::App for MainGUI {
         }
         if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::S) {
             self.save_current_tab();
+        }
+        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::W) {
+            self.close_current_tab();
         }
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {

@@ -1,7 +1,7 @@
-use std::{borrow::BorrowMut, fs::{self, File}, io::Cursor, path::PathBuf};
+use std::{path::PathBuf};
 
 use eframe::{
-    egui::{self, menu, Button, Color32, Widget},
+    egui::{self, menu, Color32},
     epi,
 };
 use hltas::HLTAS;
@@ -18,38 +18,61 @@ fn hltas_to_str(hltas: &HLTAS) -> String {
     String::new()
 }
 
+struct Tab<'a> {
+    title: String,
+    path: Option<PathBuf>,
+    hltas: HLTAS<'a>,
+}
+
+impl<'a> Tab<'a> {
+    fn open_path(path: PathBuf) -> Self {
+        // TODO
+        Self {
+            // this is file so its fine
+            // TODO error check?
+            title: path.file_name().unwrap().to_str().unwrap().to_owned(),
+            path: Some(path),
+            ..Default::default()
+        }
+    }
+
+    fn new_file() -> Self {
+        Self::default()
+    }
+}
+
+impl<'a> Default for Tab<'a> {
+    // TODO, translation support
+    fn default() -> Self {
+        Self {
+            title: "New file".to_owned(),
+            path: None,
+            hltas: Default::default(),
+        }
+    }
+}
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 // #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 // #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct MainGUI<'a> {
-    current_file: Option<PathBuf>,
-    hltas: HLTAS<'a>,
-    raw_content: String ,
+    tabs: Vec<Tab<'a>>,
+    // might have a chance to not have any tabs opened
+    current_tab: Option<usize>,
 }
 
 impl<'a> MainGUI<'a> {
     pub fn new_file(&mut self) {
-        *self = MainGUI::default();
+        self.tabs.push(Tab::new_file());
+        self.current_tab = Some(self.tabs.len() - 1);
     }
 
-    pub fn open_file(&'a mut self) {
+    pub fn open_file(&mut self) {
         if let Ok(Some(pathbuf)) = FileDialog::new()
             .add_filter("HLTAS Files", &["hltas", "txt"])
             .show_open_single_file()
         {
-            self.current_file = Some(pathbuf);
-
-            if let Ok(hltas_file_str) = fs::read_to_string(self.current_file.as_ref().unwrap()) {
-                self.raw_content = hltas_file_str.to_owned();
-                match HLTAS::from_str(&self.raw_content) {
-                    Ok(file) => self.hltas = file.to_owned(),
-                    Err(_) => todo!(),
-                }
-                // if let Ok(hltas_file_content) = HLTAS::from_str(hltas_file_str) {
-                //     self.hltas = hltas_file_content.clone();
-                // }
-            }
-            // TODO, failed to open
+            self.tabs.push(Tab::open_path(pathbuf));
         }
     }
 }
@@ -58,9 +81,8 @@ impl<'a> Default for MainGUI<'a> {
     // first time opened will always show a new tab
     fn default() -> Self {
         Self {
-            current_file: None,
-            hltas: HLTAS::default(),
-            raw_content: hltas_to_str(&HLTAS::default()),
+            tabs: vec![Tab::default()],
+            current_tab: Some(0),
         }
     }
 }
@@ -113,10 +135,38 @@ impl<'a> epi::App for MainGUI<'a> {
                     }
                 })
             });
+
+            ui.separator();
+
+            // tabs
+            let mut stale_tabs: Vec<usize> = Vec::new();
+            ui.horizontal(|ui| {
+                for (index, tab) in self.tabs.iter().enumerate() {
+                    // tab design
+                    ui.group(|ui| {
+                        ui.label(&tab.title);
+                        let close_button = egui::Button::new("x")
+                            .small()
+                            .text_color(Color32::from_rgb(255, 0, 0));
+
+                        if ui.add(close_button).clicked() {
+                            // mark as stale
+                            stale_tabs.push(index);
+                        }
+                    });
+                }
+            });
+
+            stale_tabs.reverse();
+
+            // remove stale tabs
+            for index in stale_tabs {
+                self.tabs.remove(index);
+            }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.text_edit_multiline(&mut self.raw_content);
+            // ui.text_edit_multiline(&mut self.raw_content);
         });
     }
 

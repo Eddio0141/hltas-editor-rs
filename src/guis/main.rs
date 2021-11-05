@@ -170,6 +170,7 @@ impl<'a> epi::App for MainGUI<'a> {
         });
     }
 
+    // TODO, show current tab file
     fn name(&self) -> &str {
         "HLTAS Editor"
     }

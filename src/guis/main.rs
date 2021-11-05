@@ -101,6 +101,7 @@ impl Default for MainGUI {
     }
 }
 
+// TODO separate into different functions to clean this up
 impl epi::App for MainGUI {
     fn setup(
         &mut self,
@@ -205,6 +206,14 @@ impl epi::App for MainGUI {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            // let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
+            //     let mut layout_job: egui::text::LayoutJob = my_memoized_highlighter(string);
+            //     layout_job.wrap_width = wrap_width;
+            //     ui.fonts().layout_job(layout_job)
+            // };
+            // ui.add(egui::TextEdit::multiline(&mut my_code).layouter(&mut layouter));
+
+
             egui::ScrollArea::both().show(ui, |ui| {
                 if let Some(current_tab_index) = self.current_tab_index {
                     let current_tab = &mut self.tabs[current_tab_index];

@@ -1,6 +1,6 @@
-use std::{path::PathBuf};
+use std::{fs, path::PathBuf};
 
-use eframe::{egui::{self, Color32, Sense, menu}, epi};
+use eframe::{egui::{self, Color32, Label, Sense, menu}, epi};
 use hltas::HLTAS;
 use native_dialog::FileDialog;
 
@@ -15,20 +15,33 @@ fn hltas_to_str(hltas: &HLTAS) -> String {
     String::new()
 }
 
-struct Tab<'a> {
+struct Tab {
     title: String,
     path: Option<PathBuf>,
-    hltas: HLTAS<'a>,
+    raw_content: String,
 }
 
-impl<'a> Tab<'a> {
-    fn open_path(path: PathBuf) -> Self {
-        Self {
-            // TODO error check?
-            // this is file so it should be
-            title: path.file_name().unwrap().to_str().unwrap().to_owned(),
-            path: Some(path),
-            ..Default::default()
+impl Tab {
+    fn open_path(path: PathBuf) -> Result<Self, String> {
+        if let Ok(file_content) = fs::read_to_string(&path) {
+            match HLTAS::from_str(&file_content) {
+                Ok(_) => {}
+                // TODO better error handling
+                Err(_) => {
+                    return Err("Error, can't open the file as hltas file".to_owned());
+                }
+            }
+
+            Ok(Self {
+                // TODO error check?
+                // this is file so it should be
+                title: path.file_name().unwrap().to_str().unwrap().to_owned(),
+                path: Some(path.clone()),
+                raw_content: file_content,
+            })
+        } else {
+            // TODO better error
+            Err("Error, can't open the file".to_owned())
         }
     }
 
@@ -37,13 +50,13 @@ impl<'a> Tab<'a> {
     }
 }
 
-impl<'a> Default for Tab<'a> {
+impl Default for Tab {
     // TODO translation support
     fn default() -> Self {
         Self {
             title: "New file".to_owned(),
             path: None,
-            hltas: Default::default(),
+            raw_content: hltas_to_str(&HLTAS::default()),
         }
     }
 }
@@ -51,16 +64,17 @@ impl<'a> Default for Tab<'a> {
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 // #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 // #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
-pub struct MainGUI<'a> {
-    tabs: Vec<Tab<'a>>,
+pub struct MainGUI {
+    tabs: Vec<Tab>,
     // might have a chance to not have any tabs opened
-    current_tab: Option<usize>,
+    // TODO use direct reference
+    current_tab_index: Option<usize>,
 }
 
-impl<'a> MainGUI<'a> {
+impl MainGUI {
     pub fn new_file(&mut self) {
         self.tabs.push(Tab::new_file());
-        self.current_tab = Some(self.tabs.len() - 1);
+        self.current_tab_index = Some(self.tabs.len() - 1);
     }
 
     pub fn open_file_by_dialog(&mut self) {
@@ -73,21 +87,25 @@ impl<'a> MainGUI<'a> {
     }
 
     pub fn open_file(&mut self, path: PathBuf) {
-        self.tabs.push(Tab::open_path(path));
-    }
-}
-
-impl<'a> Default for MainGUI<'a> {
-    // first time opened will always show a new tab
-    fn default() -> Self {
-        Self {
-            tabs: vec![Tab::default()],
-            current_tab: Some(0),
+        // TODO better error handling
+        if let Ok(tab) = Tab::open_path(path) {
+            self.tabs.push(tab);
         }
     }
 }
 
-impl<'a> epi::App for MainGUI<'a> {
+impl Default for MainGUI {
+    // first time opened will always show a new tab
+    fn default() -> Self {
+        Self {
+            tabs: vec![Tab::default()],
+            current_tab_index: Some(0),
+        }
+    }
+}
+
+// TODO separate into different functions to clean this up
+impl epi::App for MainGUI {
     fn setup(
         &mut self,
         _ctx: &egui::CtxRef,
@@ -140,21 +158,37 @@ impl<'a> epi::App for MainGUI<'a> {
 
             // tabs
             let mut stale_tabs: Vec<usize> = Vec::new();
-            ui.horizontal(|ui| {
-                for (index, tab) in self.tabs.iter().enumerate() {
-                    // tab design
-                    ui.group(|ui| {
-                        ui.label(&tab.title);
-                        let close_button = egui::Button::new("x")
-                            .small()
-                            .text_color(Color32::from_rgb(255, 0, 0));
-
-                        if ui.add(close_button).clicked() {
-                            // mark as stale
-                            stale_tabs.push(index);
-                        }
-                    });
-                }
+            egui::ScrollArea::horizontal().show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    let mut new_index: Option<usize> = None;
+                    for (index, tab) in self.tabs.iter().enumerate() {
+                        // tab design
+                        ui.group(|ui| {
+                            // if label is clicked, switch to that one
+                            if ui
+                                .add(Label::new(&tab.title).sense(Sense::click()))
+                                .clicked()
+                            {
+                                // FIXME not sure why I can't do this
+                                // self.current_tab_index = Some(index);
+                                new_index = Some(index);
+                            }
+    
+                            let close_button = egui::Button::new("x")
+                                .small()
+                                .text_color(Color32::from_rgb(255, 0, 0));
+    
+                            if ui.add(close_button).clicked() {
+                                // mark as stale
+                                stale_tabs.push(index);
+                            }
+                        });
+                    }
+    
+                    if let Some(_) = new_index {
+                        self.current_tab_index = new_index;
+                    }
+                });
             });
 
             stale_tabs.reverse();
@@ -162,6 +196,15 @@ impl<'a> epi::App for MainGUI<'a> {
             // remove stale tabs
             for index in stale_tabs {
                 self.tabs.remove(index);
+            }
+
+            // fix index if its out of bounds
+            if let Some(index) = self.current_tab_index {
+                if self.tabs.len() == 0 {
+                    self.current_tab_index = None;
+                } else if index >= self.tabs.len() {
+                    self.current_tab_index = Some(self.tabs.len() - 1);
+                }
             }
         });
 
@@ -176,6 +219,28 @@ impl<'a> epi::App for MainGUI<'a> {
                     self.open_file(path.to_owned());
                 }
             }
+            // let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
+            //     let mut layout_job: egui::text::LayoutJob = my_memoized_highlighter(string);
+            //     layout_job.wrap_width = wrap_width;
+            //     ui.fonts().layout_job(layout_job)
+            // };
+            // ui.add(egui::TextEdit::multiline(&mut my_code).layouter(&mut layouter));
+
+
+            egui::ScrollArea::both().show(ui, |ui| {
+                if let Some(current_tab_index) = self.current_tab_index {
+                    let current_tab = &mut self.tabs[current_tab_index];
+                    ui.add(
+                        egui::TextEdit::multiline(&mut current_tab.raw_content)
+                            .text_style(egui::TextStyle::Monospace)
+                            .code_editor()
+                            .desired_rows(1)
+                            .lock_focus(true)
+                            .desired_width(f32::INFINITY)
+                            // .layouter(&mut layouter)
+                    );
+                }
+            });
         });
     }
 

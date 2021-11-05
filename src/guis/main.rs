@@ -1,9 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use eframe::{
-    egui::{self, menu, Color32, Label, Sense},
-    epi,
-};
+use eframe::{egui::{self, Color32, Label, Sense, menu}, epi};
 use hltas::HLTAS;
 use native_dialog::FileDialog;
 
@@ -157,35 +154,37 @@ impl epi::App for MainGUI {
 
             // tabs
             let mut stale_tabs: Vec<usize> = Vec::new();
-            ui.horizontal(|ui| {
-                let mut new_index: Option<usize> = None;
-                for (index, tab) in self.tabs.iter().enumerate() {
-                    // tab design
-                    ui.group(|ui| {
-                        // if label is clicked, switch to that one
-                        if ui
-                            .add(Label::new(&tab.title).sense(Sense::click()))
-                            .clicked()
-                        {
-                            // FIXME not sure why I can't do this
-                            // self.current_tab_index = Some(index);
-                            new_index = Some(index);
-                        }
-
-                        let close_button = egui::Button::new("x")
-                            .small()
-                            .text_color(Color32::from_rgb(255, 0, 0));
-
-                        if ui.add(close_button).clicked() {
-                            // mark as stale
-                            stale_tabs.push(index);
-                        }
-                    });
-                }
-
-                if let Some(_) = new_index {
-                    self.current_tab_index = new_index;
-                }
+            egui::ScrollArea::horizontal().show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    let mut new_index: Option<usize> = None;
+                    for (index, tab) in self.tabs.iter().enumerate() {
+                        // tab design
+                        ui.group(|ui| {
+                            // if label is clicked, switch to that one
+                            if ui
+                                .add(Label::new(&tab.title).sense(Sense::click()))
+                                .clicked()
+                            {
+                                // FIXME not sure why I can't do this
+                                // self.current_tab_index = Some(index);
+                                new_index = Some(index);
+                            }
+    
+                            let close_button = egui::Button::new("x")
+                                .small()
+                                .text_color(Color32::from_rgb(255, 0, 0));
+    
+                            if ui.add(close_button).clicked() {
+                                // mark as stale
+                                stale_tabs.push(index);
+                            }
+                        });
+                    }
+    
+                    if let Some(_) = new_index {
+                        self.current_tab_index = new_index;
+                    }
+                });
             });
 
             stale_tabs.reverse();
@@ -206,10 +205,20 @@ impl epi::App for MainGUI {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            if let Some(current_tab_index) = self.current_tab_index {
-                let current_tab = &mut self.tabs[current_tab_index];
-                ui.text_edit_multiline(&mut current_tab.raw_content);
-            }
+            egui::ScrollArea::both().show(ui, |ui| {
+                if let Some(current_tab_index) = self.current_tab_index {
+                    let current_tab = &mut self.tabs[current_tab_index];
+                    ui.add(
+                        egui::TextEdit::multiline(&mut current_tab.raw_content)
+                            .text_style(egui::TextStyle::Monospace)
+                            .code_editor()
+                            .desired_rows(1)
+                            .lock_focus(true)
+                            .desired_width(f32::INFINITY)
+                            // .layouter(&mut layouter)
+                    );
+                }
+            });
         });
     }
 

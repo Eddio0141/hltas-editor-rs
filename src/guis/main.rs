@@ -26,10 +26,9 @@ struct Tab<'a> {
 
 impl<'a> Tab<'a> {
     fn open_path(path: PathBuf) -> Self {
-        // TODO
         Self {
-            // this is file so its fine
             // TODO error check?
+            // this is file so it should be
             title: path.file_name().unwrap().to_str().unwrap().to_owned(),
             path: Some(path),
             ..Default::default()
@@ -42,7 +41,7 @@ impl<'a> Tab<'a> {
 }
 
 impl<'a> Default for Tab<'a> {
-    // TODO, translation support
+    // TODO translation support
     fn default() -> Self {
         Self {
             title: "New file".to_owned(),
@@ -170,7 +169,7 @@ impl<'a> epi::App for MainGUI<'a> {
         });
     }
 
-    // TODO, show current tab file
+    // TODO show current tab file
     fn name(&self) -> &str {
         "HLTAS Editor"
     }

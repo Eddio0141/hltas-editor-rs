@@ -1,6 +1,6 @@
-use std::{fs, path::PathBuf};
+use std::{collections::VecDeque, convert::TryInto, fs, path::PathBuf};
 
-use eframe::{egui::{self, Color32, Key, Label, Sense, Vec2, menu}, epi};
+use eframe::{egui::{self, Color32, Key, Label, Pos2, Sense, Vec2, menu}, epi};
 use hltas::HLTAS;
 use native_dialog::FileDialog;
 
@@ -84,9 +84,16 @@ pub struct MainGUI {
     // might have a chance to not have any tabs opened
     // TODO use direct reference
     current_tab_index: Option<usize>,
+    // TODO option to change size
+    recent_paths: VecDeque<PathBuf>,
 }
 
 impl MainGUI {
+    // TODO make it a field?
+    pub const fn RECENT_PATH_MAX_SIZE() -> usize {
+        20
+    }
+
     pub fn new_file(&mut self) {
         self.tabs.push(Tab::new_file());
         self.current_tab_index = Some(self.tabs.len() - 1);
@@ -101,6 +108,14 @@ impl MainGUI {
         }
     }
 
+    fn add_recent_path(&mut self, path: &PathBuf) {
+        self.recent_paths.push_back(path.clone());
+
+        if self.recent_paths.len() > Self::RECENT_PATH_MAX_SIZE() {
+            self.recent_paths.pop_front();
+        }
+    }
+
     pub fn open_file(&mut self, path: PathBuf) {
         println!("attempt to open file with {:?}", &path);
         // println!("{}", Tab::open_path(&path).err().unwrap());
@@ -109,6 +124,8 @@ impl MainGUI {
             Ok(tab) => {
                 self.tabs.push(tab);
                 self.current_tab_index = Some(self.tabs.len() - 1);
+
+                self.add_recent_path(&path);
 
                 println!(
                     "new file path {:?}",
@@ -171,6 +188,7 @@ impl Default for MainGUI {
         Self {
             tabs: vec![Tab::default()],
             current_tab_index: Some(0),
+            recent_paths: VecDeque::new(),
         }
     }
 }
@@ -230,8 +248,9 @@ impl epi::App for MainGUI {
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
+                let file_menu_pos = ui.spacing().item_spacing.x;
                 menu::menu(ui, "File", |ui| {
-                    // ui.set_width(200.0);
+                    ui.set_width(200.0);
 
                     if ui.button("New    Ctrl+N").clicked() {
                         self.new_file();
@@ -243,7 +262,7 @@ impl epi::App for MainGUI {
                         self.save_current_tab();
                     }
 
-                    // HACK 
+                    // HACK
                     // no side popup? oh well I guess I'll do the weird hack solution
                     // egui::popup::popup_below_widget(
                     //     ui,
@@ -287,7 +306,7 @@ impl epi::App for MainGUI {
                     {
                         if recent_button_response.hovered() {
                             *is_popped_up = true;
-                        }                        
+                        }
                         // *is_popped_up = recent_is_hovered;
 
                         if *is_popped_up {
@@ -300,14 +319,30 @@ impl epi::App for MainGUI {
                     // TODO also think of a cleaner way to do this
                     let mut delete_recent_popup_window = false;
                     if make_recent_popup_window {
-                        egui::Window::new("My Window")
+                        // HACK fix y pos
+                        // HACK figure out x pos better
+                        let window_pos = Pos2::new(file_menu_pos + ui.available_width() + 4.0, 80.0);
+
+                        if self.recent_paths.len() > 0 {
+                            egui::Window::new("recent_files_window")
                             .title_bar(false)
+                            .auto_sized()
+                            .fixed_pos(window_pos)
                             .show(ctx, |ui| {
-                                ui.label("Hello World!");
+                                // show recents
+                                for recent_path in self.recent_paths.iter() {
+                                    if let Some(path_str) = recent_path.as_os_str().to_str() {
+                                        ui.label(path_str);
+                                    }
+                                }
+
+                                ui.label("test");
+
                                 if ui.input().pointer.any_click() {
                                     delete_recent_popup_window = true;
                                 }
                             });
+                        }
                     }
 
                     if delete_recent_popup_window {

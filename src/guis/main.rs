@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fs, path::PathBuf};
+use std::{collections::VecDeque, error::Error, fs, path::PathBuf};
 
 use eframe::{
     egui::{self, menu, Color32, Key, Label, Pos2, Sense},
@@ -26,29 +26,21 @@ struct Tab {
     got_modified: bool,
 }
 
-impl Tab {
-    fn open_path(path: &PathBuf) -> Result<Self, String> {
-        if let Ok(file_content) = fs::read_to_string(&path) {
-            match HLTAS::from_str(&file_content) {
-                Ok(_) => {}
-                // TODO better error handling
-                Err(_) => {
-                    return Err("Error, can't open the file as hltas file".to_owned());
-                }
-            }
-
-            Ok(Self {
-                // TODO error check?
-                // this is file so it should be
-                title: path.file_name().unwrap().to_str().unwrap().to_owned(),
-                path: Some(path.clone()),
-                raw_content: file_content,
-                ..Default::default()
-            })
-        } else {
-            // TODO better error
-            Err("Error, can't open the file".to_owned())
+impl<'a> Tab {
+    fn open_path(path: &PathBuf, file_content: &'a str) -> Result<Self, hltas::read::Error<'a>> {
+        match HLTAS::from_str(&file_content) {
+            Ok(_) => {}
+            Err(err) => return Err(err),
         }
+
+        Ok(Self {
+            // TODO error check?
+            // this is file so it should be
+            title: path.file_name().unwrap().to_str().unwrap().to_owned(),
+            path: Some(path.clone()),
+            raw_content: file_content.to_string(),
+            ..Default::default()
+        })
     }
 
     fn title_from_path(path: &PathBuf) -> String {
@@ -139,21 +131,22 @@ impl MainGUI {
     pub fn open_file(&mut self, path: PathBuf) {
         println!("attempt to open file with {:?}", &path);
         // println!("{}", Tab::open_path(&path).err().unwrap());
-        // TODO better error handling
-        match Tab::open_path(&path) {
-            Ok(tab) => {
-                self.tabs.push(tab);
-                self.current_tab_index = Some(self.tabs.len() - 1);
+        if let Ok(file_content) = fs::read_to_string(&path) {
+            match Tab::open_path(&path, &file_content) {
+                Ok(tab) => {
+                    self.tabs.push(tab);
+                    self.current_tab_index = Some(self.tabs.len() - 1);
 
-                self.add_recent_path(&path);
+                    self.add_recent_path(&path);
 
-                println!(
-                    "new file path {:?}",
-                    self.tabs[self.current_tab_index.unwrap()].path
-                );
-                println!("new index {:?}", self.current_tab_index);
+                    println!(
+                        "new file path {:?}",
+                        self.tabs[self.current_tab_index.unwrap()].path
+                    );
+                    println!("new index {:?}", self.current_tab_index);
+                }
+                Err(err) => println!("Error: {}", err),
             }
-            Err(err) => println!("Error: {}", err),
         }
     }
 
@@ -211,7 +204,9 @@ impl MainGUI {
             let current_tab = &self.tabs[index];
 
             if current_tab.got_modified {
-                if let Ok(_) = self.save_current_tab(Some("Would you like to save the modified file?".to_string())) {
+                if let Ok(_) = self.save_current_tab(Some(
+                    "Would you like to save the modified file?".to_string(),
+                )) {
                     self.tabs.remove(index);
                 }
                 // else do nothing since we can't close the tab
@@ -396,10 +391,10 @@ impl epi::App for MainGUI {
                                         }
                                     }
 
-                                if ui.input().pointer.any_click() {
-                                    delete_recent_popup_window = true;
-                                }
-                            });
+                                    if ui.input().pointer.any_click() {
+                                        delete_recent_popup_window = true;
+                                    }
+                                });
                         }
                     }
 

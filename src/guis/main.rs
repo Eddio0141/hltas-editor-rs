@@ -369,8 +369,6 @@ impl epi::App for MainGUI {
                                     }
                                 }
 
-                                ui.label("test");
-
                                 if ui.input().pointer.any_click() {
                                     delete_recent_popup_window = true;
                                 }

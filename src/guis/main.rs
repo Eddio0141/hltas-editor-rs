@@ -246,6 +246,19 @@ impl epi::App for MainGUI {
                         self.save_current_tab();
                     }
 
+                    // HACK 
+                    // no side popup? oh well I guess I'll do the weird hack solution
+                    // egui::popup::popup_below_widget(
+                    //     ui,
+                    //     recent_popup_id,
+                    //     &recent_button_response,
+                    //     |ui| {
+                    //         // ui.set_min_width(200.0);
+                    //         // ui.label("yoo!");
+                    //     },
+                    // );
+
+                    // TODO make it look like | Recent       > |
                     let recent_button =
                         egui::Label::new("Recent").sense(Sense::click().union(Sense::hover()));
                     let recent_button_response = ui.add(recent_button);
@@ -293,17 +306,6 @@ impl epi::App for MainGUI {
                             *is_popped_up = false;
                         }
                     }
-
-                    // no side popup? oh well
-                    // egui::popup::popup_below_widget(
-                    //     ui,
-                    //     recent_popup_id,
-                    //     &recent_button_response,
-                    //     |ui| {
-                    //         // ui.set_min_width(200.0);
-                    //         // ui.label("yoo!");
-                    //     },
-                    // );
                 })
             });
 

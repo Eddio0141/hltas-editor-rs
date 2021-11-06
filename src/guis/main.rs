@@ -1,9 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use eframe::{
-    egui::{self, menu, Color32, Key, Label, Sense},
-    epi,
-};
+use eframe::{egui::{self, Color32, Key, Label, Sense, Vec2, menu}, epi};
 use hltas::HLTAS;
 use native_dialog::FileDialog;
 
@@ -234,7 +231,7 @@ impl epi::App for MainGUI {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
                 menu::menu(ui, "File", |ui| {
-                    ui.set_width(200.0);
+                    // ui.set_width(200.0);
 
                     if ui.button("New    Ctrl+N").clicked() {
                         self.new_file();
@@ -259,6 +256,19 @@ impl epi::App for MainGUI {
                     // );
 
                     // TODO make it look like | Recent       > |
+                    // let mut recent_is_hovered = false;
+                    // ui.horizontal(|ui| {
+                    //     let recent_button = egui::Label::new("Recent >").sense(Sense::click().union(Sense::hover()));
+                    //     // TODO make it stick to the right automatically
+                    //     // ui.style_mut().spacing.item_spacing.x = 100.0;
+
+                    //     if ui.add(recent_button).hovered() {
+                    //         recent_is_hovered = true;
+                    //     }
+
+                    //     ui.label(">").ctx.pos;
+                    // });
+
                     let recent_button =
                         egui::Label::new("Recent").sense(Sense::click().union(Sense::hover()));
                     let recent_button_response = ui.add(recent_button);
@@ -277,7 +287,8 @@ impl epi::App for MainGUI {
                     {
                         if recent_button_response.hovered() {
                             *is_popped_up = true;
-                        }
+                        }                        
+                        // *is_popped_up = recent_is_hovered;
 
                         if *is_popped_up {
                             // retarded solution yes

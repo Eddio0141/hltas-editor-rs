@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, error::Error, fs, path::PathBuf};
+use std::{collections::VecDeque, fs, path::PathBuf};
 
 use eframe::{
     egui::{self, menu, Color32, Key, Label, Pos2, Sense},

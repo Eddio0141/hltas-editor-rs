@@ -6,7 +6,7 @@ use eframe::{
 };
 use hltas::HLTAS;
 use hltas_cleaner::cleaners;
-use native_dialog::FileDialog;
+use native_dialog::{FileDialog, MessageDialog, MessageType};
 
 fn hltas_to_str(hltas: &HLTAS) -> String {
     let mut file_u8: Vec<u8> = Vec::new();
@@ -100,6 +100,7 @@ impl MainGUI {
     pub fn open_file_by_dialog(&mut self) {
         if let Ok(Some(pathbuf)) = FileDialog::new()
             .add_filter("HLTAS Files", &["hltas", "txt"])
+            .add_filter("Any", &["*"])
             .show_open_single_file()
         {
             self.open_file(pathbuf);
@@ -129,8 +130,6 @@ impl MainGUI {
     }
 
     pub fn open_file(&mut self, path: PathBuf) {
-        println!("attempt to open file with {:?}", &path);
-        // println!("{}", Tab::open_path(&path).err().unwrap());
         if let Ok(file_content) = fs::read_to_string(&path) {
             match Tab::open_path(&path, &file_content) {
                 Ok(tab) => {
@@ -138,14 +137,14 @@ impl MainGUI {
                     self.current_tab_index = Some(self.tabs.len() - 1);
 
                     self.add_recent_path(&path);
-
-                    println!(
-                        "new file path {:?}",
-                        self.tabs[self.current_tab_index.unwrap()].path
-                    );
-                    println!("new index {:?}", self.current_tab_index);
                 }
-                Err(err) => println!("Error: {}", err),
+                Err(err) => {
+                    MessageDialog::new()
+                        .set_title("Error, Cannot parse as hltas file")
+                        .set_text(&err.to_string())
+                        .set_type(MessageType::Error)
+                        .show_alert().ok();
+                }
             }
         }
     }

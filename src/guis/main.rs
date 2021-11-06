@@ -1,6 +1,6 @@
-use std::{collections::VecDeque, convert::TryInto, fs, path::PathBuf};
+use std::{collections::VecDeque, fs, path::PathBuf};
 
-use eframe::{egui::{self, Color32, Key, Label, Pos2, Sense, Vec2, menu}, epi};
+use eframe::{egui::{self, Color32, Key, Label, Pos2, Sense, menu}, epi};
 use hltas::HLTAS;
 use native_dialog::FileDialog;
 
@@ -90,7 +90,7 @@ pub struct MainGUI {
 
 impl MainGUI {
     // TODO make it a field?
-    pub const fn RECENT_PATH_MAX_SIZE() -> usize {
+    pub const fn recent_path_max_size() -> usize {
         20
     }
 

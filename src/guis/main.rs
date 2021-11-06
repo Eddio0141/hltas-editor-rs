@@ -2,6 +2,7 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 
 use eframe::{egui::{self, Color32, Key, Label, Pos2, Sense, menu}, epi};
 use hltas::HLTAS;
+use hltas_cleaner::cleaners;
 use native_dialog::FileDialog;
 
 fn hltas_to_str(hltas: &HLTAS) -> String {
@@ -366,7 +367,21 @@ impl epi::App for MainGUI {
                             *is_popped_up = false;
                         }
                     }
-                })
+                });
+            
+                menu::menu(ui, "Tools", |ui| {
+                    if ui.button("HLTAS cleaner").clicked() {
+                        // TODO show options
+                        if let Some(current_index) = self.current_tab_index {
+                            let current_tab_raw = &mut self.tabs[current_index].raw_content;
+                            // TODO all error handling here
+                            if let Ok(mut hltas) = HLTAS::from_str(&current_tab_raw) {
+                                cleaners::no_dupe_framebulks(&mut hltas);
+                                *current_tab_raw = hltas_to_str(&hltas);
+                            }
+                        }
+                    }
+                });
             });
 
             ui.separator();

@@ -1,6 +1,9 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
-use eframe::{egui::{self, Color32, Key, Label, Pos2, Sense, menu}, epi};
+use eframe::{
+    egui::{self, menu, Color32, Key, Label, Pos2, Sense},
+    epi,
+};
 use hltas::HLTAS;
 use hltas_cleaner::cleaners;
 use native_dialog::FileDialog;
@@ -20,8 +23,7 @@ struct Tab {
     title: String,
     path: Option<PathBuf>,
     raw_content: String,
-    // TODO got_modified implementation
-    // got_modified: bool,
+    got_modified: bool,
 }
 
 impl Tab {
@@ -41,6 +43,7 @@ impl Tab {
                 title: path.file_name().unwrap().to_str().unwrap().to_owned(),
                 path: Some(path.clone()),
                 raw_content: file_content,
+                ..Default::default()
             })
         } else {
             // TODO better error
@@ -73,6 +76,7 @@ impl Default for Tab {
             title: Tab::default_title().to_owned(),
             path: None,
             raw_content: hltas_to_str(&HLTAS::default()),
+            got_modified: false,
         }
     }
 }
@@ -124,7 +128,7 @@ impl MainGUI {
         }) {
             self.recent_paths.remove(dupe_index);
         }
-        
+
         self.recent_paths.push_back(path.clone());
 
         if self.recent_paths.len() > Self::recent_path_max_size() {
@@ -159,8 +163,23 @@ impl MainGUI {
             .show_save_single_file()
     }
 
-    pub fn save_current_tab(&mut self) {
+    pub fn save_current_tab(&mut self, warn_user: Option<String>) -> Result<(), std::io::Error> {
         if let Some(current_tab) = self.current_tab_index {
+            if let Some(warning_msg) = warn_user {
+                // pop up warning!
+                let warning_user_selection = native_dialog::MessageDialog::new()
+                    .set_title("Warning!")
+                    .set_type(native_dialog::MessageType::Warning)
+                    .set_text(&warning_msg)
+                    .show_confirm();
+
+                if let Ok(warning_user_selection) = warning_user_selection {
+                    if !warning_user_selection {
+                        return Ok(());
+                    }
+                }
+            }
+
             let tab = &mut self.tabs[current_tab];
             let mut save_path: Option<PathBuf> = None;
             let mut new_file = false;
@@ -177,23 +196,28 @@ impl MainGUI {
             }
 
             if let Some(path) = save_path {
-                match fs::write(&path, &tab.raw_content) {
-                    Ok(_) => {
-                        if new_file {
-                            tab.title = Tab::title_from_path(&path);
-                        }
-                    }
-                    // TODO handle saving error
-                    Err(_) => (),
-                };
+                fs::write(&path, &tab.raw_content)?;
+                if new_file {
+                    tab.title = Tab::title_from_path(&path);
+                }
             }
         }
+
+        Ok(())
     }
 
-    // TODO add check if changed. if it is, save it properly
     pub fn close_current_tab(&mut self) {
         if let Some(index) = self.current_tab_index {
-            self.tabs.remove(index);
+            let current_tab = &self.tabs[index];
+
+            if current_tab.got_modified {
+                if let Ok(_) = self.save_current_tab(Some("Would you like to save the modified file?".to_string())) {
+                    self.tabs.remove(index);
+                }
+                // else do nothing since we can't close the tab
+            } else {
+                self.tabs.remove(index);
+            }
         }
     }
 
@@ -273,7 +297,7 @@ impl epi::App for MainGUI {
             self.open_file_by_dialog();
         }
         if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::S) {
-            self.save_current_tab();
+            self.save_current_tab(None);
         }
         if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::W) {
             self.close_current_tab();
@@ -292,7 +316,7 @@ impl epi::App for MainGUI {
                         self.open_file_by_dialog();
                     }
                     if ui.button("Save    Ctrl+S").clicked() {
-                        self.save_current_tab();
+                        self.save_current_tab(None);
                     }
 
                     // HACK
@@ -354,27 +378,28 @@ impl epi::App for MainGUI {
                     if make_recent_popup_window {
                         // HACK fix y pos
                         // HACK figure out x pos better
-                        let window_pos = Pos2::new(file_menu_pos + ui.available_width() + 4.0, 80.0);
+                        let window_pos =
+                            Pos2::new(file_menu_pos + ui.available_width() + 4.0, 80.0);
 
                         if self.recent_paths.len() > 0 {
                             egui::Window::new("recent_files_window")
-                            .title_bar(false)
-                            .auto_sized()
-                            .fixed_pos(window_pos)
-                            .show(ctx, |ui| {
-                                // show recents
-                                for recent_path in self.recent_paths.iter() {
-                                    if let Some(path_str) = recent_path.as_os_str().to_str() {
-                                        ui.label(path_str);
+                                .title_bar(false)
+                                .auto_sized()
+                                .fixed_pos(window_pos)
+                                .show(ctx, |ui| {
+                                    // show recents
+                                    for recent_path in self.recent_paths.iter() {
+                                        if let Some(path_str) = recent_path.as_os_str().to_str() {
+                                            ui.label(path_str);
+                                        }
                                     }
-                                }
 
-                                ui.label("test");
+                                    ui.label("test");
 
-                                if ui.input().pointer.any_click() {
-                                    delete_recent_popup_window = true;
-                                }
-                            });
+                                    if ui.input().pointer.any_click() {
+                                        delete_recent_popup_window = true;
+                                    }
+                                });
                         }
                     }
 
@@ -386,7 +411,7 @@ impl epi::App for MainGUI {
                         }
                     }
                 });
-            
+
                 menu::menu(ui, "Tools", |ui| {
                     if ui.button("HLTAS cleaner").clicked() {
                         // TODO show options
@@ -479,14 +504,20 @@ impl epi::App for MainGUI {
             egui::ScrollArea::both().show(ui, |ui| {
                 if let Some(current_tab_index) = self.current_tab_index {
                     let current_tab = &mut self.tabs[current_tab_index];
-                    ui.add(
-                        egui::TextEdit::multiline(&mut current_tab.raw_content)
-                            .text_style(egui::TextStyle::Monospace)
-                            .code_editor()
-                            .desired_rows(1)
-                            .lock_focus(true)
-                            .desired_width(f32::INFINITY), // .layouter(&mut layouter)
-                    );
+                    let tab_content_changed = ui
+                        .add(
+                            egui::TextEdit::multiline(&mut current_tab.raw_content)
+                                .text_style(egui::TextStyle::Monospace)
+                                .code_editor()
+                                .desired_rows(1)
+                                .lock_focus(true)
+                                .desired_width(f32::INFINITY), // .layouter(&mut layouter)
+                        )
+                        .changed();
+
+                    if tab_content_changed {
+                        current_tab.got_modified = true;
+                    }
                 }
             });
         });

@@ -111,7 +111,7 @@ impl MainGUI {
     fn add_recent_path(&mut self, path: &PathBuf) {
         self.recent_paths.push_back(path.clone());
 
-        if self.recent_paths.len() > Self::RECENT_PATH_MAX_SIZE() {
+        if self.recent_paths.len() > Self::recent_path_max_size() {
             self.recent_paths.pop_front();
         }
     }

@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use eframe::{
-    egui::{self, menu, Color32, Key, Label, PointerButton, Sense},
+    egui::{self, menu, Color32, Key, Label, Sense},
     epi,
 };
 use hltas::HLTAS;

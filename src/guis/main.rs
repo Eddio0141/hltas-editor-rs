@@ -297,7 +297,8 @@ impl epi::App for MainGUI {
             self.open_file_by_dialog();
         }
         if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::S) {
-            self.save_current_tab(None);
+            // TODO error handle
+            self.save_current_tab(None).ok();
         }
         if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::W) {
             self.close_current_tab();
@@ -316,7 +317,8 @@ impl epi::App for MainGUI {
                         self.open_file_by_dialog();
                     }
                     if ui.button("Save    Ctrl+S").clicked() {
-                        self.save_current_tab(None);
+                        // TODO error handle
+                        self.save_current_tab(None).ok();
                     }
 
                     // HACK

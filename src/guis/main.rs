@@ -474,6 +474,8 @@ impl epi::App for MainGUI {
             // };
             // ui.add(egui::TextEdit::multiline(&mut my_code).layouter(&mut layouter));
 
+            // TODO show line count
+
             egui::ScrollArea::both().show(ui, |ui| {
                 if let Some(current_tab_index) = self.current_tab_index {
                     let current_tab = &mut self.tabs[current_tab_index];

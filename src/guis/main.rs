@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use eframe::{
-    egui::{self, menu, Color32, Key, Label, Sense},
+    egui::{self, menu, Color32, Key, Label, PointerButton, Sense},
     epi,
 };
 use hltas::HLTAS;
@@ -112,8 +112,11 @@ impl MainGUI {
             Ok(tab) => {
                 self.tabs.push(tab);
                 self.current_tab_index = Some(self.tabs.len() - 1);
-    
-                println!("new file path {:?}", self.tabs[self.current_tab_index.unwrap()].path);
+
+                println!(
+                    "new file path {:?}",
+                    self.tabs[self.current_tab_index.unwrap()].path
+                );
                 println!("new index {:?}", self.current_tab_index);
             }
             Err(err) => println!("Error: {}", err),
@@ -231,6 +234,8 @@ impl epi::App for MainGUI {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
                 menu::menu(ui, "File", |ui| {
+                    ui.set_width(200.0);
+
                     if ui.button("New    Ctrl+N").clicked() {
                         self.new_file();
                     }
@@ -240,6 +245,65 @@ impl epi::App for MainGUI {
                     if ui.button("Save    Ctrl+S").clicked() {
                         self.save_current_tab();
                     }
+
+                    let recent_button =
+                        egui::Label::new("Recent").sense(Sense::click().union(Sense::hover()));
+                    let recent_button_response = ui.add(recent_button);
+                    let recent_popup_id = ui.make_persistent_id("recent_popup_id");
+                    let mut make_recent_popup_window = false;
+
+                    // check memory if the popup window is enabled
+
+                    // not sure why can't i just use this for the if statement combination
+                    ui.memory()
+                        .id_data_temp
+                        .get_or_insert_with(recent_popup_id, || false);
+
+                    if let Some(is_popped_up) =
+                        ui.memory().id_data_temp.get_mut::<bool>(&recent_popup_id)
+                    {
+                        if recent_button_response.hovered() {
+                            *is_popped_up = true;
+                        }
+
+                        if *is_popped_up {
+                            // retarded solution yes
+                            // TODO think of a cleaner way to do this
+                            make_recent_popup_window = true;
+                        }
+                    }
+
+                    // TODO also think of a cleaner way to do this
+                    let mut delete_recent_popup_window = false;
+                    if make_recent_popup_window {
+                        egui::Window::new("My Window")
+                            .title_bar(false)
+                            .show(ctx, |ui| {
+                                ui.label("Hello World!");
+                                if ui.input().pointer.any_click() {
+                                    delete_recent_popup_window = true;
+                                }
+                            });
+                    }
+
+                    if delete_recent_popup_window {
+                        if let Some(is_popped_up) =
+                            ui.memory().id_data_temp.get_mut::<bool>(&recent_popup_id)
+                        {
+                            *is_popped_up = false;
+                        }
+                    }
+
+                    // no side popup? oh well
+                    // egui::popup::popup_below_widget(
+                    //     ui,
+                    //     recent_popup_id,
+                    //     &recent_button_response,
+                    //     |ui| {
+                    //         // ui.set_min_width(200.0);
+                    //         // ui.label("yoo!");
+                    //     },
+                    // );
                 })
             });
 

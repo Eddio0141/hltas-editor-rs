@@ -109,6 +109,20 @@ impl MainGUI {
     }
 
     fn add_recent_path(&mut self, path: &PathBuf) {
+        let path_as_str = path.as_os_str().to_str();
+
+        // dupe check, deletes dupe
+        if let Some(dupe_index) = self.recent_paths.iter().position(|recent_path| {
+            if let Some(recent_path_str) = recent_path.as_os_str().to_str() {
+                if let Some(path_str) = path_as_str {
+                    return recent_path_str == path_str;
+                }
+            }
+            false
+        }) {
+            self.recent_paths.remove(dupe_index);
+        }
+        
         self.recent_paths.push_back(path.clone());
 
         if self.recent_paths.len() > Self::recent_path_max_size() {

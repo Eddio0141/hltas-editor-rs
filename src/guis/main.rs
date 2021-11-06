@@ -1,7 +1,8 @@
-use std::{fs, path::PathBuf};
+use std::{collections::VecDeque, fs, path::PathBuf};
 
-use eframe::{egui::{self, Color32, Label, Sense, menu}, epi};
+use eframe::{egui::{self, Color32, Key, Label, Pos2, Sense, menu}, epi};
 use hltas::HLTAS;
+use hltas_cleaner::cleaners;
 use native_dialog::FileDialog;
 
 fn hltas_to_str(hltas: &HLTAS) -> String {
@@ -19,10 +20,12 @@ struct Tab {
     title: String,
     path: Option<PathBuf>,
     raw_content: String,
+    // TODO got_modified implementation
+    // got_modified: bool,
 }
 
 impl Tab {
-    fn open_path(path: PathBuf) -> Result<Self, String> {
+    fn open_path(path: &PathBuf) -> Result<Self, String> {
         if let Ok(file_content) = fs::read_to_string(&path) {
             match HLTAS::from_str(&file_content) {
                 Ok(_) => {}
@@ -45,6 +48,19 @@ impl Tab {
         }
     }
 
+    fn title_from_path(path: &PathBuf) -> String {
+        if let Some(os_str) = path.file_name() {
+            if let Some(str) = os_str.to_str() {
+                return str.to_owned();
+            }
+        }
+        Tab::default_title().to_owned()
+    }
+
+    fn default_title() -> &'static str {
+        "New file"
+    }
+
     fn new_file() -> Self {
         Self::default()
     }
@@ -54,7 +70,7 @@ impl Default for Tab {
     // TODO translation support
     fn default() -> Self {
         Self {
-            title: "New file".to_owned(),
+            title: Tab::default_title().to_owned(),
             path: None,
             raw_content: hltas_to_str(&HLTAS::default()),
         }
@@ -70,9 +86,16 @@ pub struct MainGUI {
     // TODO use direct reference
     current_tab_index: Option<usize>,
     title: String,
+    // TODO option to change size
+    recent_paths: VecDeque<PathBuf>,
 }
 
 impl MainGUI {
+    // TODO make it a field?
+    pub const fn recent_path_max_size() -> usize {
+        20
+    }
+
     pub fn new_file(&mut self) {
         self.tabs.push(Tab::new_file());
         self.current_tab_index = Some(self.tabs.len() - 1);
@@ -87,10 +110,90 @@ impl MainGUI {
         }
     }
 
+    fn add_recent_path(&mut self, path: &PathBuf) {
+        let path_as_str = path.as_os_str().to_str();
+
+        // dupe check, deletes dupe
+        if let Some(dupe_index) = self.recent_paths.iter().position(|recent_path| {
+            if let Some(recent_path_str) = recent_path.as_os_str().to_str() {
+                if let Some(path_str) = path_as_str {
+                    return recent_path_str == path_str;
+                }
+            }
+            false
+        }) {
+            self.recent_paths.remove(dupe_index);
+        }
+        
+        self.recent_paths.push_back(path.clone());
+
+        if self.recent_paths.len() > Self::recent_path_max_size() {
+            self.recent_paths.pop_front();
+        }
+    }
+
     pub fn open_file(&mut self, path: PathBuf) {
+        println!("attempt to open file with {:?}", &path);
+        // println!("{}", Tab::open_path(&path).err().unwrap());
         // TODO better error handling
-        if let Ok(tab) = Tab::open_path(path) {
-            self.tabs.push(tab);
+        match Tab::open_path(&path) {
+            Ok(tab) => {
+                self.tabs.push(tab);
+                self.current_tab_index = Some(self.tabs.len() - 1);
+
+                self.add_recent_path(&path);
+
+                println!(
+                    "new file path {:?}",
+                    self.tabs[self.current_tab_index.unwrap()].path
+                );
+                println!("new index {:?}", self.current_tab_index);
+            }
+            Err(err) => println!("Error: {}", err),
+        }
+    }
+
+    fn ask_hltas_save_location() -> Result<Option<PathBuf>, native_dialog::Error> {
+        FileDialog::new()
+            .add_filter("HLTAS Files", &["hltas"])
+            .show_save_single_file()
+    }
+
+    pub fn save_current_tab(&mut self) {
+        if let Some(current_tab) = self.current_tab_index {
+            let tab = &mut self.tabs[current_tab];
+            let mut save_path: Option<PathBuf> = None;
+            let mut new_file = false;
+            println!("current tab index {:#?}", &self.current_tab_index);
+            println!("current tab path {:#?}", &tab.path);
+            if let Some(path) = &tab.path {
+                save_path = Some(path.to_owned());
+            } else {
+                // no file, save as new file
+                if let Ok(path) = Self::ask_hltas_save_location() {
+                    save_path = path;
+                    new_file = true;
+                }
+            }
+
+            if let Some(path) = save_path {
+                match fs::write(&path, &tab.raw_content) {
+                    Ok(_) => {
+                        if new_file {
+                            tab.title = Tab::title_from_path(&path);
+                        }
+                    }
+                    // TODO handle saving error
+                    Err(_) => (),
+                };
+            }
+        }
+    }
+
+    // TODO add check if changed. if it is, save it properly
+    pub fn close_current_tab(&mut self) {
+        if let Some(index) = self.current_tab_index {
+            self.tabs.remove(index);
         }
     }
 
@@ -118,6 +221,7 @@ impl Default for MainGUI {
             tabs: vec![Tab::default()],
             current_tab_index: Some(0),
             title: Self::default_title().to_string(),
+            recent_paths: VecDeque::new(),
         }
     }
 }
@@ -160,16 +264,142 @@ impl epi::App for MainGUI {
     // }
 
     fn update(&mut self, ctx: &egui::CtxRef, _frame: &mut epi::Frame<'_>) {
+        // menu input checks
+        // TODO better way of making this work, use of struct?
+        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::N) {
+            self.new_file();
+        }
+        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::O) {
+            self.open_file_by_dialog();
+        }
+        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::S) {
+            self.save_current_tab();
+        }
+        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::W) {
+            self.close_current_tab();
+        }
+
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
+                let file_menu_pos = ui.spacing().item_spacing.x;
                 menu::menu(ui, "File", |ui| {
-                    if ui.button("New").clicked() {
+                    ui.set_width(200.0);
+
+                    if ui.button("New    Ctrl+N").clicked() {
                         self.new_file();
                     }
-                    if ui.button("Open").clicked() {
+                    if ui.button("Open    Ctrl+O").clicked() {
                         self.open_file_by_dialog();
                     }
-                })
+                    if ui.button("Save    Ctrl+S").clicked() {
+                        self.save_current_tab();
+                    }
+
+                    // HACK
+                    // no side popup? oh well I guess I'll do the weird hack solution
+                    // egui::popup::popup_below_widget(
+                    //     ui,
+                    //     recent_popup_id,
+                    //     &recent_button_response,
+                    //     |ui| {
+                    //         // ui.set_min_width(200.0);
+                    //         // ui.label("yoo!");
+                    //     },
+                    // );
+
+                    // TODO make it look like | Recent       > |
+                    // let mut recent_is_hovered = false;
+                    // ui.horizontal(|ui| {
+                    //     let recent_button = egui::Label::new("Recent >").sense(Sense::click().union(Sense::hover()));
+                    //     // TODO make it stick to the right automatically
+                    //     // ui.style_mut().spacing.item_spacing.x = 100.0;
+
+                    //     if ui.add(recent_button).hovered() {
+                    //         recent_is_hovered = true;
+                    //     }
+
+                    //     ui.label(">").ctx.pos;
+                    // });
+
+                    let recent_button =
+                        egui::Label::new("Recent").sense(Sense::click().union(Sense::hover()));
+                    let recent_button_response = ui.add(recent_button);
+                    let recent_popup_id = ui.make_persistent_id("recent_popup_id");
+                    let mut make_recent_popup_window = false;
+
+                    // check memory if the popup window is enabled
+
+                    // not sure why can't i just use this for the if statement combination
+                    ui.memory()
+                        .id_data_temp
+                        .get_or_insert_with(recent_popup_id, || false);
+
+                    if let Some(is_popped_up) =
+                        ui.memory().id_data_temp.get_mut::<bool>(&recent_popup_id)
+                    {
+                        if recent_button_response.hovered() {
+                            *is_popped_up = true;
+                        }
+                        // *is_popped_up = recent_is_hovered;
+
+                        if *is_popped_up {
+                            // retarded solution yes
+                            // TODO think of a cleaner way to do this
+                            make_recent_popup_window = true;
+                        }
+                    }
+
+                    // TODO also think of a cleaner way to do this
+                    let mut delete_recent_popup_window = false;
+                    if make_recent_popup_window {
+                        // HACK fix y pos
+                        // HACK figure out x pos better
+                        let window_pos = Pos2::new(file_menu_pos + ui.available_width() + 4.0, 80.0);
+
+                        if self.recent_paths.len() > 0 {
+                            egui::Window::new("recent_files_window")
+                            .title_bar(false)
+                            .auto_sized()
+                            .fixed_pos(window_pos)
+                            .show(ctx, |ui| {
+                                // show recents
+                                for recent_path in self.recent_paths.iter() {
+                                    if let Some(path_str) = recent_path.as_os_str().to_str() {
+                                        ui.label(path_str);
+                                    }
+                                }
+
+                                ui.label("test");
+
+                                if ui.input().pointer.any_click() {
+                                    delete_recent_popup_window = true;
+                                }
+                            });
+                        }
+                    }
+
+                    if delete_recent_popup_window {
+                        if let Some(is_popped_up) =
+                            ui.memory().id_data_temp.get_mut::<bool>(&recent_popup_id)
+                        {
+                            *is_popped_up = false;
+                        }
+                    }
+                });
+            
+                menu::menu(ui, "Tools", |ui| {
+                    if ui.button("HLTAS cleaner").clicked() {
+                        // TODO show options
+                        if let Some(current_index) = self.current_tab_index {
+                            let current_tab_raw = &mut self.tabs[current_index].raw_content;
+                            // TODO all error handling here
+                            if let Ok(mut hltas) = HLTAS::from_str(&current_tab_raw) {
+                                cleaners::no_dupe_framebulks(&mut hltas);
+                                *current_tab_raw = hltas_to_str(&hltas);
+                            }
+                        }
+                    }
+                });
             });
 
             ui.separator();
@@ -191,18 +421,18 @@ impl epi::App for MainGUI {
                                 // self.current_tab_index = Some(index);
                                 new_index = Some(index);
                             }
-    
+
                             let close_button = egui::Button::new("x")
                                 .small()
                                 .text_color(Color32::from_rgb(255, 0, 0));
-    
+
                             if ui.add(close_button).clicked() {
                                 // mark as stale
                                 stale_tabs.push(index);
                             }
                         });
                     }
-    
+
                     if let Some(_) = new_index {
                         self.current_tab_index = new_index;
                     }
@@ -244,7 +474,6 @@ impl epi::App for MainGUI {
             // };
             // ui.add(egui::TextEdit::multiline(&mut my_code).layouter(&mut layouter));
 
-
             egui::ScrollArea::both().show(ui, |ui| {
                 if let Some(current_tab_index) = self.current_tab_index {
                     let current_tab = &mut self.tabs[current_tab_index];
@@ -254,8 +483,7 @@ impl epi::App for MainGUI {
                             .code_editor()
                             .desired_rows(1)
                             .lock_focus(true)
-                            .desired_width(f32::INFINITY)
-                            // .layouter(&mut layouter)
+                            .desired_width(f32::INFINITY), // .layouter(&mut layouter)
                     );
                 }
             });

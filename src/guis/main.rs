@@ -84,6 +84,7 @@ pub struct MainGUI {
     title: String,
     // TODO option to change size
     recent_paths: VecDeque<PathBuf>,
+    graphics_editor: bool,
 }
 
 impl MainGUI {
@@ -240,6 +241,7 @@ impl Default for MainGUI {
             current_tab_index: Some(0),
             title: Self::default_title().to_string(),
             recent_paths: VecDeque::new(),
+            graphics_editor: true,
         }
     }
 }
@@ -417,6 +419,12 @@ impl epi::App for MainGUI {
                                 *current_tab_raw = hltas_to_str(&hltas);
                             }
                         }
+                    }
+                });
+
+                menu::menu(ui, "Options", |ui| {
+                    if ui.button("Toggle graphics editor").clicked() {
+                        self.graphics_editor = !self.graphics_editor;
                     }
                 });
             });

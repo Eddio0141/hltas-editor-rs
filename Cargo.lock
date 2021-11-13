@@ -126,9 +126,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.0.71"
+version = "1.0.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79c2681d6594606957bbb8631c4b90a7fcaaa72cdb714743a437b156d6a7eedd"
+checksum = "22a9137b95ea06864e018375b72adfb7db6e6f68cfc8df5a04d00288050485ee"
 
 [[package]]
 name = "cfg-if"
@@ -716,7 +716,7 @@ dependencies = [
 [[package]]
 name = "hltas"
 version = "0.4.0"
-source = "git+https://github.com/HLTAS/hltas#f55c3cab4d2d5963bfd38ce52d337904a3b914d7"
+source = "git+https://github.com/HLTAS/hltas#de9fe2e8114c846b9e4c4c51276f824ba28a668a"
 dependencies = [
  "cookie-factory",
  "nom 5.1.2",
@@ -725,7 +725,7 @@ dependencies = [
 [[package]]
 name = "hltas-cleaner"
 version = "0.1.0"
-source = "git+https://github.com/Eddio0141/hltas-cleaner#701dfc3e65c6f991df8dd445add23ed3165d356c"
+source = "git+https://github.com/Eddio0141/hltas-cleaner#d1de4141757de53994475c448f1a96fcedd3ac3e"
 dependencies = [
  "hltas",
 ]
@@ -803,9 +803,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.106"
+version = "0.2.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a60553f9a9e039a333b4e9b20573b9e9b9c0bb3a11e201ccc48ef4283456d673"
+checksum = "fbe5e23404da5b4f555ef85ebed98fb4083e55a00c317800bc2a50ede9f3d219"
 
 [[package]]
 name = "libloading"

@@ -1,5 +1,6 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
+use crate::helpers::hltas::hltas_to_str;
 use eframe::{
     egui::{
         self, menu, Color32, CtxRef, FontDefinitions, FontFamily, Key, Label, Modifiers, Pos2,
@@ -12,17 +13,6 @@ use hltas::HLTAS;
 use hltas_cleaner::cleaners;
 use locale_config::Locale;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
-
-fn hltas_to_str(hltas: &HLTAS) -> String {
-    let mut file_u8: Vec<u8> = Vec::new();
-    hltas.to_writer(&mut file_u8).unwrap();
-
-    // always has to work
-    if let Ok(content) = String::from_utf8(file_u8) {
-        return content;
-    }
-    String::new()
-}
 
 fn default_lang() -> LanguageIdentifier {
     "en-US".parse::<LanguageIdentifier>().unwrap()
@@ -683,7 +673,13 @@ impl epi::App for MainGUI {
                     ui,
                     crate::LOCALES.lookup(&self.locale_lang.get_lang(), "tools-menu"),
                     |ui| {
-                        if ui.button(crate::LOCALES.lookup(&self.locale_lang.get_lang(), "hltas-cleaner")).clicked() {
+                        if ui
+                            .button(
+                                crate::LOCALES
+                                    .lookup(&self.locale_lang.get_lang(), "hltas-cleaner"),
+                            )
+                            .clicked()
+                        {
                             // TODO show options
                             if let Some(current_index) = self.current_tab_index {
                                 let current_tab_raw = &mut self.tabs[current_index].raw_content;
@@ -701,7 +697,13 @@ impl epi::App for MainGUI {
                     ui,
                     crate::LOCALES.lookup(&self.locale_lang.get_lang(), "options-menu"),
                     |ui| {
-                        if ui.button(crate::LOCALES.lookup(&self.locale_lang.get_lang(), "toggle-graphics-editor")).clicked() {
+                        if ui
+                            .button(
+                                crate::LOCALES
+                                    .lookup(&self.locale_lang.get_lang(), "toggle-graphics-editor"),
+                            )
+                            .clicked()
+                        {
                             self.graphics_editor = !self.graphics_editor;
                         }
                     },

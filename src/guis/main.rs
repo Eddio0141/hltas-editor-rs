@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
-use crate::helpers::hltas::hltas_to_str;
+use crate::helpers::{egui::key::key_to_string, hltas::hltas_to_str};
 use eframe::{
     egui::{
         self, menu, Color32, CtxRef, FontDefinitions, FontFamily, Key, Label, Modifiers, Pos2,
@@ -14,7 +14,7 @@ use hltas_cleaner::cleaners;
 use locale_config::Locale;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
-fn default_lang() -> LanguageIdentifier {
+fn get_fallback_lang() -> LanguageIdentifier {
     "en-US".parse::<LanguageIdentifier>().unwrap()
 }
 
@@ -80,62 +80,6 @@ impl<'a> Tab {
 //         }
 //     }
 // }
-
-fn key_to_string(key: &Key) -> &'static str {
-    match key {
-        Key::ArrowDown => "Arrow down",
-        Key::ArrowLeft => "Arrow left",
-        Key::ArrowRight => "Arrow right",
-        Key::ArrowUp => "Arrow up",
-        Key::Escape => "Escape",
-        Key::Tab => "Tab",
-        Key::Backspace => "Backspace",
-        Key::Enter => "Enter",
-        Key::Space => "Space",
-        Key::Insert => "Insert",
-        Key::Delete => "Delete",
-        Key::Home => "Home",
-        Key::End => "End",
-        Key::PageUp => "Pageup",
-        Key::PageDown => "Pagedown",
-        Key::Num0 => "Num0",
-        Key::Num1 => "Num1",
-        Key::Num2 => "Num2",
-        Key::Num3 => "Num3",
-        Key::Num4 => "Num4",
-        Key::Num5 => "Num5",
-        Key::Num6 => "Num6",
-        Key::Num7 => "Num7",
-        Key::Num8 => "Num8",
-        Key::Num9 => "Num9",
-        Key::A => "A",
-        Key::B => "B",
-        Key::C => "C",
-        Key::D => "D",
-        Key::E => "E",
-        Key::F => "F",
-        Key::G => "G",
-        Key::H => "H",
-        Key::I => "I",
-        Key::J => "J",
-        Key::K => "K",
-        Key::L => "L",
-        Key::M => "M",
-        Key::N => "N",
-        Key::O => "O",
-        Key::P => "P",
-        Key::Q => "Q",
-        Key::R => "R",
-        Key::S => "S",
-        Key::T => "T",
-        Key::U => "U",
-        Key::V => "V",
-        Key::W => "W",
-        Key::X => "X",
-        Key::Y => "Y",
-        Key::Z => "Z",
-    }
-}
 
 // TODO key conflict check
 struct MenuButton<T>
@@ -231,7 +175,7 @@ impl LocaleLang {
                 .parse::<LanguageIdentifier>()
             {
                 Ok(lang) => lang,
-                Err(_) => default_lang(),
+                Err(_) => get_fallback_lang(),
             };
 
             self.lang = Some(lang);
@@ -243,7 +187,7 @@ impl LocaleLang {
             None => Locale::current()
                 .to_string()
                 .parse()
-                .unwrap_or_else(|_| default_lang()),
+                .unwrap_or_else(|_| get_fallback_lang()),
         }
     }
 }

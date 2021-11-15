@@ -49,38 +49,47 @@ impl<'a> Tab {
             title: path.file_name().unwrap().to_str().unwrap().to_owned(),
             path: Some(path.clone()),
             raw_content: file_content.to_string(),
-            ..Default::default()
+            // ..Default::default()
+            got_modified: false,
         })
     }
 
-    fn title_from_path(path: &PathBuf) -> String {
+    fn title_from_path(path: &PathBuf, lang: &LanguageIdentifier) -> String {
         if let Some(os_str) = path.file_name() {
             if let Some(str) = os_str.to_str() {
                 return str.to_owned();
             }
         }
-        Tab::default_title().to_owned()
+        Tab::default_title(lang).to_owned()
     }
 
-    fn default_title() -> &'static str {
-        "New file"
+    // BUG fix language change for title (opt out serialization for the titles?)
+    fn default_title(lang: &LanguageIdentifier) -> String {
+        crate::LOCALES.lookup(lang, "new-file-title")
     }
 
-    fn new_file() -> Self {
-        Self::default()
-    }
-}
-
-impl Default for Tab {
-    fn default() -> Self {
+    fn new_file(lang: &LanguageIdentifier) -> Self {
+        // TODO maybe make the language global?
         Self {
-            title: Tab::default_title().to_owned(),
+            title: Self::default_title(lang).to_string(),
             path: None,
             raw_content: hltas_to_str(&HLTAS::default()),
             got_modified: false,
         }
+        // Self::default()
     }
 }
+
+// impl Default for Tab {
+//     fn default() -> Self {
+//         Self {
+//             title: Tab::default_title().to_owned(),
+//             path: None,
+//             raw_content: hltas_to_str(&HLTAS::default()),
+//             got_modified: false,
+//         }
+//     }
+// }
 
 fn key_to_string(key: &Key) -> &'static str {
     match key {
@@ -270,7 +279,7 @@ impl MainGUI {
     }
 
     pub fn new_file(&mut self) {
-        self.tabs.push(Tab::new_file());
+        self.tabs.push(Tab::new_file(&self.locale_lang.get_lang()));
         self.current_tab_index = Some(self.tabs.len() - 1);
     }
 
@@ -368,7 +377,7 @@ impl MainGUI {
             if let Some(path) = save_path {
                 fs::write(&path, &tab.raw_content)?;
                 if new_file {
-                    tab.title = Tab::title_from_path(&path);
+                    tab.title = Tab::title_from_path(&path, &self.locale_lang.get_lang());
                 }
             }
         }
@@ -413,13 +422,15 @@ impl MainGUI {
 impl Default for MainGUI {
     // first time opened will always show a new tab
     fn default() -> Self {
+        let mut locale_lang = LocaleLang::new(None);
+
         Self {
-            tabs: vec![Tab::default()],
+            tabs: vec![Tab::new_file(&locale_lang.get_lang())],
             current_tab_index: Some(0),
             title: Self::default_title().to_string(),
             recent_paths: VecDeque::new(),
             graphics_editor: true,
-            locale_lang: LocaleLang::new(None),
+            locale_lang,
         }
     }
 }
@@ -439,7 +450,8 @@ impl epi::App for MainGUI {
 
         // always have 1 tab opened by default
         if self.tabs.len() == 0 {
-            self.tabs.push(Tab::default());
+            // self.tabs.push(Tab::default());
+            self.tabs.push(Tab::new_file(&self.locale_lang.get_lang()));
             self.current_tab_index = Some(0);
         }
 
@@ -671,7 +683,7 @@ impl epi::App for MainGUI {
                     ui,
                     crate::LOCALES.lookup(&self.locale_lang.get_lang(), "tools-menu"),
                     |ui| {
-                        if ui.button("HLTAS cleaner").clicked() {
+                        if ui.button(crate::LOCALES.lookup(&self.locale_lang.get_lang(), "hltas-cleaner")).clicked() {
                             // TODO show options
                             if let Some(current_index) = self.current_tab_index {
                                 let current_tab_raw = &mut self.tabs[current_index].raw_content;
@@ -689,7 +701,7 @@ impl epi::App for MainGUI {
                     ui,
                     crate::LOCALES.lookup(&self.locale_lang.get_lang(), "options-menu"),
                     |ui| {
-                        if ui.button("Toggle graphics editor").clicked() {
+                        if ui.button(crate::LOCALES.lookup(&self.locale_lang.get_lang(), "toggle-graphics-editor")).clicked() {
                             self.graphics_editor = !self.graphics_editor;
                         }
                     },

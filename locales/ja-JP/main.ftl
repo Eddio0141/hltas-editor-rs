@@ -9,7 +9,12 @@ recent-files = 最近使用したファイル
 
 tools-menu = ツール
 
+hltas-cleaner = HLTASのクリーンアップ
+
 
 options-menu = オプション
 
 toggle-graphics-editor = グラフィックエディタの切り替え
+
+
+new-file-title = 新規

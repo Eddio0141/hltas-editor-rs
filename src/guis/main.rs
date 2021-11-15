@@ -443,6 +443,7 @@ impl epi::App for MainGUI {
             self.current_tab_index = Some(0);
         }
 
+        // TODO use system fonts and somehow match language
         let mut fonts = FontDefinitions::default();
         let msgothic_font = "msgothic";
 

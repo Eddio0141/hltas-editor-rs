@@ -382,6 +382,12 @@ impl epi::App for MainGUI {
         if let Some(storage) = _storage {
             *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
         }
+
+        // always have 1 tab opened by default
+        if self.tabs.len() == 0 {
+            self.tabs.push(Tab::default());
+            self.current_tab_index = Some(0);
+        }
     }
 
     // fn warm_up_enabled(&self) -> bool {

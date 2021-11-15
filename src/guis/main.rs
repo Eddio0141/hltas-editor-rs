@@ -457,7 +457,7 @@ impl epi::App for MainGUI {
         );
         let mut close_file = MenuButton::new(
             Some((
-                Key::S,
+                Key::W,
                 Modifiers {
                     ctrl: true,
                     command: true,

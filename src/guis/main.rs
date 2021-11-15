@@ -443,7 +443,9 @@ impl epi::App for MainGUI {
             )),
             "Save".to_string(),
             // TODO error handle
-            |main_gui| { main_gui.save_current_tab(None).ok(); },
+            |main_gui| {
+                main_gui.save_current_tab(None).ok();
+            },
         );
         let mut close_file = MenuButton::new(
             Some((
@@ -457,7 +459,7 @@ impl epi::App for MainGUI {
             "Close".to_string(),
             |main_gui| main_gui.close_current_tab(),
         );
-        
+
         // menu input checks
         new_file.key_check(&ctx, self);
         open_file.key_check(&ctx, self);

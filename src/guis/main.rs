@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
 use eframe::{
-    egui::{self, menu, Color32, Key, Label, Pos2, Sense},
+    egui::{self, menu, Color32, CtxRef, Key, Label, Modifiers, Pos2, Sense, Ui},
     epi,
 };
 use hltas::HLTAS;
@@ -69,6 +69,128 @@ impl Default for Tab {
             path: None,
             raw_content: hltas_to_str(&HLTAS::default()),
             got_modified: false,
+        }
+    }
+}
+
+fn key_to_string(key: &Key) -> &'static str {
+    match key {
+        Key::ArrowDown => "Arrow down",
+        Key::ArrowLeft => "Arrow left",
+        Key::ArrowRight => "Arrow right",
+        Key::ArrowUp => "Arrow up",
+        Key::Escape => "Escape",
+        Key::Tab => "Tab",
+        Key::Backspace => "Backspace",
+        Key::Enter => "Enter",
+        Key::Space => "Space",
+        Key::Insert => "Insert",
+        Key::Delete => "Delete",
+        Key::Home => "Home",
+        Key::End => "End",
+        Key::PageUp => "Pageup",
+        Key::PageDown => "Pagedown",
+        Key::Num0 => "Num0",
+        Key::Num1 => "Num1",
+        Key::Num2 => "Num2",
+        Key::Num3 => "Num3",
+        Key::Num4 => "Num4",
+        Key::Num5 => "Num5",
+        Key::Num6 => "Num6",
+        Key::Num7 => "Num7",
+        Key::Num8 => "Num8",
+        Key::Num9 => "Num9",
+        Key::A => "A",
+        Key::B => "B",
+        Key::C => "C",
+        Key::D => "D",
+        Key::E => "E",
+        Key::F => "F",
+        Key::G => "G",
+        Key::H => "H",
+        Key::I => "I",
+        Key::J => "J",
+        Key::K => "K",
+        Key::L => "L",
+        Key::M => "M",
+        Key::N => "N",
+        Key::O => "O",
+        Key::P => "P",
+        Key::Q => "Q",
+        Key::R => "R",
+        Key::S => "S",
+        Key::T => "T",
+        Key::U => "U",
+        Key::V => "V",
+        Key::W => "W",
+        Key::X => "X",
+        Key::Y => "Y",
+        Key::Z => "Z",
+    }
+}
+
+// TODO translation support
+// TODO key conflict check
+struct MenuButton<T>
+where
+    T: FnMut(&mut MainGUI) -> (),
+{
+    shortcut: Option<(Key, Modifiers)>,
+    pub name: String,
+    // TODO better way to call in on_click?
+    on_click: T,
+}
+
+impl<T> MenuButton<T>
+where
+    T: FnMut(&mut MainGUI) -> (),
+{
+    fn new(shortcut: Option<(Key, Modifiers)>, mut name: String, on_click: T) -> Self {
+        if let Some(key_press) = shortcut {
+            let key = &key_press.0;
+            let modifiers = &key_press.1;
+
+            let mut name_str_separated: Vec<String> = Vec::new();
+            if modifiers.ctrl {
+                name_str_separated.push("Ctrl".to_string());
+            }
+            if modifiers.alt {
+                name_str_separated.push("Alt".to_string());
+            }
+            if modifiers.shift {
+                name_str_separated.push("Shift".to_string());
+            }
+            // if modifiers.command
+            if modifiers.mac_cmd {
+                name_str_separated.push("⌘".to_string());
+            }
+            name_str_separated.push(key_to_string(key).to_string());
+
+            name += &("      ".to_string() + &name_str_separated.join("+"));
+        }
+
+        Self {
+            shortcut,
+            name,
+            on_click,
+        }
+    }
+
+    fn key_check(&mut self, ctx: &CtxRef, main_gui: &mut MainGUI) {
+        if let Some(key_modifiers) = &self.shortcut {
+            let key = key_modifiers.0;
+            let modifiers = key_modifiers.1;
+            let input = ctx.input();
+
+            if input.modifiers == modifiers && input.key_pressed(key) {
+                (self.on_click)(main_gui);
+            }
+        }
+    }
+
+    fn create_button(&mut self, ui: &mut Ui, main_gui: &mut MainGUI) {
+        if ui.button(&self.name).clicked() {
+            (self.on_click)(main_gui);
         }
     }
 }
@@ -144,7 +266,8 @@ impl MainGUI {
                         .set_title("Error, Cannot parse as hltas file")
                         .set_text(&err.to_string())
                         .set_type(MessageType::Error)
-                        .show_alert().ok();
+                        .show_alert()
+                        .ok();
                 }
             }
         }
@@ -284,21 +407,62 @@ impl epi::App for MainGUI {
     // }
 
     fn update(&mut self, ctx: &egui::CtxRef, _frame: &mut epi::Frame<'_>) {
-        // menu input checks
-        // TODO better way of making this work, use of struct?
-        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::N) {
-            self.new_file();
-        }
-        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::O) {
-            self.open_file_by_dialog();
-        }
-        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::S) {
+        // TODO even more clean up of this
+        let mut new_file = MenuButton::new(
+            Some((
+                Key::N,
+                Modifiers {
+                    ctrl: true,
+                    command: true,
+                    ..Default::default()
+                },
+            )),
+            "New".to_string(),
+            |main_gui| main_gui.new_file(),
+        );
+        let mut open_file = MenuButton::new(
+            Some((
+                Key::O,
+                Modifiers {
+                    ctrl: true,
+                    command: true,
+                    ..Default::default()
+                },
+            )),
+            "Open".to_string(),
+            |main_gui| main_gui.open_file_by_dialog(),
+        );
+        let mut save_file = MenuButton::new(
+            Some((
+                Key::S,
+                Modifiers {
+                    ctrl: true,
+                    command: true,
+                    ..Default::default()
+                },
+            )),
+            "Save".to_string(),
             // TODO error handle
-            self.save_current_tab(None).ok();
-        }
-        if ctx.input().modifiers.ctrl && ctx.input().key_pressed(Key::W) {
-            self.close_current_tab();
-        }
+            |main_gui| { main_gui.save_current_tab(None).ok(); },
+        );
+        let mut close_file = MenuButton::new(
+            Some((
+                Key::S,
+                Modifiers {
+                    ctrl: true,
+                    command: true,
+                    ..Default::default()
+                },
+            )),
+            "Close".to_string(),
+            |main_gui| main_gui.close_current_tab(),
+        );
+        
+        // menu input checks
+        new_file.key_check(&ctx, self);
+        open_file.key_check(&ctx, self);
+        save_file.key_check(&ctx, self);
+        close_file.key_check(&ctx, self);
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
@@ -306,16 +470,10 @@ impl epi::App for MainGUI {
                 menu::menu(ui, "File", |ui| {
                     ui.set_width(200.0);
 
-                    if ui.button("New    Ctrl+N").clicked() {
-                        self.new_file();
-                    }
-                    if ui.button("Open    Ctrl+O").clicked() {
-                        self.open_file_by_dialog();
-                    }
-                    if ui.button("Save    Ctrl+S").clicked() {
-                        // TODO error handle
-                        self.save_current_tab(None).ok();
-                    }
+                    new_file.create_button(ui, self);
+                    open_file.create_button(ui, self);
+                    save_file.create_button(ui, self);
+                    close_file.create_button(ui, self);
 
                     // HACK
                     // no side popup? oh well I guess I'll do the weird hack solution

@@ -646,11 +646,8 @@ impl epi::App for MainGUI {
         egui::CentralPanel::default().show(ctx, |ui| {
             // ui.text_edit_multiline(&mut self.raw_content);
             // accept file drops
-            // TODO finish this feature
             for file in &ui.input().raw.dropped_files {
-                println!("new file dropped");
                 if let Some(path) = &file.path {
-                    println!("path: {}", &path.to_string_lossy());
                     self.open_file(path.to_owned());
                 }
             }

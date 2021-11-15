@@ -1,13 +1,17 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
 use eframe::{
-    egui::{self, menu, Color32, CtxRef, Key, Label, Modifiers, Pos2, Sense, Ui},
+    egui::{
+        self, menu, Color32, CtxRef, FontDefinitions, FontFamily, Key, Label, Modifiers, Pos2,
+        Sense, Ui,
+    },
     epi,
 };
+use fluent_templates::{LanguageIdentifier, Loader};
 use hltas::HLTAS;
 use hltas_cleaner::cleaners;
+use locale_config::Locale;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
-use serde::{Deserialize, Serialize};
 
 fn hltas_to_str(hltas: &HLTAS) -> String {
     let mut file_u8: Vec<u8> = Vec::new();
@@ -20,7 +24,11 @@ fn hltas_to_str(hltas: &HLTAS) -> String {
     String::new()
 }
 
-#[derive(Serialize, Deserialize)]
+fn default_lang() -> LanguageIdentifier {
+    "en-US".parse::<LanguageIdentifier>().unwrap()
+}
+
+#[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 struct Tab {
     title: String,
     path: Option<PathBuf>,
@@ -64,7 +72,6 @@ impl<'a> Tab {
 }
 
 impl Default for Tab {
-    // TODO translation support
     fn default() -> Self {
         Self {
             title: Tab::default_title().to_owned(),
@@ -131,7 +138,6 @@ fn key_to_string(key: &Key) -> &'static str {
     }
 }
 
-// TODO translation support
 // TODO key conflict check
 struct MenuButton<T>
 where
@@ -198,6 +204,52 @@ where
 }
 
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
+struct LocaleLang {
+    #[cfg_attr(feature = "persistence", serde(skip))]
+    lang: Option<LanguageIdentifier>,
+    // only used for serialization. makes sure it syncs with lang
+    lang_str: Option<String>,
+}
+
+impl LocaleLang {
+    pub fn new(lang: Option<LanguageIdentifier>) -> Self {
+        let lang_str = match &lang {
+            Some(some) => Some(some.to_string()),
+            None => None,
+        };
+
+        Self { lang, lang_str }
+    }
+
+    pub fn get_lang(&mut self) -> LanguageIdentifier {
+        // deserialization check
+        if self.lang_str.is_some() && self.lang.is_none() {
+            // got checked, lang_str is some
+            let lang = match self
+                .lang_str
+                .to_owned()
+                .unwrap()
+                .parse::<LanguageIdentifier>()
+            {
+                Ok(lang) => lang,
+                Err(_) => default_lang(),
+            };
+
+            self.lang = Some(lang);
+        }
+
+        match &self.lang {
+            Some(lang) => lang.to_owned(),
+            // shouldn't error
+            None => Locale::current()
+                .to_string()
+                .parse()
+                .unwrap_or_else(|_| default_lang()),
+        }
+    }
+}
+
+#[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))]
 pub struct MainGUI {
     tabs: Vec<Tab>,
@@ -208,6 +260,7 @@ pub struct MainGUI {
     // TODO option to change size
     recent_paths: VecDeque<PathBuf>,
     graphics_editor: bool,
+    locale_lang: LocaleLang,
 }
 
 impl MainGUI {
@@ -366,6 +419,7 @@ impl Default for MainGUI {
             title: Self::default_title().to_string(),
             recent_paths: VecDeque::new(),
             graphics_editor: true,
+            locale_lang: LocaleLang::new(None),
         }
     }
 }
@@ -374,7 +428,7 @@ impl Default for MainGUI {
 impl epi::App for MainGUI {
     fn setup(
         &mut self,
-        _ctx: &egui::CtxRef,
+        ctx: &egui::CtxRef,
         _frame: &mut epi::Frame<'_>,
         _storage: Option<&dyn epi::Storage>,
     ) {
@@ -388,6 +442,21 @@ impl epi::App for MainGUI {
             self.tabs.push(Tab::default());
             self.current_tab_index = Some(0);
         }
+
+        let mut fonts = FontDefinitions::default();
+        let msgothic_font = "msgothic";
+
+        fonts.font_data.insert(
+            msgothic_font.to_owned(),
+            std::borrow::Cow::Borrowed(include_bytes!("../../fonts/msgothic.ttc")),
+        );
+        fonts
+            .fonts_for_family
+            .get_mut(&FontFamily::Proportional)
+            .unwrap()
+            .insert(0, msgothic_font.to_owned());
+
+        ctx.set_fonts(fonts);
     }
 
     // fn warm_up_enabled(&self) -> bool {
@@ -431,7 +500,9 @@ impl epi::App for MainGUI {
                     ..Default::default()
                 },
             )),
-            "New".to_string(),
+            crate::LOCALES
+                .lookup(&self.locale_lang.get_lang(), "new-file")
+                .to_string(),
             |main_gui| main_gui.new_file(),
         );
         let mut open_file = MenuButton::new(
@@ -443,7 +514,9 @@ impl epi::App for MainGUI {
                     ..Default::default()
                 },
             )),
-            "Open".to_string(),
+            crate::LOCALES
+                .lookup(&self.locale_lang.get_lang(), "open-file")
+                .to_string(),
             |main_gui| main_gui.open_file_by_dialog(),
         );
         let mut save_file = MenuButton::new(
@@ -455,7 +528,9 @@ impl epi::App for MainGUI {
                     ..Default::default()
                 },
             )),
-            "Save".to_string(),
+            crate::LOCALES
+                .lookup(&self.locale_lang.get_lang(), "save-file")
+                .to_string(),
             // TODO error handle
             |main_gui| {
                 main_gui.save_current_tab(None).ok();
@@ -470,7 +545,9 @@ impl epi::App for MainGUI {
                     ..Default::default()
                 },
             )),
-            "Close".to_string(),
+            crate::LOCALES
+                .lookup(&self.locale_lang.get_lang(), "close-file")
+                .to_string(),
             |main_gui| main_gui.close_current_tab(),
         );
 
@@ -483,124 +560,139 @@ impl epi::App for MainGUI {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
                 let file_menu_pos = ui.spacing().item_spacing.x;
-                menu::menu(ui, "File", |ui| {
-                    ui.set_width(200.0);
+                menu::menu(
+                    ui,
+                    crate::LOCALES.lookup(&self.locale_lang.get_lang(), "file-menu"),
+                    |ui| {
+                        ui.set_width(200.0);
 
-                    new_file.create_button(ui, self);
-                    open_file.create_button(ui, self);
-                    save_file.create_button(ui, self);
-                    close_file.create_button(ui, self);
+                        new_file.create_button(ui, self);
+                        open_file.create_button(ui, self);
+                        save_file.create_button(ui, self);
+                        close_file.create_button(ui, self);
 
-                    // HACK
-                    // no side popup? oh well I guess I'll do the weird hack solution
-                    // egui::popup::popup_below_widget(
-                    //     ui,
-                    //     recent_popup_id,
-                    //     &recent_button_response,
-                    //     |ui| {
-                    //         // ui.set_min_width(200.0);
-                    //         // ui.label("yoo!");
-                    //     },
-                    // );
+                        // HACK
+                        // no side popup? oh well I guess I'll do the weird hack solution
+                        // egui::popup::popup_below_widget(
+                        //     ui,
+                        //     recent_popup_id,
+                        //     &recent_button_response,
+                        //     |ui| {
+                        //         // ui.set_min_width(200.0);
+                        //         // ui.label("yoo!");
+                        //     },
+                        // );
 
-                    // TODO make it look like | Recent       > |
-                    // let mut recent_is_hovered = false;
-                    // ui.horizontal(|ui| {
-                    //     let recent_button = egui::Label::new("Recent >").sense(Sense::click().union(Sense::hover()));
-                    //     // TODO make it stick to the right automatically
-                    //     // ui.style_mut().spacing.item_spacing.x = 100.0;
+                        // TODO make it look like | Recent       > |
+                        // let mut recent_is_hovered = false;
+                        // ui.horizontal(|ui| {
+                        //     let recent_button = egui::Label::new("Recent >").sense(Sense::click().union(Sense::hover()));
+                        //     // TODO make it stick to the right automatically
+                        //     // ui.style_mut().spacing.item_spacing.x = 100.0;
 
-                    //     if ui.add(recent_button).hovered() {
-                    //         recent_is_hovered = true;
-                    //     }
+                        //     if ui.add(recent_button).hovered() {
+                        //         recent_is_hovered = true;
+                        //     }
 
-                    //     ui.label(">").ctx.pos;
-                    // });
+                        //     ui.label(">").ctx.pos;
+                        // });
 
-                    let recent_button =
-                        egui::Label::new("Recent").sense(Sense::click().union(Sense::hover()));
-                    let recent_button_response = ui.add(recent_button);
-                    let recent_popup_id = ui.make_persistent_id("recent_popup_id");
-                    let mut make_recent_popup_window = false;
+                        let recent_button = egui::Label::new(
+                            crate::LOCALES.lookup(&self.locale_lang.get_lang(), "recent-files"),
+                        )
+                        .sense(Sense::click().union(Sense::hover()));
+                        let recent_button_response = ui.add(recent_button);
+                        let recent_popup_id = ui.make_persistent_id("recent_popup_id");
+                        let mut make_recent_popup_window = false;
 
-                    // check memory if the popup window is enabled
+                        // check memory if the popup window is enabled
 
-                    // not sure why can't i just use this for the if statement combination
-                    ui.memory()
-                        .id_data_temp
-                        .get_or_insert_with(recent_popup_id, || false);
+                        // not sure why can't i just use this for the if statement combination
+                        ui.memory()
+                            .id_data_temp
+                            .get_or_insert_with(recent_popup_id, || false);
 
-                    if let Some(is_popped_up) =
-                        ui.memory().id_data_temp.get_mut::<bool>(&recent_popup_id)
-                    {
-                        if recent_button_response.hovered() {
-                            *is_popped_up = true;
-                        }
-                        // *is_popped_up = recent_is_hovered;
-
-                        if *is_popped_up {
-                            // retarded solution yes
-                            // TODO think of a cleaner way to do this
-                            make_recent_popup_window = true;
-                        }
-                    }
-
-                    // TODO also think of a cleaner way to do this
-                    let mut delete_recent_popup_window = false;
-                    if make_recent_popup_window {
-                        // HACK fix y pos
-                        // HACK figure out x pos better
-                        let window_pos =
-                            Pos2::new(file_menu_pos + ui.available_width() + 4.0, 80.0);
-
-                        if self.recent_paths.len() > 0 {
-                            egui::Window::new("recent_files_window")
-                                .title_bar(false)
-                                .auto_sized()
-                                .fixed_pos(window_pos)
-                                .show(ctx, |ui| {
-                                    // show recents
-                                    for recent_path in self.recent_paths.iter() {
-                                        if let Some(path_str) = recent_path.as_os_str().to_str() {
-                                            ui.label(path_str);
-                                        }
-                                    }
-
-                                    if ui.input().pointer.any_click() {
-                                        delete_recent_popup_window = true;
-                                    }
-                                });
-                        }
-                    }
-
-                    if delete_recent_popup_window {
                         if let Some(is_popped_up) =
                             ui.memory().id_data_temp.get_mut::<bool>(&recent_popup_id)
                         {
-                            *is_popped_up = false;
-                        }
-                    }
-                });
+                            if recent_button_response.hovered() {
+                                *is_popped_up = true;
+                            }
+                            // *is_popped_up = recent_is_hovered;
 
-                menu::menu(ui, "Tools", |ui| {
-                    if ui.button("HLTAS cleaner").clicked() {
-                        // TODO show options
-                        if let Some(current_index) = self.current_tab_index {
-                            let current_tab_raw = &mut self.tabs[current_index].raw_content;
-                            // TODO all error handling here
-                            if let Ok(mut hltas) = HLTAS::from_str(&current_tab_raw) {
-                                cleaners::no_dupe_framebulks(&mut hltas);
-                                *current_tab_raw = hltas_to_str(&hltas);
+                            if *is_popped_up {
+                                // retarded solution yes
+                                // TODO think of a cleaner way to do this
+                                make_recent_popup_window = true;
                             }
                         }
-                    }
-                });
 
-                menu::menu(ui, "Options", |ui| {
-                    if ui.button("Toggle graphics editor").clicked() {
-                        self.graphics_editor = !self.graphics_editor;
-                    }
-                });
+                        // TODO also think of a cleaner way to do this
+                        let mut delete_recent_popup_window = false;
+                        if make_recent_popup_window {
+                            // HACK fix y pos
+                            // HACK figure out x pos better
+                            let window_pos =
+                                Pos2::new(file_menu_pos + ui.available_width() + 4.0, 80.0);
+
+                            if self.recent_paths.len() > 0 {
+                                egui::Window::new("recent_files_window")
+                                    .title_bar(false)
+                                    .auto_sized()
+                                    .fixed_pos(window_pos)
+                                    .show(ctx, |ui| {
+                                        // show recents
+                                        for recent_path in self.recent_paths.iter() {
+                                            if let Some(path_str) = recent_path.as_os_str().to_str()
+                                            {
+                                                ui.label(path_str);
+                                            }
+                                        }
+
+                                        if ui.input().pointer.any_click() {
+                                            delete_recent_popup_window = true;
+                                        }
+                                    });
+                            }
+                        }
+
+                        if delete_recent_popup_window {
+                            if let Some(is_popped_up) =
+                                ui.memory().id_data_temp.get_mut::<bool>(&recent_popup_id)
+                            {
+                                *is_popped_up = false;
+                            }
+                        }
+                    },
+                );
+
+                menu::menu(
+                    ui,
+                    crate::LOCALES.lookup(&self.locale_lang.get_lang(), "tools-menu"),
+                    |ui| {
+                        if ui.button("HLTAS cleaner").clicked() {
+                            // TODO show options
+                            if let Some(current_index) = self.current_tab_index {
+                                let current_tab_raw = &mut self.tabs[current_index].raw_content;
+                                // TODO all error handling here
+                                if let Ok(mut hltas) = HLTAS::from_str(&current_tab_raw) {
+                                    cleaners::no_dupe_framebulks(&mut hltas);
+                                    *current_tab_raw = hltas_to_str(&hltas);
+                                }
+                            }
+                        }
+                    },
+                );
+
+                menu::menu(
+                    ui,
+                    crate::LOCALES.lookup(&self.locale_lang.get_lang(), "options-menu"),
+                    |ui| {
+                        if ui.button("Toggle graphics editor").clicked() {
+                            self.graphics_editor = !self.graphics_editor;
+                        }
+                    },
+                );
             });
 
             ui.separator();

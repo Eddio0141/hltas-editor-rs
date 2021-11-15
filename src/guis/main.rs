@@ -7,6 +7,7 @@ use eframe::{
 use hltas::HLTAS;
 use hltas_cleaner::cleaners;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
+use serde::{Deserialize, Serialize};
 
 fn hltas_to_str(hltas: &HLTAS) -> String {
     let mut file_u8: Vec<u8> = Vec::new();
@@ -19,6 +20,7 @@ fn hltas_to_str(hltas: &HLTAS) -> String {
     String::new()
 }
 
+#[derive(Serialize, Deserialize)]
 struct Tab {
     title: String,
     path: Option<PathBuf>,
@@ -195,9 +197,8 @@ where
     }
 }
 
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-// #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
-// #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
+#[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "persistence", serde(default))]
 pub struct MainGUI {
     tabs: Vec<Tab>,
     // might have a chance to not have any tabs opened
@@ -377,13 +378,20 @@ impl epi::App for MainGUI {
         _frame: &mut epi::Frame<'_>,
         _storage: Option<&dyn epi::Storage>,
     ) {
+        #[cfg(feature = "persistence")]
+        if let Some(storage) = _storage {
+            *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
+        }
     }
 
     // fn warm_up_enabled(&self) -> bool {
     //     false
     // }
 
-    // fn save(&mut self, _storage: &mut dyn epi::Storage) {}
+    #[cfg(feature = "persistence")]
+    fn save(&mut self, storage: &mut dyn epi::Storage) {
+        epi::set_value(storage, epi::APP_KEY, self);
+    }
 
     // fn on_exit(&mut self) {}
 

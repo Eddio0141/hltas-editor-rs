@@ -41,6 +41,7 @@ checksum = "fcb51a0695d8f838b1ee009b3fbf66bda078cd64590202a864a8f3e8c4315c47"
 dependencies = [
  "getrandom",
  "once_cell",
+ "serde",
  "version_check",
 ]
 
@@ -95,6 +96,12 @@ dependencies = [
  "object",
  "rustc-demangle",
 ]
+
+[[package]]
+name = "base64"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 
 [[package]]
 name = "bitflags"
@@ -409,6 +416,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "directories-next"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "339ee130d97a610ea5a5872d2bbb130fdf68884ff09d3028b81bec8a1ac23bbc"
+dependencies = [
+ "cfg-if 1.0.0",
+ "dirs-sys-next",
+]
+
+[[package]]
 name = "dirs"
 version = "3.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -501,6 +518,8 @@ dependencies = [
  "ahash",
  "epaint",
  "nohash-hasher",
+ "ron",
+ "serde",
 ]
 
 [[package]]
@@ -512,6 +531,7 @@ dependencies = [
  "copypasta",
  "egui",
  "epi",
+ "serde",
  "webbrowser",
  "winit",
 ]
@@ -553,6 +573,9 @@ name = "emath"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24a1aaa922d55da6a2bf32957c3d153e7fb9d52ed8d69777a75092240172eb6e"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "epaint"
@@ -565,6 +588,7 @@ dependencies = [
  "atomic_refcell",
  "emath",
  "nohash-hasher",
+ "serde",
 ]
 
 [[package]]
@@ -573,7 +597,10 @@ version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f5e4e08127f9b86e2c450c96a3032764b63546eb170c2fc54684dc70ff3fc82"
 dependencies = [
+ "directories-next",
  "egui",
+ "ron",
+ "serde",
 ]
 
 [[package]]
@@ -738,6 +765,7 @@ dependencies = [
  "hltas",
  "hltas-cleaner",
  "native-dialog",
+ "serde",
 ]
 
 [[package]]
@@ -1280,6 +1308,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ron"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b861ecaade43ac97886a512b360d01d66be9f41f3c61088b42cedf92e03d678"
+dependencies = [
+ "base64",
+ "bitflags",
+ "serde",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1327,6 +1366,20 @@ name = "serde"
 version = "1.0.130"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f12d06de37cf59146fbdecab66aa99f9fe4f78722e3607577a5375d66bd0c913"
+dependencies = [
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.130"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7bc1a1ab1961464eae040d96713baa5a724a8152c1222492465b54322ec508b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "shared_library"

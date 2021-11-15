@@ -10,3 +10,8 @@ hltas-cleaner = { git = "https://github.com/Eddio0141/hltas-cleaner" }
 eframe = "0.15.0"
 hltas = { git = "https://github.com/HLTAS/hltas" }
 native-dialog = "0.5.5"
+serde = { version = "1", features = ["derive"], optional = true }
+
+[features]
+default = ["persistence"]
+persistence = ["eframe/persistence", "serde"]

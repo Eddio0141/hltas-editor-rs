@@ -3,7 +3,7 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
 use crate::helpers::{egui::memory::popup_state::PopupStateMemory, hltas::hltas_to_str};
-use crate::widgets::menu::top_bottom_panel::tab::FileTab;
+use crate::widgets::menu::top_bottom_panel::tab::HLTASFileTab;
 use eframe::egui::{Button, Window};
 use eframe::{
     egui::{self, menu, Color32, FontDefinitions, FontFamily, Key, Label, Modifiers, Sense},
@@ -17,7 +17,7 @@ use native_dialog::{FileDialog, MessageDialog, MessageType};
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))]
 pub struct MainGUI {
-    tabs: Vec<FileTab>,
+    tabs: Vec<HLTASFileTab>,
     // might have a chance to not have any tabs opened
     // TODO use direct reference
     current_tab_index: Option<usize>,
@@ -35,7 +35,7 @@ impl MainGUI {
     }
 
     pub fn new_file(&mut self) {
-        self.tabs.push(FileTab::new_file(&self.locale_lang.get_lang()));
+        self.tabs.push(HLTASFileTab::new_file(&self.locale_lang.get_lang()));
         self.current_tab_index = Some(self.tabs.len() - 1);
     }
 
@@ -73,7 +73,7 @@ impl MainGUI {
 
     pub fn open_file(&mut self, path: &PathBuf) {
         if let Ok(file_content) = fs::read_to_string(&path) {
-            match FileTab::open_path(&path, &file_content) {
+            match HLTASFileTab::open_path(&path, &file_content) {
                 Ok(tab) => {
                     self.tabs.push(tab);
                     self.current_tab_index = Some(self.tabs.len() - 1);
@@ -133,7 +133,7 @@ impl MainGUI {
             if let Some(path) = save_path {
                 fs::write(&path, &tab.raw_content)?;
                 if new_file {
-                    tab.title = FileTab::title_from_path(&path, &self.locale_lang.get_lang());
+                    tab.title = HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
                 }
             }
         }
@@ -181,7 +181,7 @@ impl Default for MainGUI {
         let mut locale_lang = LocaleLang::new(None);
 
         Self {
-            tabs: vec![FileTab::new_file(&locale_lang.get_lang())],
+            tabs: vec![HLTASFileTab::new_file(&locale_lang.get_lang())],
             current_tab_index: Some(0),
             title: Self::default_title().to_string(),
             recent_paths: VecDeque::new(),
@@ -207,7 +207,7 @@ impl epi::App for MainGUI {
         // always have 1 tab opened by default
         if self.tabs.len() == 0 {
             // self.tabs.push(Tab::default());
-            self.tabs.push(FileTab::new_file(&self.locale_lang.get_lang()));
+            self.tabs.push(HLTASFileTab::new_file(&self.locale_lang.get_lang()));
             self.current_tab_index = Some(0);
         }
 

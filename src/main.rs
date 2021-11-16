@@ -4,6 +4,7 @@ mod guis;
 mod helpers;
 mod widgets;
 
+// TODO move global locale stuff in its own thing
 fluent_templates::static_loader! {
     static LOCALES = {
         locales: "./locales",

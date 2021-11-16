@@ -35,7 +35,9 @@ impl MainGUI {
     }
 
     pub fn new_file(&mut self) {
-        self.tabs.push(HLTASFileTab::new_file(&self.locale_lang.get_lang()));
+        // TODO method to do this tab switching?
+        self.tabs
+            .push(HLTASFileTab::new_file(&self.locale_lang.get_lang()));
         self.current_tab_index = Some(self.tabs.len() - 1);
     }
 
@@ -72,6 +74,19 @@ impl MainGUI {
     }
 
     pub fn open_file(&mut self, path: &PathBuf) {
+        // check for dupe tab and switch to it if found
+        let dupe_tab_index = self.tabs.iter().position(|tab| {
+            if let Some(tab_path) = &tab.path {
+                return tab_path.as_path() == path.as_path();
+            }
+            false
+        });
+
+        if let Some(dupe_tab_index) = dupe_tab_index {
+            self.current_tab_index = Some(dupe_tab_index);
+            return;
+        }
+
         if let Ok(file_content) = fs::read_to_string(&path) {
             match HLTASFileTab::open_path(&path, &file_content) {
                 Ok(tab) => {
@@ -207,7 +222,8 @@ impl epi::App for MainGUI {
         // always have 1 tab opened by default
         if self.tabs.len() == 0 {
             // self.tabs.push(Tab::default());
-            self.tabs.push(HLTASFileTab::new_file(&self.locale_lang.get_lang()));
+            self.tabs
+                .push(HLTASFileTab::new_file(&self.locale_lang.get_lang()));
             self.current_tab_index = Some(0);
         }
 
@@ -426,7 +442,10 @@ impl epi::App for MainGUI {
                                         }
 
                                         // BUG add delay for hover to be deleting popup or this will vanish instantly
-                                        if ui.input().pointer.any_click() || (!recent_button_response.hovered() && !ui.ui_contains_pointer()) {
+                                        if ui.input().pointer.any_click()
+                                            || (!recent_button_response.hovered()
+                                                && !ui.ui_contains_pointer())
+                                        {
                                             delete_recent_popup_window = true;
                                         }
                                     });

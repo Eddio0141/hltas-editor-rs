@@ -4,9 +4,9 @@ use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
 use crate::helpers::{egui::memory::popup_state::PopupStateMemory, hltas::hltas_to_str};
 use crate::widgets::menu::top_bottom_panel::tab::Tab;
-use eframe::egui::Button;
+use eframe::egui::{Button, Window};
 use eframe::{
-    egui::{self, menu, Color32, FontDefinitions, FontFamily, Key, Label, Modifiers, Pos2, Sense},
+    egui::{self, menu, Color32, FontDefinitions, FontFamily, Key, Label, Modifiers, Sense},
     epi,
 };
 use fluent_templates::Loader;
@@ -409,28 +409,26 @@ impl epi::App for MainGUI {
                         // TODO also think of a cleaner way to do this
                         let mut delete_recent_popup_window = false;
                         if make_recent_popup_window {
-                            let mut show_pos = recent_popup_coord.0.unwrap();
-                            show_pos.x -= 10.0;
+                            let show_pos = recent_popup_coord.0.unwrap();
 
                             if self.recent_paths.len() > 0 {
-                                egui::containers::popup::show_tooltip_at(
-                                    ctx,
-                                    egui::Id::new("recent_files_tooltip"),
-                                    Some(Pos2::new(show_pos.x, show_pos.y)),
-                                    |ui| {
+                                // TODO make the layer topmost with whatever method works
+                                Window::new("recent_files_display")
+                                    .title_bar(false)
+                                    .auto_sized()
+                                    .fixed_pos(show_pos)
+                                    .show(ctx, |ui| {
                                         // TODO safety I guess, look into this issue a bit more
                                         let mut clicked_path: Option<PathBuf> = None;
                                         for recent_path in &self.recent_paths {
                                             if let Some(path_str) = recent_path.as_os_str().to_str()
                                             {
-                                                // TODO make it open path
                                                 let recent_path_button =
                                                     Button::new(path_str).frame(false);
 
                                                 if ui.add(recent_path_button).clicked() {
-                                                    println!("opening file {:#?}", &clicked_path);
                                                     clicked_path = Some(recent_path.to_owned());
-                                                    // break;
+                                                    break;
                                                 }
                                             }
                                         }
@@ -438,11 +436,10 @@ impl epi::App for MainGUI {
                                             self.open_file(&clicked_path);
                                         }
 
-                                        // if ui.input().pointer.any_click() {
-                                        //     delete_recent_popup_window = true;
-                                        // }
-                                    },
-                                );
+                                        if ui.input().pointer.any_click() {
+                                            delete_recent_popup_window = true;
+                                        }
+                                    });
                             }
                         }
 

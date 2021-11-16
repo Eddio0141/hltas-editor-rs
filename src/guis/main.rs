@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
-use crate::helpers::locale_stuff::LocaleLang;
+use crate::helpers::locale::LocaleLang;
 use crate::helpers::{egui::key::key_to_string, hltas::hltas_to_str};
 use crate::widgets::menu::top_bottom_panel::tab::Tab;
 use eframe::{

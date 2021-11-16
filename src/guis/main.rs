@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::hltas::hltas_to_str;
-use crate::helpers::locale::LocaleLang;
+use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
 use crate::widgets::menu::top_bottom_panel::tab::Tab;
 use eframe::{

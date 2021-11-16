@@ -6,14 +6,14 @@ use hltas::HLTAS;
 use crate::helpers::hltas::hltas_to_str;
 
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
-pub struct Tab {
+pub struct FileTab {
     pub title: String,
     pub path: Option<PathBuf>,
     pub raw_content: String,
     pub got_modified: bool,
 }
 
-impl<'a> Tab {
+impl<'a> FileTab {
     pub fn open_path(
         path: &PathBuf,
         file_content: &'a str,
@@ -40,7 +40,7 @@ impl<'a> Tab {
                 return str.to_owned();
             }
         }
-        Tab::default_title(lang).to_owned()
+        FileTab::default_title(lang).to_owned()
     }
 
     // BUG fix language change for title (opt out serialization for the titles?)

@@ -2,6 +2,7 @@ use guis::main::MainGUI;
 
 mod guis;
 mod helpers;
+mod widgets;
 
 fluent_templates::static_loader! {
     static LOCALES = {

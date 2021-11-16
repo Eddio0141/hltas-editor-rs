@@ -1,8 +1,8 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
-use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
+use crate::helpers::{egui::memory::popup_state::PopupStateMemory, hltas::hltas_to_str};
 use crate::widgets::menu::top_bottom_panel::tab::Tab;
 use eframe::{
     egui::{self, menu, Color32, FontDefinitions, FontFamily, Key, Label, Modifiers, Pos2, Sense},
@@ -327,7 +327,6 @@ impl epi::App for MainGUI {
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
-                let file_menu_pos = ui.spacing().item_spacing.x;
                 menu::menu(
                     ui,
                     crate::LOCALES.lookup(&self.locale_lang.get_lang(), "file-menu"),
@@ -365,54 +364,63 @@ impl epi::App for MainGUI {
                         //     ui.label(">").ctx.pos;
                         // });
 
-                        let recent_button = egui::Label::new(
+                        let recent_widget_pos = ui.min_rect().right_bottom();
+                        let recent_widget = egui::Label::new(
                             crate::LOCALES.lookup(&self.locale_lang.get_lang(), "recent-files"),
                         )
                         .sense(Sense::click().union(Sense::hover()));
-                        let recent_button_response = ui.add(recent_button);
+                        let recent_button_response = ui.add(recent_widget);
                         let recent_popup_id = ui.make_persistent_id("recent_popup_id");
                         let mut make_recent_popup_window = false;
+                        let mut recent_popup_coord = PopupStateMemory::none();
 
                         // check memory if the popup window is enabled
 
                         // not sure why can't i just use this for the if statement combination
+                        // TODO better way to store with struct?
                         ui.memory()
                             .id_data_temp
-                            .get_or_insert_with(recent_popup_id, || false);
+                            .get_or_insert_with(recent_popup_id, || PopupStateMemory::none());
 
-                        if let Some(is_popped_up) =
-                            ui.memory().id_data_temp.get_mut::<bool>(&recent_popup_id)
+                        if let Some(pop_up_coords) = ui
+                            .memory()
+                            .id_data_temp
+                            .get_mut::<PopupStateMemory>(&recent_popup_id)
                         {
                             if recent_button_response.hovered() {
-                                *is_popped_up = true;
+                                // TODO set backup pos?
+                                if let None = &pop_up_coords.0 {
+                                    *pop_up_coords = PopupStateMemory {
+                                        0: Some(recent_widget_pos),
+                                    };
+                                }
                             }
                             // *is_popped_up = recent_is_hovered;
 
-                            if *is_popped_up {
+                            if let Some(_) = pop_up_coords.0 {
                                 // retarded solution yes
                                 // TODO think of a cleaner way to do this
                                 make_recent_popup_window = true;
+                                recent_popup_coord = pop_up_coords.clone();
                             }
                         }
 
                         // TODO also think of a cleaner way to do this
                         let mut delete_recent_popup_window = false;
                         if make_recent_popup_window {
-                            // HACK fix y pos
-                            // HACK figure out x pos better
-                            let window_pos =
-                                Pos2::new(file_menu_pos + ui.available_width() + 4.0, 80.0);
+                            let mut show_pos = recent_popup_coord.0.unwrap();
+                            show_pos.x -= 10.0;
 
                             if self.recent_paths.len() > 0 {
-                                egui::Window::new("recent_files_window")
-                                    .title_bar(false)
-                                    .auto_sized()
-                                    .fixed_pos(window_pos)
-                                    .show(ctx, |ui| {
-                                        // show recents
+                                egui::containers::popup::show_tooltip_at(
+                                    ctx,
+                                    egui::Id::new("recent_files_tooltip"),
+                                    Some(Pos2::new(show_pos.x, show_pos.y)),
+                                    |ui| {
                                         for recent_path in self.recent_paths.iter() {
                                             if let Some(path_str) = recent_path.as_os_str().to_str()
                                             {
+                                                // TODO make it open path
                                                 ui.label(path_str);
                                             }
                                         }
@@ -420,15 +428,18 @@ impl epi::App for MainGUI {
                                         if ui.input().pointer.any_click() {
                                             delete_recent_popup_window = true;
                                         }
-                                    });
+                                    },
+                                );
                             }
                         }
 
                         if delete_recent_popup_window {
-                            if let Some(is_popped_up) =
-                                ui.memory().id_data_temp.get_mut::<bool>(&recent_popup_id)
+                            if let Some(pop_up_state) = ui
+                                .memory()
+                                .id_data_temp
+                                .get_mut::<PopupStateMemory>(&recent_popup_id)
                             {
-                                *is_popped_up = false;
+                                *pop_up_state = PopupStateMemory::none();
                             }
                         }
                     },

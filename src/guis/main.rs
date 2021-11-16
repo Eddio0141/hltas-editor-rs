@@ -4,6 +4,7 @@ use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
 use crate::helpers::{egui::memory::popup_state::PopupStateMemory, hltas::hltas_to_str};
 use crate::widgets::menu::top_bottom_panel::tab::Tab;
+use eframe::egui::Button;
 use eframe::{
     egui::{self, menu, Color32, FontDefinitions, FontFamily, Key, Label, Modifiers, Pos2, Sense},
     epi,
@@ -44,7 +45,7 @@ impl MainGUI {
             .add_filter("Any", &["*"])
             .show_open_single_file()
         {
-            self.open_file(pathbuf);
+            self.open_file(&pathbuf);
         }
     }
 
@@ -70,7 +71,7 @@ impl MainGUI {
         }
     }
 
-    pub fn open_file(&mut self, path: PathBuf) {
+    pub fn open_file(&mut self, path: &PathBuf) {
         if let Ok(file_content) = fs::read_to_string(&path) {
             match Tab::open_path(&path, &file_content) {
                 Ok(tab) => {
@@ -417,17 +418,29 @@ impl epi::App for MainGUI {
                                     egui::Id::new("recent_files_tooltip"),
                                     Some(Pos2::new(show_pos.x, show_pos.y)),
                                     |ui| {
-                                        for recent_path in self.recent_paths.iter() {
+                                        // TODO safety I guess, look into this issue a bit more
+                                        let mut clicked_path: Option<PathBuf> = None;
+                                        for recent_path in &self.recent_paths {
                                             if let Some(path_str) = recent_path.as_os_str().to_str()
                                             {
                                                 // TODO make it open path
-                                                ui.label(path_str);
+                                                let recent_path_button =
+                                                    Button::new(path_str).frame(false);
+
+                                                if ui.add(recent_path_button).clicked() {
+                                                    println!("opening file {:#?}", &clicked_path);
+                                                    clicked_path = Some(recent_path.to_owned());
+                                                    // break;
+                                                }
                                             }
                                         }
-
-                                        if ui.input().pointer.any_click() {
-                                            delete_recent_popup_window = true;
+                                        if let Some(clicked_path) = clicked_path {
+                                            self.open_file(&clicked_path);
                                         }
+
+                                        // if ui.input().pointer.any_click() {
+                                        //     delete_recent_popup_window = true;
+                                        // }
                                     },
                                 );
                             }
@@ -545,7 +558,7 @@ impl epi::App for MainGUI {
             // accept file drops
             for file in &ui.input().raw.dropped_files {
                 if let Some(path) = &file.path {
-                    self.open_file(path.to_owned());
+                    self.open_file(path);
                 }
             }
             // let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {

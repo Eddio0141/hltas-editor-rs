@@ -358,7 +358,7 @@ impl epi::App for MainGUI {
                         let recent_widget = egui::Label::new(
                             crate::LOCALES.lookup(&self.locale_lang.get_lang(), "recent-files"),
                         )
-                        .sense(Sense::click().union(Sense::hover()));
+                        .sense(Sense::hover());
                         let recent_button_response = ui.add(recent_widget);
                         let recent_popup_id = ui.make_persistent_id("recent_popup_id");
                         let mut make_recent_popup_window = false;
@@ -425,7 +425,8 @@ impl epi::App for MainGUI {
                                             self.open_file(&clicked_path);
                                         }
 
-                                        if ui.input().pointer.any_click() {
+                                        // TODO add delay for hover to be deleting popup
+                                        if ui.input().pointer.any_click() || (!recent_button_response.hovered() && !ui.ui_contains_pointer()) {
                                             delete_recent_popup_window = true;
                                         }
                                     });

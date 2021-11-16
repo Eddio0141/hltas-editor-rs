@@ -339,18 +339,6 @@ impl epi::App for MainGUI {
                         save_file.create_button(ui, self);
                         close_file.create_button(ui, self);
 
-                        // HACK
-                        // no side popup? oh well I guess I'll do the weird hack solution
-                        // egui::popup::popup_below_widget(
-                        //     ui,
-                        //     recent_popup_id,
-                        //     &recent_button_response,
-                        //     |ui| {
-                        //         // ui.set_min_width(200.0);
-                        //         // ui.label("yoo!");
-                        //     },
-                        // );
-
                         // TODO make it look like | Recent       > |
                         // let mut recent_is_hovered = false;
                         // ui.horizontal(|ui| {
@@ -365,6 +353,7 @@ impl epi::App for MainGUI {
                         //     ui.label(">").ctx.pos;
                         // });
 
+                        // TODO make this into its own widget
                         let recent_widget_pos = ui.min_rect().right_bottom();
                         let recent_widget = egui::Label::new(
                             crate::LOCALES.lookup(&self.locale_lang.get_lang(), "recent-files"),

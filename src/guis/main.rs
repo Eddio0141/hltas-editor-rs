@@ -1,84 +1,17 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
+use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::LocaleLang;
-use crate::helpers::{egui::key::key_to_string, hltas::hltas_to_str};
+use crate::helpers::widget_stuff::menu_button::MenuButton;
 use crate::widgets::menu::top_bottom_panel::tab::Tab;
 use eframe::{
-    egui::{
-        self, menu, Color32, CtxRef, FontDefinitions, FontFamily, Key, Label, Modifiers, Pos2,
-        Sense, Ui,
-    },
+    egui::{self, menu, Color32, FontDefinitions, FontFamily, Key, Label, Modifiers, Pos2, Sense},
     epi,
 };
 use fluent_templates::Loader;
 use hltas::HLTAS;
 use hltas_cleaner::cleaners;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
-
-// TODO key conflict check
-struct MenuButton<T>
-where
-    T: FnMut(&mut MainGUI) -> (),
-{
-    shortcut: Option<(Key, Modifiers)>,
-    pub name: String,
-    // TODO better way to call in on_click?
-    on_click: T,
-}
-
-impl<T> MenuButton<T>
-where
-    T: FnMut(&mut MainGUI) -> (),
-{
-    fn new(shortcut: Option<(Key, Modifiers)>, mut name: String, on_click: T) -> Self {
-        if let Some(key_press) = shortcut {
-            let key = &key_press.0;
-            let modifiers = &key_press.1;
-
-            let mut name_str_separated: Vec<String> = Vec::new();
-            if modifiers.ctrl {
-                name_str_separated.push("Ctrl".to_string());
-            }
-            if modifiers.alt {
-                name_str_separated.push("Alt".to_string());
-            }
-            if modifiers.shift {
-                name_str_separated.push("Shift".to_string());
-            }
-            // if modifiers.command
-            if modifiers.mac_cmd {
-                name_str_separated.push("⌘".to_string());
-            }
-            name_str_separated.push(key_to_string(key).to_string());
-
-            name += &("      ".to_string() + &name_str_separated.join("+"));
-        }
-
-        Self {
-            shortcut,
-            name,
-            on_click,
-        }
-    }
-
-    fn key_check(&mut self, ctx: &CtxRef, main_gui: &mut MainGUI) {
-        if let Some(key_modifiers) = &self.shortcut {
-            let key = key_modifiers.0;
-            let modifiers = key_modifiers.1;
-            let input = ctx.input();
-
-            if input.modifiers == modifiers && input.key_pressed(key) {
-                (self.on_click)(main_gui);
-            }
-        }
-    }
-
-    fn create_button(&mut self, ui: &mut Ui, main_gui: &mut MainGUI) {
-        if ui.button(&self.name).clicked() {
-            (self.on_click)(main_gui);
-        }
-    }
-}
 
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))]

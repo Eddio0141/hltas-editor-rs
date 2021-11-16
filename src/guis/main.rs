@@ -425,7 +425,7 @@ impl epi::App for MainGUI {
                                             self.open_file(&clicked_path);
                                         }
 
-                                        // TODO add delay for hover to be deleting popup
+                                        // BUG add delay for hover to be deleting popup or this will vanish instantly
                                         if ui.input().pointer.any_click() || (!recent_button_response.hovered() && !ui.ui_contains_pointer()) {
                                             delete_recent_popup_window = true;
                                         }

@@ -1,10 +1,11 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
+use crate::helpers::egui::containers::popup_to_widget_right;
+use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
-use crate::helpers::{egui::memory::popup_state::PopupStateMemory, hltas::hltas_to_str};
 use crate::widgets::menu::top_bottom_panel::tab::HLTASFileTab;
-use eframe::egui::{Button, Window};
+use eframe::egui::Button;
 use eframe::{
     egui::{self, menu, Color32, FontDefinitions, FontFamily, Key, Label, Modifiers, Sense},
     epi,
@@ -356,111 +357,60 @@ impl epi::App for MainGUI {
                         close_file.create_button(ui, self);
 
                         // TODO make it look like | Recent       > |
-                        // let mut recent_is_hovered = false;
-                        // ui.horizontal(|ui| {
-                        //     let recent_button = egui::Label::new("Recent >").sense(Sense::click().union(Sense::hover()));
-                        //     // TODO make it stick to the right automatically
-                        //     // ui.style_mut().spacing.item_spacing.x = 100.0;
-
-                        //     if ui.add(recent_button).hovered() {
-                        //         recent_is_hovered = true;
-                        //     }
-
-                        //     ui.label(">").ctx.pos;
-                        // });
-
-                        // TODO make this into its own widget
-                        let recent_widget_pos = ui.min_rect().right_bottom();
-                        let recent_widget = egui::Label::new(
+                        let recent_popup_id = ui.make_persistent_id("recent_popup_id");
+                        let recent_opener = egui::Label::new(
                             crate::LOCALES.lookup(&self.locale_lang.get_lang(), "recent-files"),
                         )
                         .sense(Sense::hover());
-                        let recent_button_response = ui.add(recent_widget);
-                        let recent_popup_id = ui.make_persistent_id("recent_popup_id");
-                        let mut make_recent_popup_window = false;
-                        let mut recent_popup_coord = PopupStateMemory::none();
+                        let recent_opener_response = ui.add(recent_opener);
 
-                        // check memory if the popup window is enabled
+                        // let mut make_recent_popup_window = false;
+                        // let mut recent_popup_coord = PopupStateMemory::none();
 
-                        // not sure why can't i just use this for the if statement combination
-                        // TODO better way to store with struct?
-                        ui.memory()
-                            .id_data_temp
-                            .get_or_insert_with(recent_popup_id, || PopupStateMemory::none());
-
-                        if let Some(pop_up_coords) = ui
-                            .memory()
-                            .id_data_temp
-                            .get_mut::<PopupStateMemory>(&recent_popup_id)
+                        if !ui.memory().is_popup_open(recent_popup_id)
+                            && recent_opener_response.hovered()
                         {
-                            if recent_button_response.hovered() {
-                                // TODO set backup pos?
-                                if let None = &pop_up_coords.0 {
-                                    *pop_up_coords = PopupStateMemory {
-                                        0: Some(recent_widget_pos),
-                                    };
-                                }
-                            }
-                            // *is_popped_up = recent_is_hovered;
-
-                            if let Some(_) = pop_up_coords.0 {
-                                // retarded solution yes
-                                // TODO think of a cleaner way to do this
-                                make_recent_popup_window = true;
-                                recent_popup_coord = pop_up_coords.clone();
-                            }
+                            ui.memory().open_popup(recent_popup_id);
                         }
 
-                        // TODO also think of a cleaner way to do this
-                        let mut delete_recent_popup_window = false;
-                        if make_recent_popup_window {
-                            let show_pos = recent_popup_coord.0.unwrap();
+                        let popup_hovered = popup_to_widget_right(
+                            ui,
+                            recent_popup_id,
+                            &recent_opener_response,
+                            |ui| {
+                                let clicked_path = {
+                                    let mut clicked_path = None;
+                                    for recent_path in &self.recent_paths {
+                                        if let Some(path_str) = recent_path.as_os_str().to_str() {
+                                            let recent_path_button =
+                                                Button::new(path_str).frame(false).wrap(false);
 
-                            if self.recent_paths.len() > 0 {
-                                // TODO make the layer topmost with whatever method works
-                                Window::new("recent_files_display")
-                                    .title_bar(false)
-                                    .auto_sized()
-                                    .fixed_pos(show_pos)
-                                    .show(ctx, |ui| {
-                                        let clicked_path = {
-                                            let mut clicked_path = None;
-                                            for recent_path in &self.recent_paths {
-                                                if let Some(path_str) = recent_path.as_os_str().to_str()
-                                                {
-                                                    let recent_path_button =
-                                                        Button::new(path_str).frame(false);
-    
-                                                    if ui.add(recent_path_button).clicked() {
-                                                        clicked_path = Some(recent_path.to_owned());
-                                                        break;
-                                                    }
-                                                }
+                                            if ui.add(recent_path_button).clicked() {
+                                                clicked_path = Some(recent_path.to_owned());
+                                                break;
                                             }
-                                            clicked_path
-                                        };
-
-                                        if let Some(clicked_path) = clicked_path {
-                                            self.open_file(&clicked_path);
                                         }
+                                    }
+                                    clicked_path
+                                };
 
-                                        // BUG add delay for hover to be deleting popup or this will vanish instantly
-                                        if !recent_button_response.hovered() && !ui.ui_contains_pointer()
-                                        {
-                                            delete_recent_popup_window = true;
-                                        }
-                                    });
-                            }
-                        }
+                                if let Some(clicked_path) = clicked_path {
+                                    self.open_file(&clicked_path);
+                                }
 
-                        if delete_recent_popup_window {
-                            if let Some(pop_up_state) = ui
-                                .memory()
-                                .id_data_temp
-                                .get_mut::<PopupStateMemory>(&recent_popup_id)
-                            {
-                                *pop_up_state = PopupStateMemory::none();
+                                return ui.rect_contains_pointer(ui.clip_rect());
+                            },
+                        );
+                        let popup_hovered = {
+                            if let Some(hovered) = popup_hovered {
+                                hovered
+                            } else {
+                                false
                             }
+                        };
+
+                        if !recent_opener_response.hovered() && !popup_hovered {
+                            ui.memory().close_popup();
                         }
                     },
                 );

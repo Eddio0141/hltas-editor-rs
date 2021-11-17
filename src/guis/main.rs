@@ -453,7 +453,7 @@ impl epi::App for MainGUI {
             ui.separator();
 
             // tabs
-            let mut stale_tabs: Vec<usize> = Vec::new();
+            let mut stale_tab: Option<usize> = None;
             egui::ScrollArea::horizontal().show(ui, |ui| {
                 ui.horizontal(|ui| {
                     let mut new_index: Option<usize> = None;
@@ -476,7 +476,7 @@ impl epi::App for MainGUI {
 
                             if ui.add(close_button).clicked() {
                                 // mark as stale
-                                stale_tabs.push(index);
+                                stale_tab = Some(index);
                             }
                         });
                     }
@@ -487,11 +487,9 @@ impl epi::App for MainGUI {
                 });
             });
 
-            stale_tabs.reverse();
-
-            // remove stale tabs
-            for index in stale_tabs {
-                self.tabs.remove(index);
+            // remove stale tab
+            if let Some(stale_tab) = stale_tab {
+                self.tabs.remove(stale_tab);
             }
 
             // fix index if its out of bounds

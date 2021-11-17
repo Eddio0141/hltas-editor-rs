@@ -515,34 +515,43 @@ impl epi::App for MainGUI {
                     self.open_file(path);
                 }
             }
-            // let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-            //     let mut layout_job: egui::text::LayoutJob = my_memoized_highlighter(string);
-            //     layout_job.wrap_width = wrap_width;
-            //     ui.fonts().layout_job(layout_job)
-            // };
-            // ui.add(egui::TextEdit::multiline(&mut my_code).layouter(&mut layouter));
 
-            // TODO show line count
+            if let Some(current_tab_index) = self.current_tab_index {
+                let current_tab = &mut self.tabs[current_tab_index];
 
-            egui::ScrollArea::both().show(ui, |ui| {
-                if let Some(current_tab_index) = self.current_tab_index {
-                    let current_tab = &mut self.tabs[current_tab_index];
-                    let tab_content_changed = ui
-                        .add(
-                            egui::TextEdit::multiline(&mut current_tab.raw_content)
-                                .text_style(egui::TextStyle::Monospace)
-                                .code_editor()
-                                .desired_rows(1)
-                                .lock_focus(true)
-                                .desired_width(f32::INFINITY), // .layouter(&mut layouter)
-                        )
-                        .changed();
+                if self.graphics_editor {
+                    egui::ScrollArea::both().show(ui, |ui| {
+                        // TODO translation?
 
-                    if tab_content_changed {
-                        current_tab.got_modified = true;
-                    }
+                        // ui.label(format!("version {}", current_tab.hltas.version));
+                    });
+                } else {
+                    // let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
+                    //     let mut layout_job: egui::text::LayoutJob = my_memoized_highlighter(string);
+                    //     layout_job.wrap_width = wrap_width;
+                    //     ui.fonts().layout_job(layout_job)
+                    // };
+                    // ui.add(egui::TextEdit::multiline(&mut my_code).layouter(&mut layouter));
+
+                    // TODO show line count
+                    egui::ScrollArea::both().show(ui, |ui| {
+                        let tab_content_changed = ui
+                            .add(
+                                egui::TextEdit::multiline(&mut current_tab.raw_content)
+                                    .text_style(egui::TextStyle::Monospace)
+                                    .code_editor()
+                                    .desired_rows(1)
+                                    .lock_focus(true)
+                                    .desired_width(f32::INFINITY), // .layouter(&mut layouter)
+                            )
+                            .changed();
+
+                        if tab_content_changed {
+                            current_tab.got_modified = true;
+                        }
+                    });
                 }
-            });
+            }
         });
 
         // self.set_current_tab_title();

@@ -364,9 +364,6 @@ impl epi::App for MainGUI {
                         .sense(Sense::hover());
                         let recent_opener_response = ui.add(recent_opener);
 
-                        // let mut make_recent_popup_window = false;
-                        // let mut recent_popup_coord = PopupStateMemory::none();
-
                         if !ui.memory().is_popup_open(recent_popup_id)
                             && recent_opener_response.hovered()
                         {

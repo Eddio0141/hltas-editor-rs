@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 hltas-cleaner = { git = "https://github.com/Eddio0141/hltas-cleaner/", branch = "master" }
 eframe = "0.15.0"
-hltas = { git = "https://github.com/HLTAS/hltas" }
+hltas = { git = "https://github.com/HLTAS/hltas", branch = "master" }
 native-dialog = "0.5.5"
 serde = { version = "1", features = ["derive"], optional = true }
 fluent-templates = "0.6.1"

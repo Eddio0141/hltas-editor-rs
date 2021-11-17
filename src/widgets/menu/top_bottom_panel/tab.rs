@@ -3,13 +3,16 @@ use std::path::PathBuf;
 use fluent_templates::{LanguageIdentifier, Loader};
 use hltas::HLTAS;
 
-use crate::helpers::hltas::hltas_to_str;
+use crate::helpers::{self, hltas::hltas_to_str};
 
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 pub struct HLTASFileTab {
     pub title: String,
     pub path: Option<PathBuf>,
-    pub raw_content: String,
+    raw_content: String,
+    // TODO implement serialization
+    #[cfg_attr(feature = "persistence", serde(skip))]
+    hltas: HLTAS,
     pub got_modified: bool,
 }
 
@@ -18,10 +21,10 @@ impl<'a> HLTASFileTab {
         path: &PathBuf,
         file_content: &'a str,
     ) -> Result<Self, hltas::read::Error<'a>> {
-        match HLTAS::from_str(&file_content) {
-            Ok(_) => {}
+        let hltas = match HLTAS::from_str(&file_content) {
+            Ok(hltas) => hltas,
             Err(err) => return Err(err),
-        }
+        };
 
         Ok(Self {
             // TODO error check?
@@ -31,6 +34,7 @@ impl<'a> HLTASFileTab {
             raw_content: file_content.to_string(),
             // ..Default::default()
             got_modified: false,
+            hltas,
         })
     }
 
@@ -55,8 +59,23 @@ impl<'a> HLTASFileTab {
             path: None,
             raw_content: hltas_to_str(&HLTAS::default()),
             got_modified: false,
+            hltas: HLTAS::default(),
         }
         // Self::default()
+    }
+
+    // TODO use cache
+    pub fn raw_content(&self) -> &str {
+        &self.raw_content
+    }
+
+    pub fn set_hltas(&mut self, hltas: HLTAS) {
+        self.raw_content = helpers::hltas::hltas_to_str(&self.hltas);
+        self.hltas = hltas;
+    }
+
+    pub fn hltas(&self) -> &HLTAS {
+        &self.hltas
     }
 }
 

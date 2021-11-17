@@ -85,9 +85,9 @@ checksum = "000444226fcff248f2bc4c7625be32c63caccfecc2723a2b9f78a7487a49c407"
 
 [[package]]
 name = "arc-swap"
-version = "1.4.0"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6df5aef5c5830360ce5218cecb8f018af3438af5686ae945094affc86fdec63"
+checksum = "c5d78ce20460b82d3fa150275ed9d55e21064fc7951177baacf86a145c4a4b1f"
 
 [[package]]
 name = "arrayvec"
@@ -521,7 +521,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac1b7517328c04c2aa68422fc60a41b92208182142ed04a25879c26c8f878794"
 dependencies = [
- "libloading 0.7.1",
+ "libloading 0.7.2",
 ]
 
 [[package]]
@@ -843,7 +843,7 @@ dependencies = [
  "glutin_glx_sys",
  "glutin_wgl_sys",
  "lazy_static",
- "libloading 0.7.1",
+ "libloading 0.7.2",
  "log",
  "objc",
  "osmesa-sys",
@@ -911,7 +911,7 @@ dependencies = [
 [[package]]
 name = "hltas"
 version = "0.4.0"
-source = "git+https://github.com/HLTAS/hltas#de9fe2e8114c846b9e4c4c51276f824ba28a668a"
+source = "git+https://github.com/HLTAS/hltas?branch=master#de9fe2e8114c846b9e4c4c51276f824ba28a668a"
 dependencies = [
  "cookie-factory",
  "nom 5.1.2",
@@ -920,7 +920,7 @@ dependencies = [
 [[package]]
 name = "hltas-cleaner"
 version = "0.1.0"
-source = "git+https://github.com/Eddio0141/hltas-cleaner/?branch=master#49e353c4858c109bc65e4c2799a2d4d2760311ae"
+source = "git+https://github.com/Eddio0141/hltas-cleaner/?branch=master#2d26cb906fbf75c33d114c9b4e791855547cf400"
 dependencies = [
  "hltas",
 ]
@@ -1063,9 +1063,9 @@ dependencies = [
 
 [[package]]
 name = "libloading"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0cf036d15402bea3c5d4de17b3fce76b3e4a56ebc1f577be0e7a72f7c607cf0"
+checksum = "afe203d669ec979b7128619bae5a63b7b42e9203c1b29146079ee05e2f604b52"
 dependencies = [
  "cfg-if 1.0.0",
  "winapi",

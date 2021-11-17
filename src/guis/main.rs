@@ -1,7 +1,6 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::egui::containers::popup_to_widget_right;
-use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
 use crate::widgets::menu::top_bottom_panel::tab::HLTASFileTab;
@@ -147,7 +146,7 @@ impl MainGUI {
             }
 
             if let Some(path) = save_path {
-                fs::write(&path, &tab.raw_content)?;
+                fs::write(&path, &tab.raw_content())?;
                 if new_file {
                     tab.title = HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
                 }
@@ -425,12 +424,10 @@ impl epi::App for MainGUI {
                         {
                             // TODO show options
                             if let Some(current_index) = self.current_tab_index {
-                                let current_tab_raw = &mut self.tabs[current_index].raw_content;
+                                let mut current_hltas = self.tabs[current_index].hltas().to_owned();
                                 // TODO all error handling here
-                                if let Ok(mut hltas) = HLTAS::from_str(&current_tab_raw) {
-                                    cleaners::no_dupe_framebulks(&mut hltas);
-                                    *current_tab_raw = hltas_to_str(&hltas);
-                                }
+                                cleaners::no_dupe_framebulks(&mut current_hltas);
+                                self.tabs[current_index].set_hltas(current_hltas);
                             }
                         }
                     },
@@ -535,9 +532,10 @@ impl epi::App for MainGUI {
 
                     // TODO show line count
                     egui::ScrollArea::both().show(ui, |ui| {
+                        let mut raw_hltas = current_tab.raw_content().to_owned();
                         let tab_content_changed = ui
                             .add(
-                                egui::TextEdit::multiline(&mut current_tab.raw_content)
+                                egui::TextEdit::multiline(&mut raw_hltas)
                                     .text_style(egui::TextStyle::Monospace)
                                     .code_editor()
                                     .desired_rows(1)
@@ -546,6 +544,11 @@ impl epi::App for MainGUI {
                             )
                             .changed();
 
+                        if tab_content_changed {
+                            if let Ok(hltas) = HLTAS::from_str(&raw_hltas) {
+                                current_tab.set_hltas(hltas);
+                            }
+                        }
                         if tab_content_changed {
                             current_tab.got_modified = true;
                         }

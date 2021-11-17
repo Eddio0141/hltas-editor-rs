@@ -423,20 +423,23 @@ impl epi::App for MainGUI {
                                     .auto_sized()
                                     .fixed_pos(show_pos)
                                     .show(ctx, |ui| {
-                                        // TODO safety I guess, look into this issue a bit more
-                                        let mut clicked_path: Option<PathBuf> = None;
-                                        for recent_path in &self.recent_paths {
-                                            if let Some(path_str) = recent_path.as_os_str().to_str()
-                                            {
-                                                let recent_path_button =
-                                                    Button::new(path_str).frame(false);
-
-                                                if ui.add(recent_path_button).clicked() {
-                                                    clicked_path = Some(recent_path.to_owned());
-                                                    break;
+                                        let clicked_path = {
+                                            let mut clicked_path = None;
+                                            for recent_path in &self.recent_paths {
+                                                if let Some(path_str) = recent_path.as_os_str().to_str()
+                                                {
+                                                    let recent_path_button =
+                                                        Button::new(path_str).frame(false);
+    
+                                                    if ui.add(recent_path_button).clicked() {
+                                                        clicked_path = Some(recent_path.to_owned());
+                                                        break;
+                                                    }
                                                 }
                                             }
-                                        }
+                                            clicked_path
+                                        };
+
                                         if let Some(clicked_path) = clicked_path {
                                             self.open_file(&clicked_path);
                                         }

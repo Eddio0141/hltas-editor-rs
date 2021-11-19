@@ -5,6 +5,7 @@ use crate::helpers::egui::containers::popup_to_widget_right;
 use crate::helpers::hltas::{fps, hltas_to_str};
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
+use crate::widgets::hltas::frametime_changer;
 use crate::widgets::menu::top_bottom_panel::tab::HLTASFileTab;
 use eframe::egui::{Button, CollapsingHeader, DragValue};
 use eframe::{
@@ -12,7 +13,7 @@ use eframe::{
     epi,
 };
 use fluent_templates::Loader;
-use hltas::types::Seeds;
+use hltas::types::{Line, Seeds};
 use hltas_cleaner::cleaners;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
@@ -529,7 +530,7 @@ impl epi::App for MainGUI {
                                                 Ok(mut frametime) => {
                                                     ui.add(
                                                         DragValue::new(&mut frametime)
-                                                            .speed(0.0000000001)
+                                                            .speed(fps::MAX)
                                                             .clamp_range(fps::MAX..=fps::MIN),
                                                     );
                                                     hltas.properties.frametime_0ms =
@@ -582,6 +583,17 @@ impl epi::App for MainGUI {
                                     }
 
                                     ui.shrink_width_to_current();
+                                });
+
+                                // TODO remove me
+                                ui.horizontal(|ui| {
+                                    ui.label(hltas.lines.len());
+                                    if hltas.lines.len() > 15 {
+                                        if let Line::FrameBulk(framebulk) = &mut hltas.lines[15] {
+                                            ui.label("shud be working");
+                                            frametime_changer(&mut framebulk.frame_time, ui);
+                                        }
+                                    }
                                 });
                             });
                     });

@@ -2,7 +2,7 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::egui::button::close_button;
 use crate::helpers::egui::containers::popup_to_widget_right;
-use crate::helpers::hltas::hltas_to_str;
+use crate::helpers::hltas::{fps, hltas_to_str};
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
 use crate::widgets::menu::top_bottom_panel::tab::HLTASFileTab;
@@ -521,6 +521,40 @@ impl epi::App for MainGUI {
                         CollapsingHeader::new("properties")
                             .default_open(true)
                             .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.label("frametime0ms");
+                                    let set_frametime_button =
+                                        match &mut hltas.properties.frametime_0ms {
+                                            Some(frametime) => match frametime.parse::<f32>() {
+                                                Ok(mut frametime) => {
+                                                    ui.add(
+                                                        DragValue::new(&mut frametime)
+                                                            .speed(0.0000000001)
+                                                            .clamp_range(fps::MAX..=fps::MIN),
+                                                    );
+                                                    hltas.properties.frametime_0ms =
+                                                        Some(frametime.to_string());
+                                                    if ui.add(close_button().small()).clicked() {
+                                                        hltas.properties.frametime_0ms = None;
+                                                    }
+                                                    false
+                                                }
+                                                Err(_) => true,
+                                            },
+                                            None => true,
+                                        };
+
+                                    if set_frametime_button {
+                                        if ui.button("set frametime0ms").clicked() {
+                                            // TODO implement settings to change this
+                                            hltas.properties.frametime_0ms =
+                                                Some("0.0000000001".to_string());
+                                        }
+                                    }
+
+                                    ui.shrink_width_to_current();
+                                });
+
                                 ui.horizontal(|ui| {
                                     ui.label("seeds");
                                     let create_seed_button = match &mut hltas.properties.seeds {

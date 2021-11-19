@@ -1,3 +1,5 @@
+pub mod fps;
+
 use hltas::HLTAS;
 
 pub fn hltas_to_str(hltas: &HLTAS) -> String {

@@ -1,5 +1,6 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
+use crate::helpers::egui::button::close_button;
 use crate::helpers::egui::containers::popup_to_widget_right;
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
@@ -470,9 +471,7 @@ impl epi::App for MainGUI {
                                 new_index = Some(index);
                             }
 
-                            let close_button = egui::Button::new("x")
-                                .small()
-                                .text_color(Color32::from_rgb(255, 0, 0));
+                            let close_button = close_button().small();
 
                             if ui.add(close_button).clicked() {
                                 // mark as stale
@@ -530,14 +529,7 @@ impl epi::App for MainGUI {
                                             Some(nonshared_rng) => {
                                                 ui.add(DragValue::new(shared_rng).speed(0.2));
                                                 ui.add(DragValue::new(nonshared_rng).speed(0.2));
-                                                if ui
-                                                    .add(
-                                                        Button::new("x").small().text_color(
-                                                            Color32::from_rgb(255, 0, 0),
-                                                        ),
-                                                    )
-                                                    .clicked()
-                                                {
+                                                if ui.add(close_button().small()).clicked() {
                                                     hltas_raw.shared_rng = None;
                                                     hltas_raw.non_shared_rng = None;
                                                 }
@@ -554,15 +546,7 @@ impl epi::App for MainGUI {
                                             hltas_raw.non_shared_rng = Some(0);
                                         }
                                     }
-
-                                    // ui.add(
-                                    //     TextEdit::singleline(&mut hltas_raw.shared_rng)
-                                    //         .hint_text("shared rng"),
-                                    // );
-                                    // ui.add(
-                                    //     TextEdit::singleline(&mut hltas_raw.non_shared_rng)
-                                    //         .hint_text("nonshared rng"),
-                                    // );
+                                    
                                     ui.shrink_width_to_current();
                                 });
                             });

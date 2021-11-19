@@ -4,7 +4,7 @@ use crate::helpers::egui::containers::popup_to_widget_right;
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
 use crate::widgets::menu::top_bottom_panel::tab::HLTASFileTab;
-use eframe::egui::Button;
+use eframe::egui::{Button, CollapsingHeader, DragValue};
 use eframe::{
     egui::{self, menu, Color32, FontDefinitions, FontFamily, Key, Label, Modifiers, Sense},
     epi,
@@ -146,7 +146,7 @@ impl MainGUI {
             }
 
             if let Some(path) = save_path {
-                fs::write(&path, &tab.raw_content())?;
+                fs::write(&path, &tab.get_raw_content())?;
                 if new_file {
                     tab.title = HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
                 }
@@ -517,8 +517,55 @@ impl epi::App for MainGUI {
                 if self.graphics_editor {
                     egui::ScrollArea::both().show(ui, |ui| {
                         // TODO translation?
+                        // TODO better method?
+                        let hltas_raw = current_tab.raw_hltas_mut();
 
-                        // ui.label(format!("version {}", current_tab.hltas.version));
+                        CollapsingHeader::new("properties")
+                            .default_open(true)
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.label("seeds");
+                                    let create_seed_button = match &mut hltas_raw.shared_rng {
+                                        Some(shared_rng) => match &mut hltas_raw.non_shared_rng {
+                                            Some(nonshared_rng) => {
+                                                ui.add(DragValue::new(shared_rng).speed(0.2));
+                                                ui.add(DragValue::new(nonshared_rng).speed(0.2));
+                                                if ui
+                                                    .add(
+                                                        Button::new("x").small().text_color(
+                                                            Color32::from_rgb(255, 0, 0),
+                                                        ),
+                                                    )
+                                                    .clicked()
+                                                {
+                                                    hltas_raw.shared_rng = None;
+                                                    hltas_raw.non_shared_rng = None;
+                                                }
+                                                false
+                                            }
+                                            None => true,
+                                        },
+                                        None => true,
+                                    };
+
+                                    if create_seed_button {
+                                        if ui.button("set shared non-shared rng").clicked() {
+                                            hltas_raw.shared_rng = Some(0);
+                                            hltas_raw.non_shared_rng = Some(0);
+                                        }
+                                    }
+
+                                    // ui.add(
+                                    //     TextEdit::singleline(&mut hltas_raw.shared_rng)
+                                    //         .hint_text("shared rng"),
+                                    // );
+                                    // ui.add(
+                                    //     TextEdit::singleline(&mut hltas_raw.non_shared_rng)
+                                    //         .hint_text("nonshared rng"),
+                                    // );
+                                    ui.shrink_width_to_current();
+                                });
+                            });
                     });
                 } else {
                     // let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
@@ -530,7 +577,8 @@ impl epi::App for MainGUI {
 
                     // TODO show line count
                     egui::ScrollArea::both().show(ui, |ui| {
-                        let mut raw_hltas = current_tab.raw_content().to_owned();
+                        // HACK find a better method
+                        let mut raw_hltas = current_tab.get_raw_content().to_owned();
                         let tab_content_changed = ui
                             .add(
                                 egui::TextEdit::multiline(&mut raw_hltas)

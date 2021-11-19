@@ -516,7 +516,6 @@ impl epi::App for MainGUI {
                 if self.graphics_editor {
                     egui::ScrollArea::both().show(ui, |ui| {
                         // TODO translation?
-                        // TODO better method?
                         let hltas = &mut current_tab.hltas;
 
                         CollapsingHeader::new("properties")

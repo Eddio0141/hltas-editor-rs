@@ -1,4 +1,5 @@
 pub mod fps;
+pub mod frametime;
 
 use hltas::HLTAS;
 

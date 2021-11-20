@@ -3,12 +3,13 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::egui::button::close_button;
 use crate::helpers::egui::containers::popup_to_widget_right;
-use crate::helpers::hltas::{fps, hltas_to_str};
+use crate::helpers::hltas::{frametime, hltas_to_str};
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
 use crate::widgets::hltas::frametime_changer;
 use crate::widgets::menu::top_bottom_panel::tab::HLTASFileTab;
-use eframe::egui::{Button, CollapsingHeader, DragValue};
+use eframe::egui::style::Spacing;
+use eframe::egui::{Button, CollapsingHeader, Color32, DragValue, Id, TextEdit, Vec2};
 use eframe::{
     egui::{self, menu, FontDefinitions, FontFamily, Key, Label, Modifiers, Sense},
     epi,
@@ -554,88 +555,187 @@ impl epi::App for MainGUI {
                 let current_tab = &mut self.tabs[current_tab_index];
 
                 if self.graphics_editor {
-                    egui::ScrollArea::both().show(ui, |ui| {
-                        // TODO translation?
-                        let hltas = &mut current_tab.hltas;
+                    egui::ScrollArea::both()
+                        .max_width(f32::INFINITY)
+                        .auto_shrink([false; 2])
+                        .show(ui, |ui| {
+                            // TODO translation?
+                            let hltas = &mut current_tab.hltas;
 
-                        CollapsingHeader::new("properties")
-                            .default_open(true)
-                            .show(ui, |ui| {
-                                ui.horizontal(|ui| {
-                                    ui.label("frametime0ms");
-                                    let set_frametime_button =
-                                        match &mut hltas.properties.frametime_0ms {
-                                            Some(frametime) => match frametime.parse::<f32>() {
-                                                Ok(mut frametime) => {
-                                                    ui.add(
-                                                        DragValue::new(&mut frametime)
-                                                            .speed(fps::MAX)
-                                                            .clamp_range(fps::MAX..=fps::MIN),
-                                                    );
-                                                    hltas.properties.frametime_0ms =
-                                                        Some(frametime.to_string());
-                                                    if ui.add(close_button().small()).clicked() {
-                                                        hltas.properties.frametime_0ms = None;
+                            CollapsingHeader::new("properties")
+                                .default_open(true)
+                                .show(ui, |ui| {
+                                    ui.horizontal(|ui| {
+                                        ui.label("frametime0ms");
+                                        // TODO do I even make this an option? maybe make this changable from the gui options
+                                        ui.set_enabled(false);
+                                        let set_frametime_button =
+                                            match &mut hltas.properties.frametime_0ms {
+                                                Some(frametime) => match frametime.parse::<f32>() {
+                                                    Ok(mut frametime) => {
+                                                        ui.add(
+                                                            DragValue::new(&mut frametime)
+                                                                .speed(frametime::MAX)
+                                                                .clamp_range(
+                                                                    frametime::MIN..=frametime::MAX,
+                                                                ),
+                                                        );
+                                                        hltas.properties.frametime_0ms =
+                                                            Some(frametime.to_string());
+                                                        if ui.add(close_button().small()).clicked()
+                                                        {
+                                                            hltas.properties.frametime_0ms = None;
+                                                        }
+                                                        false
                                                     }
-                                                    false
+                                                    Err(_) => true,
+                                                },
+                                                None => true,
+                                            };
+
+                                        if set_frametime_button {
+                                            if ui.button("set frametime0ms").clicked() {
+                                                // TODO implement settings to change this
+                                                hltas.properties.frametime_0ms =
+                                                    Some("0.0000000001".to_string());
+                                            }
+                                        }
+
+                                        // TODO remove me when done
+                                        ui.set_enabled(true);
+                                        ui.shrink_width_to_current();
+                                    });
+
+                                    ui.horizontal(|ui| {
+                                        ui.label("seeds");
+                                        let create_seed_button = match &mut hltas.properties.seeds {
+                                            Some(seeds) => {
+                                                let shared_rng = &mut seeds.shared;
+                                                let nonshared_rng = &mut seeds.non_shared;
+
+                                                ui.add(DragValue::new(shared_rng).speed(0.05));
+                                                ui.add(DragValue::new(nonshared_rng).speed(0.05));
+                                                if ui.add(close_button().small()).clicked() {
+                                                    hltas.properties.seeds = None;
                                                 }
-                                                Err(_) => true,
-                                            },
+                                                false
+                                            }
                                             None => true,
                                         };
 
-                                    if set_frametime_button {
-                                        if ui.button("set frametime0ms").clicked() {
-                                            // TODO implement settings to change this
-                                            hltas.properties.frametime_0ms =
-                                                Some("0.0000000001".to_string());
-                                        }
-                                    }
-
-                                    ui.shrink_width_to_current();
-                                });
-
-                                ui.horizontal(|ui| {
-                                    ui.label("seeds");
-                                    let create_seed_button = match &mut hltas.properties.seeds {
-                                        Some(seeds) => {
-                                            let shared_rng = &mut seeds.shared;
-                                            let nonshared_rng = &mut seeds.non_shared;
-
-                                            ui.add(DragValue::new(shared_rng).speed(0.2));
-                                            ui.add(DragValue::new(nonshared_rng).speed(0.2));
-                                            if ui.add(close_button().small()).clicked() {
-                                                hltas.properties.seeds = None;
+                                        if create_seed_button {
+                                            if ui.button("set shared non-shared rng").clicked() {
+                                                hltas.properties.seeds = Some(Seeds {
+                                                    shared: 0,
+                                                    non_shared: 0,
+                                                });
                                             }
-                                            false
                                         }
-                                        None => true,
-                                    };
 
-                                    if create_seed_button {
-                                        if ui.button("set shared non-shared rng").clicked() {
-                                            hltas.properties.seeds = Some(Seeds {
-                                                shared: 0,
-                                                non_shared: 0,
-                                            });
-                                        }
-                                    }
-
-                                    ui.shrink_width_to_current();
+                                        ui.shrink_width_to_current();
+                                    });
                                 });
 
-                                // TODO remove me
-                                ui.horizontal(|ui| {
-                                    ui.label(hltas.lines.len());
-                                    if hltas.lines.len() > 15 {
-                                        if let Line::FrameBulk(framebulk) = &mut hltas.lines[15] {
-                                            ui.label("shud be working");
-                                            frametime_changer(&mut framebulk.frame_time, ui);
-                                        }
+                            ui.separator();
+                            ui.add(Label::new("Lines").heading());
+
+                            // TODO color customization
+                            // TODO rest
+                            // TODO show bulk ID
+
+                            // TODO comment enter focus
+                            // let mut new_comment_insert = None;
+                            // let focus_mem_id = Id::new("focus_mem");
+
+                            for (i, line) in &mut hltas.lines.iter_mut().enumerate() {
+                                ui.horizontal(|ui| match line {
+                                    Line::FrameBulk(framebulk) => {
+                                        frametime_changer(&mut framebulk.frame_time, ui);
                                     }
+                                    Line::Save(save) => {
+                                        ui.label(save);
+                                    }
+                                    Line::SharedSeed(shared_seed) => {
+                                        // TODO seed changer helper function
+                                        ui.style_mut().spacing.item_spacing.x = 0.0;
+
+                                        ui.label("seed ");
+                                        // TODO settings for seed drag changer
+                                        ui.add(DragValue::new(shared_seed).speed(0.05));
+                                    }
+                                    Line::Buttons(buttons) => {}
+                                    Line::LGAGSTMinSpeed(lgagstminspd) => {}
+                                    Line::Reset { non_shared_seed } => {
+                                        // TODO seed changer helper function
+                                        ui.style_mut().spacing.item_spacing.x = 0.0;
+
+                                        ui.label("reset ");
+                                        // TODO settings for seed drag changer
+                                        ui.add(DragValue::new(non_shared_seed).speed(0.05));
+                                    }
+                                    Line::Comment(comment) => {
+                                        ui.style_mut().spacing.item_spacing.x = 0.0;
+                                        let comment_color = Color32::from_rgb(0, 255, 0);
+                                        ui.colored_label(comment_color, "//");
+                                        ui.add(
+                                            TextEdit::singleline(comment)
+                                                .text_color(comment_color)
+                                                .desired_width(f32::INFINITY)
+                                                .frame(false),
+                                        );
+
+                                        // let focus_comment = if let Some(index) = ui
+                                        //     .memory()
+                                        //     .id_data_temp
+                                        //     .get_or_insert_with(focus_mem_id, || {
+                                        //         Option::<usize>::None
+                                        //     }) {
+                                        //     *index == i
+                                        // } else {
+                                        //     false
+                                        // };
+
+                                        // let is_focused = {
+                                        //     let response = ui.add(
+                                        //         TextEdit::singleline(comment)
+                                        //             .text_color(comment_color)
+                                        //             .desired_width(f32::INFINITY)
+                                        //             .frame(false),
+                                        //     );
+                                        //     if focus_comment {
+                                        //         response.request_focus();
+                                        //         ui.memory()
+                                        //             .id_data_temp
+                                        //             .insert(focus_mem_id, || Option::<usize>::None);
+
+                                        //         true
+                                        //     } else {
+                                        //         response.lost_focus()
+                                        //     }
+                                        // };
+
+                                        // if is_focused && ui.input().key_pressed(Key::Enter) {
+                                        //     new_comment_insert = Some(i + 1);
+
+                                        //     ui.memory().id_data_temp.insert(focus_mem_id, Some(i + 1));
+                                        // }
+                                    }
+                                    Line::VectorialStrafing(vectorial_strafing) => {}
+                                    Line::VectorialStrafingConstraints(
+                                        vectorial_strafing_constraints,
+                                    ) => {}
+                                    Line::Change(change) => {}
+                                    Line::TargetYawOverride(target_yaw) => {}
                                 });
-                            });
-                    });
+                            }
+
+                            // TODO comment focus thing
+                            // if let Some(insert_index) = new_comment_insert {
+                            //     hltas
+                            //         .lines
+                            //         .insert(insert_index, Line::Comment(String::new()));
+                            // }
+                        });
                 } else {
                     // let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
                     //     let mut layout_job: egui::text::LayoutJob = my_memoized_highlighter(string);

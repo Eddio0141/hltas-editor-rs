@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{ops::Deref, path::{Path, PathBuf}};
 
 use fluent_templates::{LanguageIdentifier, Loader};
 use hltas::HLTAS;
@@ -13,38 +13,43 @@ pub struct HLTASFileTab {
     pub got_modified: bool,
 }
 
+// TODO think if pathbuf can be a generic type
 impl<'a> HLTASFileTab {
-    pub fn open_path(
-        path: &PathBuf,
-        file_content: &'a str,
-    ) -> Result<Self, hltas::read::Error<'a>> {
+    pub fn open_path(path: &Path, file_content: &'a str) -> Result<Self, hltas::read::Error<'a>>
+    {
         let hltas = match HLTAS::from_str(&file_content) {
             Ok(hltas) => hltas,
             Err(err) => return Err(err),
         };
 
+        let title = {
+            let path_name = path.file_name().unwrap();
+            match path_name.to_str() {
+                Some(str_name) => str_name.to_owned(),
+                None => path_name.to_string_lossy().deref().to_owned(),
+            }
+        };
+
         Ok(Self {
-            // TODO error check?
-            // this is file so it should be
-            title: path.file_name().unwrap().to_str().unwrap().to_owned(),
-            path: Some(path.clone()),
+            title,
+            path: Some(path.to_path_buf()),
             got_modified: false,
-            hltas: hltas.to_owned(),
+            hltas,
         })
     }
 
-    pub fn title_from_path(path: &PathBuf, lang: &LanguageIdentifier) -> String {
+    pub fn title_from_path<'b>(path: &'b PathBuf, lang: &'b LanguageIdentifier) -> String {
         if let Some(os_str) = path.file_name() {
             if let Some(str) = os_str.to_str() {
                 return str.to_owned();
             }
         }
-        HLTASFileTab::default_title(lang).to_owned()
+        HLTASFileTab::default_title(&lang)
     }
 
     // BUG fix language change for title (opt out serialization for the titles?)
     fn default_title(lang: &LanguageIdentifier) -> String {
-        crate::LOCALES.lookup(lang, "new-file-title")
+        crate::LOCALES.lookup(&lang, "new-file-title")
     }
 
     pub fn new_file(lang: &LanguageIdentifier) -> Self {

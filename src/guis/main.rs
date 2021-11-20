@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::egui::button::close_button;
@@ -55,7 +56,7 @@ impl MainGUI {
         }
     }
 
-    fn add_recent_path(&mut self, path: &PathBuf) {
+    fn add_recent_path(&mut self, path: &Path) {
         let path_as_str = path.as_os_str().to_str();
 
         // dupe check, deletes dupe
@@ -70,18 +71,18 @@ impl MainGUI {
             self.recent_paths.remove(dupe_index);
         }
 
-        self.recent_paths.push_back(path.clone());
+        self.recent_paths.push_back(path.to_owned());
 
         if self.recent_paths.len() > Self::recent_path_max_size() {
             self.recent_paths.pop_front();
         }
     }
 
-    pub fn open_file(&mut self, path: &PathBuf) {
+    pub fn open_file(&mut self, path: &Path) {
         // check for dupe tab and switch to it if found
         let dupe_tab_index = self.tabs.iter().position(|tab| {
             if let Some(tab_path) = &tab.path {
-                return tab_path.as_path() == path.as_path();
+                return tab_path.as_path() == path;
             }
             false
         });
@@ -92,12 +93,12 @@ impl MainGUI {
         }
 
         if let Ok(file_content) = fs::read_to_string(&path) {
-            match HLTASFileTab::open_path(&path, &file_content) {
+            match HLTASFileTab::open_path(path, &file_content) {
                 Ok(tab) => {
                     self.tabs.push(tab);
                     self.current_tab_index = Some(self.tabs.len() - 1);
 
-                    self.add_recent_path(&path);
+                    self.add_recent_path(path);
                 }
                 Err(err) => {
                     MessageDialog::new()
@@ -135,24 +136,17 @@ impl MainGUI {
             }
 
             let tab = &mut self.tabs[current_tab];
-            let mut save_path: Option<PathBuf> = None;
-            let mut new_file = false;
-            println!("current tab index {:#?}", &self.current_tab_index);
-            println!("current tab path {:#?}", &tab.path);
             if let Some(path) = &tab.path {
-                save_path = Some(path.to_owned());
+                // save_path = Some(path.to_owned());
+                fs::write(path, hltas_to_str(&tab.hltas))?;
             } else {
                 // no file, save as new file
                 if let Ok(path) = Self::ask_hltas_save_location() {
-                    save_path = path;
-                    new_file = true;
-                }
-            }
-
-            if let Some(path) = save_path {
-                fs::write(&path, hltas_to_str(&tab.hltas))?;
-                if new_file {
-                    tab.title = HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
+                    if let Some(path) = path {
+                        fs::write(&path, hltas_to_str(&tab.hltas))?;
+                        tab.title =
+                            HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
+                    }
                 }
             }
         }
@@ -252,7 +246,7 @@ impl epi::App for MainGUI {
 
         // TODO use system fonts and somehow match language
         let mut fonts = FontDefinitions::default();
-        let msgothic_font = "msgothic";
+        let msgothic_font = String::from("msgothic");
 
         fonts.font_data.insert(
             msgothic_font.to_owned(),
@@ -262,7 +256,7 @@ impl epi::App for MainGUI {
             .fonts_for_family
             .get_mut(&FontFamily::Proportional)
             .unwrap()
-            .insert(0, msgothic_font.to_owned());
+            .insert(0, msgothic_font);
 
         ctx.set_fonts(fonts);
 

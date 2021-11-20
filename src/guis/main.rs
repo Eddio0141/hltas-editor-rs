@@ -14,6 +14,7 @@ use eframe::{
 };
 use fluent_templates::Loader;
 use hltas::types::{Line, Seeds};
+use hltas::HLTAS;
 use hltas_cleaner::cleaners;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
@@ -176,6 +177,25 @@ impl MainGUI {
         }
     }
 
+    pub fn close_tab(&mut self, index: usize) {
+        if index >= self.tabs.len() {
+            return;
+        }
+
+        let current_tab = &self.tabs[index];
+
+        if current_tab.got_modified {
+            if let Ok(_) = self.save_current_tab(Some(
+                "Would you like to save the modified file?".to_string(),
+            )) {
+                self.tabs.remove(index);
+            }
+            // else do nothing since we can't close the tab
+        } else {
+            self.tabs.remove(index);
+        }
+    }
+
     // pub fn set_current_tab_title(&mut self) {
     //     if let Some(index) = self.current_tab_index {
     //         // println!("current index {}", index);
@@ -245,6 +265,31 @@ impl epi::App for MainGUI {
             .insert(0, msgothic_font.to_owned());
 
         ctx.set_fonts(fonts);
+
+        // attempt to load files cause it could change content
+        // TODO change this into a check if file changed, I still want to store state of edited hltas in the editor
+        let mut stale_tabs = Vec::new();
+
+        if self.tabs.len() > 0 {
+            for (i, tab) in self.tabs.iter_mut().enumerate() {
+                if let Some(path) = &tab.path {
+                    match fs::read_to_string(&path) {
+                        Ok(content) => match HLTAS::from_str(&content) {
+                            Ok(hltas) => tab.hltas = hltas,
+                            Err(_) => stale_tabs.push(i),
+                        },
+                        Err(_) => stale_tabs.push(i),
+                    }
+                }
+            }
+        }
+
+        // TODO think of a better way to handle this
+        stale_tabs.reverse();
+
+        for stale_tab in stale_tabs {
+            self.close_tab(stale_tab);
+        }
     }
 
     // fn warm_up_enabled(&self) -> bool {

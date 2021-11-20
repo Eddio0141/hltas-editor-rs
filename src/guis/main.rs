@@ -15,7 +15,7 @@ use eframe::{
     epi,
 };
 use fluent_templates::Loader;
-use hltas::types::{Line, Seeds};
+use hltas::types::{Line, Seeds, VectorialStrafingConstraints};
 use hltas::HLTAS;
 use hltas_cleaner::cleaners;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
@@ -647,7 +647,7 @@ impl epi::App for MainGUI {
                             // let mut new_comment_insert = None;
                             // let focus_mem_id = Id::new("focus_mem");
 
-                            for (i, line) in &mut hltas.lines.iter_mut().enumerate() {
+                            for line in &mut hltas.lines {
                                 ui.horizontal(|ui| match line {
                                     Line::FrameBulk(framebulk) => {
                                         frametime_changer(&mut framebulk.frame_time, ui);
@@ -720,10 +720,49 @@ impl epi::App for MainGUI {
                                         //     ui.memory().id_data_temp.insert(focus_mem_id, Some(i + 1));
                                         // }
                                     }
-                                    Line::VectorialStrafing(vectorial_strafing) => {}
+                                    Line::VectorialStrafing(vectorial_strafing) => {
+                                        ui.checkbox(vectorial_strafing, "vectorial strafing");
+                                    }
                                     Line::VectorialStrafingConstraints(
                                         vectorial_strafing_constraints,
-                                    ) => {}
+                                    ) => {
+                                        let target_yaw_colour = Color32::from_rgb(255, 0, 0);
+                                        match vectorial_strafing_constraints {
+                                            VectorialStrafingConstraints::VelocityYaw {
+                                                tolerance,
+                                            } => {
+                                                ui.label("VelocityYaw");
+                                            }
+                                            VectorialStrafingConstraints::AvgVelocityYaw {
+                                                tolerance,
+                                            } => {
+                                                ui.colored_label(
+                                                    target_yaw_colour,
+                                                    "target_yaw velocity_avg +-",
+                                                );
+                                                // TODO idk the limit
+                                                ui.add(
+                                                    DragValue::new(tolerance)
+                                                        .speed(0.05)
+                                                        .clamp_range(0.0..=360.0),
+                                                );
+                                            }
+                                            VectorialStrafingConstraints::VelocityYawLocking {
+                                                tolerance,
+                                            } => {
+                                                ui.label("VelocityYawLocking");
+                                            }
+                                            VectorialStrafingConstraints::Yaw {
+                                                yaw,
+                                                tolerance,
+                                            } => {
+                                                ui.label(format!("Yaw {} {}", yaw, tolerance));
+                                            }
+                                            VectorialStrafingConstraints::YawRange { from, to } => {
+                                                ui.label("YawRange");
+                                            }
+                                        }
+                                    }
                                     Line::Change(change) => {}
                                     Line::TargetYawOverride(target_yaw) => {}
                                 });

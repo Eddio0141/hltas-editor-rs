@@ -37,6 +37,7 @@ pub fn frametime_changer(frametime: &mut String, ui: &mut Ui) {
         }
 
         // TODO option?
+        // TODO customizable fps buttons?
         let frametime_0ms_button = Button::new("0ms frame").text_color(Color32::from_rgb(173, 216, 230));
 
         if ui.add(frametime_0ms_button).clicked() && (!changed_fps && !changed_frametime) {

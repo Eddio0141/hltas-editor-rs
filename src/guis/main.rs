@@ -8,14 +8,13 @@ use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
 use crate::widgets::hltas::{frametime_changer, selectable_values_from_button};
 use crate::widgets::menu::top_bottom_panel::tab::HLTASFileTab;
-use eframe::egui::style::Spacing;
-use eframe::egui::{Button, CollapsingHeader, Color32, DragValue, Id, TextEdit, Vec2};
+use eframe::egui::{Button, CollapsingHeader, Color32, DragValue, Id, TextEdit};
 use eframe::{
     egui::{self, menu, FontDefinitions, FontFamily, Key, Label, Modifiers, Sense},
     epi,
 };
 use fluent_templates::Loader;
-use hltas::types::{Buttons, Line, Seeds, VectorialStrafingConstraints};
+use hltas::types::{Buttons, ChangeTarget, Line, Seeds, VectorialStrafingConstraints};
 use hltas::HLTAS;
 use hltas_cleaner::cleaners;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
@@ -679,13 +678,29 @@ impl epi::App for MainGUI {
                                             } => {
                                                 ui.separator();
                                                 ui.label("air left");
-                                                selectable_values_from_button(air_left, ui, Id::new("air_left"));
+                                                selectable_values_from_button(
+                                                    air_left,
+                                                    ui,
+                                                    Id::new("air_left"),
+                                                );
                                                 ui.label("air right");
-                                                selectable_values_from_button(air_right, ui, Id::new("air_right"));
+                                                selectable_values_from_button(
+                                                    air_right,
+                                                    ui,
+                                                    Id::new("air_right"),
+                                                );
                                                 ui.label("ground left");
-                                                selectable_values_from_button(ground_left, ui, Id::new("ground_left"));
+                                                selectable_values_from_button(
+                                                    ground_left,
+                                                    ui,
+                                                    Id::new("ground_left"),
+                                                );
                                                 ui.label("ground right");
-                                                selectable_values_from_button(ground_right, ui, Id::new("ground_right"));
+                                                selectable_values_from_button(
+                                                    ground_right,
+                                                    ui,
+                                                    Id::new("ground_right"),
+                                                );
                                             }
                                         }
                                     }
@@ -763,14 +778,23 @@ impl epi::App for MainGUI {
                                             VectorialStrafingConstraints::VelocityYaw {
                                                 tolerance,
                                             } => {
-                                                ui.label("VelocityYaw");
+                                                ui.colored_label(
+                                                    target_yaw_colour,
+                                                    "target yaw velocity",
+                                                );
+                                                // TODO idk the limit
+                                                ui.add(
+                                                    DragValue::new(tolerance)
+                                                        .speed(0.05)
+                                                        .clamp_range(0.0..=360.0),
+                                                );
                                             }
                                             VectorialStrafingConstraints::AvgVelocityYaw {
                                                 tolerance,
                                             } => {
                                                 ui.colored_label(
                                                     target_yaw_colour,
-                                                    "target_yaw velocity_avg +-",
+                                                    "target yaw velocity avg +-",
                                                 );
                                                 // TODO idk the limit
                                                 ui.add(
@@ -782,21 +806,74 @@ impl epi::App for MainGUI {
                                             VectorialStrafingConstraints::VelocityYawLocking {
                                                 tolerance,
                                             } => {
-                                                ui.label("VelocityYawLocking");
+                                                ui.colored_label(
+                                                    target_yaw_colour,
+                                                    "target_yaw velocity_lock",
+                                                );
+                                                ui.add(
+                                                    DragValue::new(tolerance)
+                                                        .speed(0.05)
+                                                        .clamp_range(0.0..=360.0),
+                                                );
                                             }
                                             VectorialStrafingConstraints::Yaw {
                                                 yaw,
                                                 tolerance,
                                             } => {
-                                                ui.label(format!("Yaw {} {}", yaw, tolerance));
+                                                ui.colored_label(target_yaw_colour, "target yaw ");
+                                                ui.add(
+                                                    DragValue::new(yaw)
+                                                        .speed(0.05)
+                                                        .clamp_range(0.0..=360.0),
+                                                );
+                                                ui.colored_label(target_yaw_colour, "+-");
+                                                ui.add(
+                                                    DragValue::new(tolerance)
+                                                        .speed(0.05)
+                                                        .clamp_range(0.0..=360.0),
+                                                );
                                             }
                                             VectorialStrafingConstraints::YawRange { from, to } => {
-                                                ui.label("YawRange");
+                                                ui.label("target_yaw from");
+                                                ui.add(
+                                                    DragValue::new(from)
+                                                        .speed(0.05)
+                                                        .clamp_range(0.0..=360.0),
+                                                );
+                                                ui.label("to");
+                                                ui.add(
+                                                    DragValue::new(to)
+                                                        .speed(0.05)
+                                                        .clamp_range(0.0..=360.0),
+                                                );
                                             }
                                         }
                                     }
-                                    Line::Change(change) => {}
-                                    Line::TargetYawOverride(target_yaw) => {}
+                                    Line::Change(change) => {
+                                        let target_text = match change.target {
+                                            ChangeTarget::Yaw => "yaw",
+                                            ChangeTarget::Pitch => "pitch",
+                                            ChangeTarget::VectorialStrafingYaw => "target_yaw",
+                                        };
+
+                                        ui.label(format!("change {} to", target_text));
+                                        ui.add(
+                                            DragValue::new(&mut change.final_value)
+                                                .speed(0.05)
+                                                .clamp_range(0.0..=360.0),
+                                        );
+                                        ui.label("over");
+                                        ui.add(
+                                            DragValue::new(&mut change.over)
+                                                .speed(0.01)
+                                                .clamp_range(0.0..=f32::INFINITY),
+                                        );
+                                        ui.label("s");
+                                    }
+                                    // TODO implement target_yaw_override
+                                    Line::TargetYawOverride(_target_yaw) => {
+                                        ui.label("target_yaw_override...");
+                                    }
                                 });
                             }
 

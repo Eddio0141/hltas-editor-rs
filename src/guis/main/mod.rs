@@ -333,9 +333,8 @@ impl epi::App for MainGUI {
                     ..Default::default()
                 },
             )),
-            crate::LOCALES
-                .lookup(&self.locale_lang.get_lang(), "new-file")
-                .to_string(),
+            "new-file",
+            self.locale_lang.get_lang(),
             |main_gui| main_gui.new_file(),
         );
         let mut open_file = MenuButton::new(
@@ -347,9 +346,8 @@ impl epi::App for MainGUI {
                     ..Default::default()
                 },
             )),
-            crate::LOCALES
-                .lookup(&self.locale_lang.get_lang(), "open-file")
-                .to_string(),
+            "open-file",
+            self.locale_lang.get_lang(),
             |main_gui| main_gui.open_file_by_dialog(),
         );
         let mut save_file = MenuButton::new(
@@ -361,9 +359,8 @@ impl epi::App for MainGUI {
                     ..Default::default()
                 },
             )),
-            crate::LOCALES
-                .lookup(&self.locale_lang.get_lang(), "save-file")
-                .to_string(),
+            "save-file",
+            self.locale_lang.get_lang(),
             // TODO error handle
             |main_gui| {
                 main_gui.save_current_tab(None).ok();
@@ -378,9 +375,8 @@ impl epi::App for MainGUI {
                     ..Default::default()
                 },
             )),
-            crate::LOCALES
-                .lookup(&self.locale_lang.get_lang(), "close-file")
-                .to_string(),
+            "close-file",
+            self.locale_lang.get_lang(),
             |main_gui| main_gui.close_current_tab(),
         );
 

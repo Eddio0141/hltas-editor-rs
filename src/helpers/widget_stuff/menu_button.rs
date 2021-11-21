@@ -1,4 +1,5 @@
 use eframe::egui::{CtxRef, Key, Modifiers, Ui};
+use fluent_templates::{LanguageIdentifier, Loader};
 
 use crate::{guis::main::MainGUI, helpers::egui::key::key_to_string};
 
@@ -17,7 +18,16 @@ impl<T> MenuButton<T>
 where
     T: FnMut(&mut MainGUI) -> (),
 {
-    pub fn new(shortcut: Option<(Key, Modifiers)>, mut name: String, on_click: T) -> Self {
+    pub fn new(
+        shortcut: Option<(Key, Modifiers)>,
+        translation_text_id: &str,
+        language: LanguageIdentifier,
+        on_click: T,
+    ) -> Self {
+        let mut name = crate::LOCALES
+            .lookup(&language, translation_text_id)
+            .to_string();
+
         if let Some(key_press) = shortcut {
             let key = &key_press.0;
             let modifiers = &key_press.1;

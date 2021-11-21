@@ -677,9 +677,14 @@ impl epi::App for MainGUI {
                                                 ground_left,
                                                 ground_right,
                                             } => {
+                                                ui.separator();
+                                                ui.label("air left");
                                                 selectable_values_from_button(air_left, ui, Id::new("air_left"));
+                                                ui.label("air right");
                                                 selectable_values_from_button(air_right, ui, Id::new("air_right"));
+                                                ui.label("ground left");
                                                 selectable_values_from_button(ground_left, ui, Id::new("ground_left"));
+                                                ui.label("ground right");
                                                 selectable_values_from_button(ground_right, ui, Id::new("ground_right"));
                                             }
                                         }

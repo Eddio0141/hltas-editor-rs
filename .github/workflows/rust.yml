@@ -1,18 +1,15 @@
 name: CI
 
 # original from https://github.com/YaLTeR/bxt-rs/blob/master/.github/workflows/ci.yml
+# TODO reduce repetition
 on:
   push:
   pull_request:
 
 jobs:
-  build-linux:
-    name: Build on Linux (${{ matrix.configuration }})
+  build-linux-release:
+    name: Build on Linux release
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        configuration: ["release", "debug"]
 
     steps:
       - uses: actions/checkout@v2
@@ -31,26 +28,57 @@ jobs:
           target: i686-unknown-linux-gnu
           override: true
 
-      # better way to do this?
-      - if: ${{ matrix.configuration == 'debug' }}
-        name: Build
-        run: cargo build --verbose
-      - if: ${{ matrix.configuration == 'release' }}
-        run: cargo build --release --verbose
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
 
       - uses: actions/upload-artifact@v2
         with:
-          name: hltas-editor-rs-${{ runner.os }}-${{ matrix.configuration }}
-          path: target/${{ matrix.configuration }}/hltas-editor-rs.so
+          name: hltas-editor-rs-linux-release
+          path: target/release/hltas-editor-rs
 
-  build-windows:
-    name: Build on Windows (${{ matrix.configuration }})
+  build-linux-debug:
+    name: Build on Linux debug
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxcb-shape0-dev
+          sudo apt-get install libxcb-xfixes0-dev
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: i686-unknown-linux-gnu
+          override: true
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: hltas-editor-rs-linux-debug
+          path: target/debug/hltas-editor-rs
+
+  build-windows-release:
+    name: Build on Windows release
     runs-on: windows-2019
-
-    strategy:
-      fail-fast: false
-      matrix:
-        configuration: ["release", "debug"]
 
     steps:
       - uses: actions/checkout@v2
@@ -63,13 +91,44 @@ jobs:
           target: i686-pc-windows-msvc
           override: true
 
-      - if: ${{ matrix.configuration == 'debug' }}
-        name: Build
-        run: cargo build --verbose
-      - if: ${{ matrix.configuration == 'release' }}
-        run: cargo build --release --verbose
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
 
       - uses: actions/upload-artifact@v2
         with:
-          name: hltas-editor-rs-${{ runner.os }}-${{ matrix.configuration }}
-          path: target\${{ matrix.configuration }}\hltas-editor-rs.exe
+          name: hltas-editor-rs-windows-release
+          path: target\release\hltas-editor-rs.exe
+
+  build-windows-debug:
+    name: Build on Windows debug
+    runs-on: windows-2019
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: i686-pc-windows-msvc
+          override: true
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: hltas-editor-rs-windows-debug
+          path: target\debug\hltas-editor-rs.exe

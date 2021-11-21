@@ -6,7 +6,7 @@ use crate::helpers::egui::containers::popup_to_widget_right;
 use crate::helpers::hltas::{frametime, hltas_to_str};
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
-use crate::widgets::hltas::frametime_changer;
+use crate::widgets::hltas::{frametime_changer, selectable_values_from_button};
 use crate::widgets::menu::top_bottom_panel::tab::HLTASFileTab;
 use eframe::egui::style::Spacing;
 use eframe::egui::{Button, CollapsingHeader, Color32, DragValue, Id, TextEdit, Vec2};
@@ -15,7 +15,7 @@ use eframe::{
     epi,
 };
 use fluent_templates::Loader;
-use hltas::types::{Line, Seeds, VectorialStrafingConstraints};
+use hltas::types::{Buttons, Line, Seeds, VectorialStrafingConstraints};
 use hltas::HLTAS;
 use hltas_cleaner::cleaners;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
@@ -663,8 +663,35 @@ impl epi::App for MainGUI {
                                         // TODO settings for seed drag changer
                                         ui.add(DragValue::new(shared_seed).speed(0.05));
                                     }
-                                    Line::Buttons(buttons) => {}
-                                    Line::LGAGSTMinSpeed(lgagstminspd) => {}
+                                    Line::Buttons(buttons) => {
+                                        // ui.style_mut().spacing.item_spacing.x = 0.0;
+                                        ui.label("Buttons");
+
+                                        match buttons {
+                                            Buttons::Reset => {
+                                                ui.label("reset");
+                                            }
+                                            Buttons::Set {
+                                                air_left,
+                                                air_right,
+                                                ground_left,
+                                                ground_right,
+                                            } => {
+                                                selectable_values_from_button(air_left, ui, Id::new("air_left"));
+                                                selectable_values_from_button(air_right, ui, Id::new("air_right"));
+                                                selectable_values_from_button(ground_left, ui, Id::new("ground_left"));
+                                                selectable_values_from_button(ground_right, ui, Id::new("ground_right"));
+                                            }
+                                        }
+                                    }
+                                    Line::LGAGSTMinSpeed(lgagstminspd) => {
+                                        ui.label("lgagst minimum speed ");
+                                        ui.add(
+                                            DragValue::new(lgagstminspd)
+                                                .speed(0.05)
+                                                .clamp_range(0.0..=f32::INFINITY),
+                                        );
+                                    }
                                     Line::Reset { non_shared_seed } => {
                                         // TODO seed changer helper function
                                         ui.style_mut().spacing.item_spacing.x = 0.0;

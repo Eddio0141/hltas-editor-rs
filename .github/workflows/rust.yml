@@ -1,5 +1,6 @@
 name: CI
 
+# original from https://github.com/YaLTeR/bxt-rs/blob/master/.github/workflows/ci.yml
 on:
   push:
   pull_request:
@@ -70,5 +71,5 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: BunnymodXT-${{ runner.os }}-${{ matrix.configuration }}
+          name: hltas-editor-rs-${{ runner.os }}-${{ matrix.configuration }}
           path: target\${{ matrix.configuration }}\hltas-editor-rs.exe

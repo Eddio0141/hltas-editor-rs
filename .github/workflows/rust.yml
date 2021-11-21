@@ -1,24 +1,99 @@
-name: Rust
+name: CI
 
 on:
   push:
-    branches: [ master ]
   pull_request:
-    branches: [ master ]
-
-env:
-  CARGO_TERM_COLOR: always
+  # schedule:
+  #   - cron: "0 0 1 * *" # Monthly
 
 jobs:
-  build:
-
+  build-linux:
+    name: Build on Linux (${{ matrix.configuration }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Release, Debug]
 
     steps:
-    - run: sudo apt install libxcb-shape0-dev -y
-    - run: sudo apt install libxcb-xfixes0-dev -y
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v2
+
+      # - name: Install dependencies
+      #   run: |
+      #     sudo dpkg --add-architecture i386
+      #     sudo apt-get update
+      #     sudo apt-get install g++-multilib libboost-dev mesa-common-dev ninja-build libgl-dev:i386
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: i686-unknown-linux-gnu
+          override: true
+
+      # - name: Generate the build system
+      #   run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.configuration }}
+
+      - name: Build
+        run: cmake --build build
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: hltas-editor-rs-${{ runner.os }}-${{ matrix.configuration }}
+          path: build/hltas-editor-rs.so
+
+  # build-flatpak:
+  #   name: Build under Flatpak
+  #   runs-on: ubuntu-latest
+
+  #   container:
+  #     image: bilelmoussaoui/flatpak-github-actions:freedesktop-20.08
+  #     options: --privileged
+
+  #   steps:
+  #     - uses: actions/checkout@v2
+
+  #     - uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v3
+  #       with:
+  #         manifest-path: build-aux/flatpak/rs.bxt.BunnymodXT.json
+  #         cache-key: flatpak-builder-${{ github.sha }}
+
+  build-windows:
+    name: Build on Windows (${{ matrix.configuration }})
+    runs-on: windows-2019
+
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Release, Debug]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: i686-pc-windows-msvc
+          override: true
+
+      # - name: Install Boost
+      #   id: install-boost
+      #   uses: MarkusJx/install-boost@v2.0.0
+      #   with:
+      #     boost_version: 1.77.0
+
+      # - name: Generate the build system
+      #   run: cmake -B build -A Win32
+        # env:
+        #   BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.configuration }} -j $env:NUMBER_OF_PROCESSORS
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: BunnymodXT-${{ runner.os }}-${{ matrix.configuration }}
+          path: build\${{ matrix.configuration }}\BunnymodXT.dll

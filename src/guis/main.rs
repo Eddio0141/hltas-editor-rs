@@ -649,6 +649,7 @@ impl epi::App for MainGUI {
                             for line in &mut hltas.lines {
                                 ui.horizontal(|ui| match line {
                                     Line::FrameBulk(framebulk) => {
+                                        // s03ljDbcgw|flrbud|jdu12r|0.001|180|-89|1|cmd
                                         frametime_changer(&mut framebulk.frame_time, ui);
                                     }
                                     Line::Save(save) => {

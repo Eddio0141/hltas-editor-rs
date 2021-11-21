@@ -3,8 +3,6 @@ name: CI
 on:
   push:
   pull_request:
-  # schedule:
-  #   - cron: "0 0 1 * *" # Monthly
 
 jobs:
   build-linux:
@@ -13,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        configuration: [Release, Debug]
+        configuration: ["release", "debug"]
 
     steps:
       - uses: actions/checkout@v2
@@ -32,32 +30,17 @@ jobs:
           target: i686-unknown-linux-gnu
           override: true
 
-      # - name: Generate the build system
-      #   run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.configuration }}
-
-      - name: Build
-        run: cmake --build build
+      # better way to do this?
+      - if: ${{ matrix.configuration == 'debug' }}
+        name: Build
+        run: cargo build --verbose
+      - if: ${{ matrix.configuration == 'release' }}
+        run: cargo build --release --verbose
 
       - uses: actions/upload-artifact@v2
         with:
           name: hltas-editor-rs-${{ runner.os }}-${{ matrix.configuration }}
-          path: build/hltas-editor-rs.so
-
-  # build-flatpak:
-  #   name: Build under Flatpak
-  #   runs-on: ubuntu-latest
-
-  #   container:
-  #     image: bilelmoussaoui/flatpak-github-actions:freedesktop-20.08
-  #     options: --privileged
-
-  #   steps:
-  #     - uses: actions/checkout@v2
-
-  #     - uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v3
-  #       with:
-  #         manifest-path: build-aux/flatpak/rs.bxt.BunnymodXT.json
-  #         cache-key: flatpak-builder-${{ github.sha }}
+          path: target/${{ matrix.configuration }}/hltas-editor-rs.so
 
   build-windows:
     name: Build on Windows (${{ matrix.configuration }})
@@ -66,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        configuration: [Release, Debug]
+        configuration: ["release", "debug"]
 
     steps:
       - uses: actions/checkout@v2
@@ -79,21 +62,13 @@ jobs:
           target: i686-pc-windows-msvc
           override: true
 
-      # - name: Install Boost
-      #   id: install-boost
-      #   uses: MarkusJx/install-boost@v2.0.0
-      #   with:
-      #     boost_version: 1.77.0
-
-      # - name: Generate the build system
-      #   run: cmake -B build -A Win32
-        # env:
-        #   BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
-
-      - name: Build
-        run: cmake --build build --config ${{ matrix.configuration }} -j $env:NUMBER_OF_PROCESSORS
+      - if: ${{ matrix.configuration == 'debug' }}
+        name: Build
+        run: cargo build --verbose
+      - if: ${{ matrix.configuration == 'release' }}
+        run: cargo build --release --verbose
 
       - uses: actions/upload-artifact@v2
         with:
           name: BunnymodXT-${{ runner.os }}-${{ matrix.configuration }}
-          path: build\${{ matrix.configuration }}\BunnymodXT.dll
+          path: target\${{ matrix.configuration }}\hltas-editor-rs.exe

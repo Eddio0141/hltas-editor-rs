@@ -1,13 +1,14 @@
+mod tab;
+
 use std::path::Path;
 use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::egui::button::close_button;
 use crate::helpers::egui::containers::popup_to_widget_right;
+use crate::helpers::egui::hltas::{frametime_changer, selectable_values_from_button};
 use crate::helpers::hltas::{frametime, hltas_to_str};
 use crate::helpers::locale::locale_lang::LocaleLang;
 use crate::helpers::widget_stuff::menu_button::MenuButton;
-use crate::widgets::hltas::{frametime_changer, selectable_values_from_button};
-use crate::widgets::menu::top_bottom_panel::tab::HLTASFileTab;
 use eframe::egui::{Button, CollapsingHeader, Color32, DragValue, Id, TextEdit};
 use eframe::{
     egui::{self, menu, FontDefinitions, FontFamily, Key, Label, Modifiers, Sense},
@@ -18,6 +19,8 @@ use hltas::types::{Buttons, ChangeTarget, Line, Seeds, VectorialStrafingConstrai
 use hltas::HLTAS;
 use hltas_cleaner::cleaners;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
+
+use self::tab::HLTASFileTab;
 
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))]
@@ -250,7 +253,7 @@ impl epi::App for MainGUI {
 
         fonts.font_data.insert(
             msgothic_font.to_owned(),
-            std::borrow::Cow::Borrowed(include_bytes!("../../fonts/msgothic.ttc")),
+            std::borrow::Cow::Borrowed(include_bytes!("../../../fonts/msgothic.ttc")),
         );
         fonts
             .fonts_for_family

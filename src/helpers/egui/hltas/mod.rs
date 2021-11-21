@@ -3,8 +3,6 @@ use hltas::types::Button;
 
 use crate::helpers::hltas::{button_to_str, fps, frametime};
 
-// TODO move this into somewhere else appropriate?
-
 // TODO options for dragvalue
 pub fn frametime_changer(frametime: &mut String, ui: &mut Ui) {
     if let Ok(mut frametime_f32) = frametime.parse::<f32>() {

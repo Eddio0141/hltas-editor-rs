@@ -13,15 +13,15 @@ pub fn frametime_changer(frametime: &mut String, ui: &mut Ui) {
 
         // TODO option or fps.rs?
         if frametime::is_0ms(frametime) {
-            let bg_color = ui.visuals().code_bg_color;
+            // let bg_color = ui.visuals().code_bg_color;
             ui.add(
                 Label::new(format!("{} 0ms", &frametime_prefix))
-                    .background_color(bg_color)
+                    // .background_color(bg_color)
                     .text_color(color_0ms),
             );
             ui.add(
                 Label::new(format!("{} 0ms", &fps_prefix))
-                    .background_color(bg_color)
+                    // .background_color(bg_color)
                     .text_color(color_0ms),
             );
         } else {

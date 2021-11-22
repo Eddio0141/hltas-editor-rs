@@ -3,6 +3,7 @@ use std::num::NonZeroU32;
 
 use super::frametime_changer::frametime_changer;
 use super::selectable_hltas_button::selectable_hltas_button;
+use super::strafe_selector::strafe_selector;
 use super::tab::HLTASFileTab;
 use crate::helpers::egui::button::close_button;
 use crate::helpers::hltas::frametime;
@@ -98,203 +99,232 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
             // let mut new_comment_insert = None;
             // let focus_mem_id = Id::new("focus_mem");
 
-            for line in &mut hltas.lines {
-                ui.horizontal(|ui| match line {
-                    Line::FrameBulk(framebulk) => {
-                        // s03ljDbcgw|flrbud|jdu12r|0.001|180|-89|1|cmd
-                        frametime_changer(&mut framebulk.frame_time, ui);
-                        ui.separator();
-                        let mut framecount_unwrapped = framebulk.frame_count.get();
-                        let framecount_changed = ui
-                            .add(
-                                DragValue::new(&mut framecount_unwrapped).clamp_range(1..=u32::MAX),
-                            )
-                            .changed();
+            for (i, line) in &mut hltas.lines.iter_mut().enumerate() {
+                ui.horizontal(
+                    |ui| match line {
+                        Line::FrameBulk(framebulk) => {
+                            // s03ljDbcgw|flrbud|jdu12r|0.001|180|-89|1|cmd
+                            strafe_selector(
+                                &mut framebulk.auto_actions.movement,
+                                ui,
+                                Id::new(format!("strafe_selector_{}", i)),
+                            );
 
-                        if framecount_changed {
-                            if let Ok(framecount) = NonZeroU32::try_from(framecount_unwrapped) {
-                                framebulk.frame_count = framecount;
+                            frametime_changer(&mut framebulk.frame_time, ui);
+                            ui.separator();
+                            let mut framecount_unwrapped = framebulk.frame_count.get();
+                            let framecount_changed = ui
+                                .add(
+                                    DragValue::new(&mut framecount_unwrapped)
+                                        .clamp_range(1..=u32::MAX),
+                                )
+                                .changed();
+
+                            if framecount_changed {
+                                if let Ok(framecount) = NonZeroU32::try_from(framecount_unwrapped) {
+                                    framebulk.frame_count = framecount;
+                                }
+                            }
+
+                            ui.label("frames");
+                        }
+                        Line::Save(save) => {
+                            ui.label(save);
+                        }
+                        Line::SharedSeed(shared_seed) => {
+                            // TODO seed changer helper function
+                            ui.style_mut().spacing.item_spacing.x = 0.0;
+
+                            ui.label("seed ");
+                            // TODO settings for seed drag changer
+                            ui.add(DragValue::new(shared_seed).speed(0.05));
+                        }
+                        Line::Buttons(buttons) => {
+                            // ui.style_mut().spacing.item_spacing.x = 0.0;
+                            ui.label("Buttons");
+
+                            match buttons {
+                                Buttons::Reset => {
+                                    ui.label("reset");
+                                }
+                                Buttons::Set {
+                                    air_left,
+                                    air_right,
+                                    ground_left,
+                                    ground_right,
+                                } => {
+                                    ui.separator();
+                                    ui.label("air left");
+                                    selectable_hltas_button(air_left, ui, Id::new("air_left"));
+                                    ui.label("air right");
+                                    selectable_hltas_button(air_right, ui, Id::new("air_right"));
+                                    ui.label("ground left");
+                                    selectable_hltas_button(
+                                        ground_left,
+                                        ui,
+                                        Id::new("ground_left"),
+                                    );
+                                    ui.label("ground right");
+                                    selectable_hltas_button(
+                                        ground_right,
+                                        ui,
+                                        Id::new("ground_right"),
+                                    );
+                                }
                             }
                         }
+                        Line::LGAGSTMinSpeed(lgagstminspd) => {
+                            ui.label("lgagst minimum speed ");
+                            ui.add(
+                                DragValue::new(lgagstminspd)
+                                    .speed(0.05)
+                                    .clamp_range(0.0..=f32::INFINITY),
+                            );
+                        }
+                        Line::Reset { non_shared_seed } => {
+                            // TODO seed changer helper function
+                            ui.style_mut().spacing.item_spacing.x = 0.0;
 
-                        ui.label("frames");
-                    }
-                    Line::Save(save) => {
-                        ui.label(save);
-                    }
-                    Line::SharedSeed(shared_seed) => {
-                        // TODO seed changer helper function
-                        ui.style_mut().spacing.item_spacing.x = 0.0;
+                            ui.label("reset ");
+                            // TODO settings for seed drag changer
+                            ui.add(DragValue::new(non_shared_seed).speed(0.05));
+                        }
+                        Line::Comment(comment) => {
+                            ui.style_mut().spacing.item_spacing.x = 0.0;
+                            let comment_color = Color32::from_rgb(0, 255, 0);
+                            ui.colored_label(comment_color, "//");
+                            ui.add(
+                                TextEdit::singleline(comment)
+                                    .text_color(comment_color)
+                                    .desired_width(f32::INFINITY)
+                                    .frame(false),
+                            );
 
-                        ui.label("seed ");
-                        // TODO settings for seed drag changer
-                        ui.add(DragValue::new(shared_seed).speed(0.05));
-                    }
-                    Line::Buttons(buttons) => {
-                        // ui.style_mut().spacing.item_spacing.x = 0.0;
-                        ui.label("Buttons");
+                            // let focus_comment = if let Some(index) = ui
+                            //     .memory()
+                            //     .id_data_temp
+                            //     .get_or_insert_with(focus_mem_id, || {
+                            //         Option::<usize>::None
+                            //     }) {
+                            //     *index == i
+                            // } else {
+                            //     false
+                            // };
 
-                        match buttons {
-                            Buttons::Reset => {
-                                ui.label("reset");
-                            }
-                            Buttons::Set {
-                                air_left,
-                                air_right,
-                                ground_left,
-                                ground_right,
-                            } => {
-                                ui.separator();
-                                ui.label("air left");
-                                selectable_hltas_button(air_left, ui, Id::new("air_left"));
-                                ui.label("air right");
-                                selectable_hltas_button(air_right, ui, Id::new("air_right"));
-                                ui.label("ground left");
-                                selectable_hltas_button(ground_left, ui, Id::new("ground_left"));
-                                ui.label("ground right");
-                                selectable_hltas_button(ground_right, ui, Id::new("ground_right"));
+                            // let is_focused = {
+                            //     let response = ui.add(
+                            //         TextEdit::singleline(comment)
+                            //             .text_color(comment_color)
+                            //             .desired_width(f32::INFINITY)
+                            //             .frame(false),
+                            //     );
+                            //     if focus_comment {
+                            //         response.request_focus();
+                            //         ui.memory()
+                            //             .id_data_temp
+                            //             .insert(focus_mem_id, || Option::<usize>::None);
+
+                            //         true
+                            //     } else {
+                            //         response.lost_focus()
+                            //     }
+                            // };
+
+                            // if is_focused && ui.input().key_pressed(Key::Enter) {
+                            //     new_comment_insert = Some(i + 1);
+
+                            //     ui.memory().id_data_temp.insert(focus_mem_id, Some(i + 1));
+                            // }
+                        }
+                        Line::VectorialStrafing(vectorial_strafing) => {
+                            ui.checkbox(vectorial_strafing, "vectorial strafing");
+                        }
+                        Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => {
+                            let target_yaw_colour = Color32::from_rgb(255, 0, 0);
+                            match vectorial_strafing_constraints {
+                                VectorialStrafingConstraints::VelocityYaw { tolerance } => {
+                                    ui.colored_label(target_yaw_colour, "target yaw velocity");
+                                    // TODO idk the limit
+                                    ui.add(
+                                        DragValue::new(tolerance)
+                                            .speed(0.05)
+                                            .clamp_range(0.0..=360.0),
+                                    );
+                                }
+                                VectorialStrafingConstraints::AvgVelocityYaw { tolerance } => {
+                                    ui.colored_label(
+                                        target_yaw_colour,
+                                        "target yaw velocity avg +-",
+                                    );
+                                    // TODO idk the limit
+                                    ui.add(
+                                        DragValue::new(tolerance)
+                                            .speed(0.05)
+                                            .clamp_range(0.0..=360.0),
+                                    );
+                                }
+                                VectorialStrafingConstraints::VelocityYawLocking { tolerance } => {
+                                    ui.colored_label(target_yaw_colour, "target_yaw velocity_lock");
+                                    ui.add(
+                                        DragValue::new(tolerance)
+                                            .speed(0.05)
+                                            .clamp_range(0.0..=360.0),
+                                    );
+                                }
+                                VectorialStrafingConstraints::Yaw { yaw, tolerance } => {
+                                    ui.colored_label(target_yaw_colour, "target yaw ");
+                                    ui.add(
+                                        DragValue::new(yaw).speed(0.05).clamp_range(0.0..=360.0),
+                                    );
+                                    ui.colored_label(target_yaw_colour, "+-");
+                                    ui.add(
+                                        DragValue::new(tolerance)
+                                            .speed(0.05)
+                                            .clamp_range(0.0..=360.0),
+                                    );
+                                }
+                                VectorialStrafingConstraints::YawRange { from, to } => {
+                                    ui.label("target_yaw from");
+                                    ui.add(
+                                        DragValue::new(from).speed(0.05).clamp_range(0.0..=360.0),
+                                    );
+                                    ui.label("to");
+                                    ui.add(DragValue::new(to).speed(0.05).clamp_range(0.0..=360.0));
+                                }
                             }
                         }
-                    }
-                    Line::LGAGSTMinSpeed(lgagstminspd) => {
-                        ui.label("lgagst minimum speed ");
-                        ui.add(
-                            DragValue::new(lgagstminspd)
-                                .speed(0.05)
-                                .clamp_range(0.0..=f32::INFINITY),
-                        );
-                    }
-                    Line::Reset { non_shared_seed } => {
-                        // TODO seed changer helper function
-                        ui.style_mut().spacing.item_spacing.x = 0.0;
+                        Line::Change(change) => {
+                            let target_text = match change.target {
+                                ChangeTarget::Yaw => "yaw",
+                                ChangeTarget::Pitch => "pitch",
+                                ChangeTarget::VectorialStrafingYaw => "target_yaw",
+                            };
 
-                        ui.label("reset ");
-                        // TODO settings for seed drag changer
-                        ui.add(DragValue::new(non_shared_seed).speed(0.05));
-                    }
-                    Line::Comment(comment) => {
-                        ui.style_mut().spacing.item_spacing.x = 0.0;
-                        let comment_color = Color32::from_rgb(0, 255, 0);
-                        ui.colored_label(comment_color, "//");
-                        ui.add(
-                            TextEdit::singleline(comment)
-                                .text_color(comment_color)
-                                .desired_width(f32::INFINITY)
-                                .frame(false),
-                        );
-
-                        // let focus_comment = if let Some(index) = ui
-                        //     .memory()
-                        //     .id_data_temp
-                        //     .get_or_insert_with(focus_mem_id, || {
-                        //         Option::<usize>::None
-                        //     }) {
-                        //     *index == i
-                        // } else {
-                        //     false
-                        // };
-
-                        // let is_focused = {
-                        //     let response = ui.add(
-                        //         TextEdit::singleline(comment)
-                        //             .text_color(comment_color)
-                        //             .desired_width(f32::INFINITY)
-                        //             .frame(false),
-                        //     );
-                        //     if focus_comment {
-                        //         response.request_focus();
-                        //         ui.memory()
-                        //             .id_data_temp
-                        //             .insert(focus_mem_id, || Option::<usize>::None);
-
-                        //         true
-                        //     } else {
-                        //         response.lost_focus()
-                        //     }
-                        // };
-
-                        // if is_focused && ui.input().key_pressed(Key::Enter) {
-                        //     new_comment_insert = Some(i + 1);
-
-                        //     ui.memory().id_data_temp.insert(focus_mem_id, Some(i + 1));
-                        // }
-                    }
-                    Line::VectorialStrafing(vectorial_strafing) => {
-                        ui.checkbox(vectorial_strafing, "vectorial strafing");
-                    }
-                    Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => {
-                        let target_yaw_colour = Color32::from_rgb(255, 0, 0);
-                        match vectorial_strafing_constraints {
-                            VectorialStrafingConstraints::VelocityYaw { tolerance } => {
-                                ui.colored_label(target_yaw_colour, "target yaw velocity");
-                                // TODO idk the limit
-                                ui.add(
-                                    DragValue::new(tolerance)
-                                        .speed(0.05)
-                                        .clamp_range(0.0..=360.0),
-                                );
-                            }
-                            VectorialStrafingConstraints::AvgVelocityYaw { tolerance } => {
-                                ui.colored_label(target_yaw_colour, "target yaw velocity avg +-");
-                                // TODO idk the limit
-                                ui.add(
-                                    DragValue::new(tolerance)
-                                        .speed(0.05)
-                                        .clamp_range(0.0..=360.0),
-                                );
-                            }
-                            VectorialStrafingConstraints::VelocityYawLocking { tolerance } => {
-                                ui.colored_label(target_yaw_colour, "target_yaw velocity_lock");
-                                ui.add(
-                                    DragValue::new(tolerance)
-                                        .speed(0.05)
-                                        .clamp_range(0.0..=360.0),
-                                );
-                            }
-                            VectorialStrafingConstraints::Yaw { yaw, tolerance } => {
-                                ui.colored_label(target_yaw_colour, "target yaw ");
-                                ui.add(DragValue::new(yaw).speed(0.05).clamp_range(0.0..=360.0));
-                                ui.colored_label(target_yaw_colour, "+-");
-                                ui.add(
-                                    DragValue::new(tolerance)
-                                        .speed(0.05)
-                                        .clamp_range(0.0..=360.0),
-                                );
-                            }
-                            VectorialStrafingConstraints::YawRange { from, to } => {
-                                ui.label("target_yaw from");
-                                ui.add(DragValue::new(from).speed(0.05).clamp_range(0.0..=360.0));
-                                ui.label("to");
-                                ui.add(DragValue::new(to).speed(0.05).clamp_range(0.0..=360.0));
-                            }
+                            ui.label(format!("change {} to", target_text));
+                            ui.add(
+                                DragValue::new(&mut change.final_value)
+                                    .speed(0.05)
+                                    .clamp_range(0.0..=360.0),
+                            );
+                            ui.label("over");
+                            ui.add(
+                                DragValue::new(&mut change.over)
+                                    .speed(0.01)
+                                    .clamp_range(0.0..=f32::INFINITY),
+                            );
+                            ui.label("s");
                         }
-                    }
-                    Line::Change(change) => {
-                        let target_text = match change.target {
-                            ChangeTarget::Yaw => "yaw",
-                            ChangeTarget::Pitch => "pitch",
-                            ChangeTarget::VectorialStrafingYaw => "target_yaw",
-                        };
-
-                        ui.label(format!("change {} to", target_text));
-                        ui.add(
-                            DragValue::new(&mut change.final_value)
-                                .speed(0.05)
-                                .clamp_range(0.0..=360.0),
-                        );
-                        ui.label("over");
-                        ui.add(
-                            DragValue::new(&mut change.over)
-                                .speed(0.01)
-                                .clamp_range(0.0..=f32::INFINITY),
-                        );
-                        ui.label("s");
-                    }
-                    // TODO implement target_yaw_override
-                    Line::TargetYawOverride(_target_yaw) => {
-                        ui.label("target_yaw_override...");
-                    }
-                });
+                        // TODO implement target_yaw_override
+                        Line::TargetYawOverride(_target_yaw) => {
+                            ui.label("target_yaw_override...");
+                        }
+                    }, // ui.painter().rect(
+                       //     rect.expand(visuals.expansion),
+                       //     visuals.corner_radius,
+                       //     fill,
+                       //     stroke,
+                       // );
+                );
             }
 
             // TODO comment focus thing

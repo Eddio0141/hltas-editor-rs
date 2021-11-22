@@ -100,18 +100,30 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
             // let focus_mem_id = Id::new("focus_mem");
 
             for (i, line) in &mut hltas.lines.iter_mut().enumerate() {
-                ui.horizontal(
-                    |ui| match line {
-                        Line::FrameBulk(framebulk) => {
+                match line {
+                    Line::FrameBulk(framebulk) => {
+                        ui.horizontal(|ui| {
                             // s03ljDbcgw|flrbud|jdu12r|0.001|180|-89|1|cmd
+
+                            // ui.painter().rect(
+                            //     ui.available_rect_before_wrap(), /*.expand(ui.visuals().expansion)*/
+                            //     0.3,
+                            //     ui.visuals().code_bg_color,
+                            //     ui.style().visuals.widgets.inactive.fg_stroke,
+                            // );
+
                             strafe_selector(
                                 &mut framebulk.auto_actions.movement,
                                 ui,
                                 Id::new(format!("strafe_selector_{}", i)),
                             );
 
-                            frametime_changer(&mut framebulk.frame_time, ui);
                             ui.separator();
+
+                            frametime_changer(&mut framebulk.frame_time, ui);
+
+                            ui.separator();
+
                             let mut framecount_unwrapped = framebulk.frame_count.get();
                             let framecount_changed = ui
                                 .add(
@@ -127,19 +139,23 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
                             }
 
                             ui.label("frames");
-                        }
-                        Line::Save(save) => {
-                            ui.label(save);
-                        }
-                        Line::SharedSeed(shared_seed) => {
+                        });
+                    }
+                    Line::Save(save) => {
+                        ui.label(save);
+                    }
+                    Line::SharedSeed(shared_seed) => {
+                        ui.horizontal(|ui| {
                             // TODO seed changer helper function
                             ui.style_mut().spacing.item_spacing.x = 0.0;
 
                             ui.label("seed ");
                             // TODO settings for seed drag changer
                             ui.add(DragValue::new(shared_seed).speed(0.05));
-                        }
-                        Line::Buttons(buttons) => {
+                        });
+                    }
+                    Line::Buttons(buttons) => {
+                        ui.horizontal(|ui| {
                             // ui.style_mut().spacing.item_spacing.x = 0.0;
                             ui.label("Buttons");
 
@@ -171,25 +187,31 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
                                         Id::new("ground_right"),
                                     );
                                 }
-                            }
-                        }
-                        Line::LGAGSTMinSpeed(lgagstminspd) => {
+                            };
+                        });
+                    }
+                    Line::LGAGSTMinSpeed(lgagstminspd) => {
+                        ui.horizontal(|ui| {
                             ui.label("lgagst minimum speed ");
                             ui.add(
                                 DragValue::new(lgagstminspd)
                                     .speed(0.05)
                                     .clamp_range(0.0..=f32::INFINITY),
                             );
-                        }
-                        Line::Reset { non_shared_seed } => {
+                        });
+                    }
+                    Line::Reset { non_shared_seed } => {
+                        ui.horizontal(|ui| {
                             // TODO seed changer helper function
                             ui.style_mut().spacing.item_spacing.x = 0.0;
 
                             ui.label("reset ");
                             // TODO settings for seed drag changer
                             ui.add(DragValue::new(non_shared_seed).speed(0.05));
-                        }
-                        Line::Comment(comment) => {
+                        });
+                    }
+                    Line::Comment(comment) => {
+                        ui.horizontal(|ui| {
                             ui.style_mut().spacing.item_spacing.x = 0.0;
                             let comment_color = Color32::from_rgb(0, 255, 0);
                             ui.colored_label(comment_color, "//");
@@ -235,11 +257,13 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
 
                             //     ui.memory().id_data_temp.insert(focus_mem_id, Some(i + 1));
                             // }
-                        }
-                        Line::VectorialStrafing(vectorial_strafing) => {
-                            ui.checkbox(vectorial_strafing, "vectorial strafing");
-                        }
-                        Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => {
+                        });
+                    }
+                    Line::VectorialStrafing(vectorial_strafing) => {
+                        ui.checkbox(vectorial_strafing, "vectorial strafing");
+                    }
+                    Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => {
+                        ui.horizontal(|ui| {
                             let target_yaw_colour = Color32::from_rgb(255, 0, 0);
                             match vectorial_strafing_constraints {
                                 VectorialStrafingConstraints::VelocityYaw { tolerance } => {
@@ -264,12 +288,17 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
                                     );
                                 }
                                 VectorialStrafingConstraints::VelocityYawLocking { tolerance } => {
-                                    ui.colored_label(target_yaw_colour, "target_yaw velocity_lock");
-                                    ui.add(
-                                        DragValue::new(tolerance)
-                                            .speed(0.05)
-                                            .clamp_range(0.0..=360.0),
-                                    );
+                                    ui.horizontal(|ui| {
+                                        ui.colored_label(
+                                            target_yaw_colour,
+                                            "target_yaw velocity_lock",
+                                        );
+                                        ui.add(
+                                            DragValue::new(tolerance)
+                                                .speed(0.05)
+                                                .clamp_range(0.0..=360.0),
+                                        );
+                                    });
                                 }
                                 VectorialStrafingConstraints::Yaw { yaw, tolerance } => {
                                     ui.colored_label(target_yaw_colour, "target yaw ");
@@ -292,8 +321,10 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
                                     ui.add(DragValue::new(to).speed(0.05).clamp_range(0.0..=360.0));
                                 }
                             }
-                        }
-                        Line::Change(change) => {
+                        });
+                    }
+                    Line::Change(change) => {
+                        ui.horizontal(|ui| {
                             let target_text = match change.target {
                                 ChangeTarget::Yaw => "yaw",
                                 ChangeTarget::Pitch => "pitch",
@@ -313,18 +344,13 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
                                     .clamp_range(0.0..=f32::INFINITY),
                             );
                             ui.label("s");
-                        }
-                        // TODO implement target_yaw_override
-                        Line::TargetYawOverride(_target_yaw) => {
-                            ui.label("target_yaw_override...");
-                        }
-                    }, // ui.painter().rect(
-                       //     rect.expand(visuals.expansion),
-                       //     visuals.corner_radius,
-                       //     fill,
-                       //     stroke,
-                       // );
-                );
+                        });
+                    }
+                    // TODO implement target_yaw_override
+                    Line::TargetYawOverride(_target_yaw) => {
+                        ui.label("target_yaw_override...");
+                    }
+                };
             }
 
             // TODO comment focus thing

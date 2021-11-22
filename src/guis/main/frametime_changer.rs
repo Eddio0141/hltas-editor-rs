@@ -1,10 +1,11 @@
-use eframe::egui::{Color32, DragValue, Label, Ui, widgets};
+use eframe::egui::{Color32, DragValue, Label, Ui};
 
 use crate::helpers::hltas::{fps, frametime};
 
 // TODO options for dragvalue
 pub fn frametime_changer(frametime: &mut String, ui: &mut Ui) {
     if let Ok(mut frametime_f32) = frametime.parse::<f32>() {
+        // ui.style_mut().visuals.button_frame = false;
         let frametime_prefix = String::from("frametime: ");
         let fps_prefix = String::from("fps: ");
 
@@ -57,11 +58,11 @@ pub fn frametime_changer(frametime: &mut String, ui: &mut Ui) {
 
         // TODO option?
         // TODO customizable fps buttons?
-        let frametime_0ms_button = widgets::Button::new("0ms frame").text_color(color_0ms);
+        // let frametime_0ms_button = widgets::Button::new("0ms frame").text_color(color_0ms);
 
-        if ui.add(frametime_0ms_button).clicked() {
-            // TODO use 0ms settings
-            *frametime = "0.0000000001".to_string();
-        }
+        // if ui.add(frametime_0ms_button).clicked() {
+        //     // TODO use 0ms settings
+        //     *frametime = "0.0000000001".to_string();
+        // }
     }
 }

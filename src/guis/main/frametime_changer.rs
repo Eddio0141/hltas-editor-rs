@@ -1,7 +1,6 @@
-use eframe::egui::{widgets, Color32, ComboBox, DragValue, Id, Label, Ui};
-use hltas::types::Button;
+use eframe::egui::{Color32, DragValue, Label, Ui, widgets};
 
-use crate::helpers::hltas::{button_to_str, fps, frametime};
+use crate::helpers::hltas::{fps, frametime};
 
 // TODO options for dragvalue
 pub fn frametime_changer(frametime: &mut String, ui: &mut Ui) {
@@ -65,26 +64,4 @@ pub fn frametime_changer(frametime: &mut String, ui: &mut Ui) {
             *frametime = "0.0000000001".to_string();
         }
     }
-}
-
-// TODO think about this function a bit more you know
-pub fn selectable_values_from_button(button: &mut Button, ui: &mut Ui, id: Id) {
-    let buttons = vec![
-        Button::Back,
-        Button::BackLeft,
-        Button::BackRight,
-        Button::Forward,
-        Button::ForwardLeft,
-        Button::ForwardRight,
-        Button::Left,
-        Button::Right,
-    ];
-
-    ComboBox::from_id_source(id)
-        .selected_text(button_to_str(&button))
-        .show_ui(ui, |ui| {
-            for button_enum in buttons {
-                ui.selectable_value(button, button_enum, button_to_str(&button_enum));
-            }
-        });
 }

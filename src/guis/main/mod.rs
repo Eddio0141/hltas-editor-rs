@@ -1,4 +1,6 @@
+mod frametime_changer;
 mod graphics_editor;
+mod selectable_hltas_button;
 mod tab;
 mod text_editor;
 

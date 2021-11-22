@@ -1,7 +1,7 @@
 pub mod fps;
 pub mod frametime;
 
-use hltas::{HLTAS, types::Button};
+use hltas::{types::Button, HLTAS};
 
 pub fn hltas_to_str(hltas: &HLTAS) -> String {
     let mut file_u8: Vec<u8> = Vec::new();

@@ -1,12 +1,17 @@
+use std::convert::TryFrom;
+use std::num::NonZeroU32;
+
+use super::frametime_changer::frametime_changer;
+use super::selectable_hltas_button::selectable_hltas_button;
 use super::tab::HLTASFileTab;
 use crate::helpers::egui::button::close_button;
-use crate::helpers::egui::hltas::{frametime_changer, selectable_values_from_button};
 use crate::helpers::hltas::frametime;
 use eframe::egui::{self, Label};
 use eframe::egui::{CollapsingHeader, Color32, DragValue, Id, TextEdit, Ui};
 
 use hltas::types::{Buttons, ChangeTarget, Line, Seeds, VectorialStrafingConstraints};
 
+// TODO preset buttons for common stuff like 1k fps
 pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
     egui::ScrollArea::both()
         .max_width(f32::INFINITY)
@@ -87,7 +92,6 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
             ui.add(Label::new("Lines").heading());
 
             // TODO color customization
-            // TODO rest
             // TODO show bulk ID
 
             // TODO comment enter focus
@@ -99,6 +103,21 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
                     Line::FrameBulk(framebulk) => {
                         // s03ljDbcgw|flrbud|jdu12r|0.001|180|-89|1|cmd
                         frametime_changer(&mut framebulk.frame_time, ui);
+                        ui.separator();
+                        let mut framecount_unwrapped = framebulk.frame_count.get();
+                        let framecount_changed = ui
+                            .add(
+                                DragValue::new(&mut framecount_unwrapped).clamp_range(1..=u32::MAX),
+                            )
+                            .changed();
+
+                        if framecount_changed {
+                            if let Ok(framecount) = NonZeroU32::try_from(framecount_unwrapped) {
+                                framebulk.frame_count = framecount;
+                            }
+                        }
+
+                        ui.label("frames");
                     }
                     Line::Save(save) => {
                         ui.label(save);
@@ -127,21 +146,13 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
                             } => {
                                 ui.separator();
                                 ui.label("air left");
-                                selectable_values_from_button(air_left, ui, Id::new("air_left"));
+                                selectable_hltas_button(air_left, ui, Id::new("air_left"));
                                 ui.label("air right");
-                                selectable_values_from_button(air_right, ui, Id::new("air_right"));
+                                selectable_hltas_button(air_right, ui, Id::new("air_right"));
                                 ui.label("ground left");
-                                selectable_values_from_button(
-                                    ground_left,
-                                    ui,
-                                    Id::new("ground_left"),
-                                );
+                                selectable_hltas_button(ground_left, ui, Id::new("ground_left"));
                                 ui.label("ground right");
-                                selectable_values_from_button(
-                                    ground_right,
-                                    ui,
-                                    Id::new("ground_right"),
-                                );
+                                selectable_hltas_button(ground_right, ui, Id::new("ground_right"));
                             }
                         }
                     }

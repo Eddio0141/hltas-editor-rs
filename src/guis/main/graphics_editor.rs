@@ -10,7 +10,9 @@ use crate::helpers::hltas::frametime;
 use eframe::egui::{self, Label};
 use eframe::egui::{CollapsingHeader, Color32, DragValue, Id, TextEdit, Ui};
 
-use hltas::types::{Buttons, ChangeTarget, Line, Seeds, VectorialStrafingConstraints};
+use hltas::types::{
+    AutoMovement, Buttons, ChangeTarget, Line, Seeds, StrafeDir, VectorialStrafingConstraints,
+};
 
 // TODO preset buttons for common stuff like 1k fps
 pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
@@ -123,6 +125,79 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
                             frametime_changer(&mut framebulk.frame_time, ui);
 
                             ui.separator();
+
+                            let yaw = match &mut framebulk.auto_actions.movement {
+                                Some(auto_movement) => match auto_movement {
+                                    AutoMovement::SetYaw(yaw) => Some(yaw),
+                                    AutoMovement::Strafe(strafe_settings) => {
+                                        match &mut strafe_settings.dir {
+                                            StrafeDir::Yaw(yaw) => Some(yaw),
+                                            StrafeDir::Line { yaw } => Some(yaw),
+                                            _ => None,
+                                        }
+                                    }
+                                },
+                                None => None,
+                            };
+
+                            match yaw {
+                                // TODO 360 deg limit
+                                Some(yaw) => {
+                                    ui.add(
+                                        DragValue::new(yaw)
+                                            .prefix("yaw: ")
+                                            // .clamp_range(0.0..=360.0)
+                                            .speed(0.05),
+                                    );
+                                }
+                                None => {
+                                    // TODO settings for default yaw
+                                    let default_yaw = 0.0;
+
+                                    let yaw_is_settable = match framebulk.auto_actions.movement {
+                                        Some(auto_movement) => match auto_movement {
+                                            AutoMovement::SetYaw(_) => true,
+                                            AutoMovement::Strafe(strafe_settings) => {
+                                                match strafe_settings.dir {
+                                                    StrafeDir::Yaw(_) => true,
+                                                    StrafeDir::Line { .. } => true,
+                                                    _ => false,
+                                                }
+                                            }
+                                        },
+                                        None => true
+                                    };
+
+                                    ui.set_enabled(yaw_is_settable);
+
+                                    if ui.button("Set Yaw").clicked() {
+                                        // make sure yaw is able to set
+                                        if yaw_is_settable {
+                                            let strafe_settings = match &mut framebulk.auto_actions.movement {
+                                                Some(auto_movement) => match auto_movement {
+                                                    AutoMovement::SetYaw(_) => None,
+                                                    AutoMovement::Strafe(strafe_settings) => Some(strafe_settings),
+                                                },
+                                                None => None,
+                                            };
+
+                                            match strafe_settings {
+                                                Some(strafe_settings) => {
+                                                    match &mut strafe_settings.dir {
+                                                        StrafeDir::Yaw(yaw) => *yaw = default_yaw,
+                                                        StrafeDir::Line { yaw } => *yaw = default_yaw,
+                                                        _ => (),
+                                                    }
+                                                },
+                                                // create setyaw if no strafe settings exist
+                                                None => framebulk.auto_actions.movement = Some(AutoMovement::SetYaw(default_yaw)),
+                                            }
+                                        }
+                                    }
+
+                                    ui.set_enabled(true);
+                                }
+                            };
 
                             let mut framecount_unwrapped = framebulk.frame_count.get();
                             let framecount_changed = ui

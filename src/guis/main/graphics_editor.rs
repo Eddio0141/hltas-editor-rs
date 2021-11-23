@@ -3,11 +3,11 @@ use std::num::NonZeroU32;
 
 use super::frametime_changer::frametime_changer;
 use super::selectable_hltas_button::selectable_hltas_button;
-use super::strafe_selector::strafe_selector;
+use super::strafe_key_selector::strafe_key_selector;
 use super::tab::HLTASFileTab;
 use crate::helpers::egui::button::close_button;
 use crate::helpers::hltas::frametime;
-use eframe::egui::{self, Label};
+use eframe::egui::{self, Label, Resize};
 use eframe::egui::{CollapsingHeader, Color32, DragValue, Id, TextEdit, Ui};
 
 use hltas::types::{
@@ -105,115 +105,88 @@ pub fn show_graphics_editor(ui: &mut Ui, current_tab: &mut HLTASFileTab) {
                 match line {
                     Line::FrameBulk(framebulk) => {
                         ui.horizontal(|ui| {
-                            // s03ljDbcgw|flrbud|jdu12r|0.001|180|-89|1|cmd
+                            ui.group(|ui| {
+                                // yaw / pitch
+                                // shows "set yaw / pitch" buttons if not set
+                                // TODO make those set yaw / pitch buttons from a function
+                                ui.vertical(|ui| {
+                                    ui.group(|ui| {
+                                        match &mut framebulk.auto_actions.movement {
+                                            Some(auto_movement) => {
+                                                // TODO 360 deg wrap thing
+                                                // TODO speed settings
+                                                match auto_movement {
+                                                    AutoMovement::SetYaw(yaw) => {
+                                                        ui.add(
+                                                            DragValue::new(yaw)
+                                                                .prefix("yaw: ")
+                                                                .speed(0.05),
+                                                        );
+                                                    }
+                                                    AutoMovement::Strafe(strafe_settings) => {
+                                                        let yaw = match &mut strafe_settings.dir {
+                                                            StrafeDir::Yaw(yaw) => Some(yaw),
+                                                            StrafeDir::Line { yaw } => Some(yaw),
+                                                            _ => None,
+                                                        };
 
-                            // ui.painter().rect(
-                            //     ui.available_rect_before_wrap(), /*.expand(ui.visuals().expansion)*/
-                            //     0.3,
-                            //     ui.visuals().code_bg_color,
-                            //     ui.style().visuals.widgets.inactive.fg_stroke,
-                            // );
-
-                            strafe_selector(
-                                &mut framebulk.auto_actions.movement,
-                                ui,
-                                Id::new(format!("strafe_selector_{}", i)),
-                            );
-
-                            ui.separator();
-
-                            frametime_changer(&mut framebulk.frame_time, ui);
-
-                            ui.separator();
-
-                            let yaw = match &mut framebulk.auto_actions.movement {
-                                Some(auto_movement) => match auto_movement {
-                                    AutoMovement::SetYaw(yaw) => Some(yaw),
-                                    AutoMovement::Strafe(strafe_settings) => {
-                                        match &mut strafe_settings.dir {
-                                            StrafeDir::Yaw(yaw) => Some(yaw),
-                                            StrafeDir::Line { yaw } => Some(yaw),
-                                            _ => None,
-                                        }
-                                    }
-                                },
-                                None => None,
-                            };
-
-                            match yaw {
-                                // TODO 360 deg limit
-                                Some(yaw) => {
-                                    ui.add(
-                                        DragValue::new(yaw)
-                                            .prefix("yaw: ")
-                                            // .clamp_range(0.0..=360.0)
-                                            .speed(0.05),
-                                    );
-                                }
-                                None => {
-                                    // TODO settings for default yaw
-                                    let default_yaw = 0.0;
-
-                                    let yaw_is_settable = match framebulk.auto_actions.movement {
-                                        Some(auto_movement) => match auto_movement {
-                                            AutoMovement::SetYaw(_) => true,
-                                            AutoMovement::Strafe(strafe_settings) => {
-                                                match strafe_settings.dir {
-                                                    StrafeDir::Yaw(_) => true,
-                                                    StrafeDir::Line { .. } => true,
-                                                    _ => false,
+                                                        match yaw {
+                                                            Some(yaw) => {
+                                                                ui.add(
+                                                                    DragValue::new(yaw)
+                                                                        .prefix("yaw: ")
+                                                                        .speed(0.05),
+                                                                );
+                                                            }
+                                                            None => {
+                                                                // HACK dummy button
+                                                                ui.set_enabled(false);
+                                                                let _ = ui.button("Set Yaw");
+                                                                ui.set_enabled(true);
+                                                            }
+                                                        };
+                                                    }
                                                 }
                                             }
-                                        },
-                                        None => true
-                                    };
-
-                                    ui.set_enabled(yaw_is_settable);
-
-                                    if ui.button("Set Yaw").clicked() {
-                                        // make sure yaw is able to set
-                                        if yaw_is_settable {
-                                            let strafe_settings = match &mut framebulk.auto_actions.movement {
-                                                Some(auto_movement) => match auto_movement {
-                                                    AutoMovement::SetYaw(_) => None,
-                                                    AutoMovement::Strafe(strafe_settings) => Some(strafe_settings),
-                                                },
-                                                None => None,
-                                            };
-
-                                            match strafe_settings {
-                                                Some(strafe_settings) => {
-                                                    match &mut strafe_settings.dir {
-                                                        StrafeDir::Yaw(yaw) => *yaw = default_yaw,
-                                                        StrafeDir::Line { yaw } => *yaw = default_yaw,
-                                                        _ => (),
-                                                    }
-                                                },
-                                                // create setyaw if no strafe settings exist
-                                                None => framebulk.auto_actions.movement = Some(AutoMovement::SetYaw(default_yaw)),
+                                            // default to setyaw
+                                            None => {
+                                                if ui.button("Set Yaw").clicked() {
+                                                    framebulk.auto_actions.movement =
+                                                        Some(AutoMovement::SetYaw(0.0));
+                                                }
                                             }
                                         }
-                                    }
 
-                                    ui.set_enabled(true);
-                                }
-                            };
-
-                            let mut framecount_unwrapped = framebulk.frame_count.get();
-                            let framecount_changed = ui
-                                .add(
-                                    DragValue::new(&mut framecount_unwrapped)
-                                        .clamp_range(1..=u32::MAX),
-                                )
-                                .changed();
-
-                            if framecount_changed {
-                                if let Ok(framecount) = NonZeroU32::try_from(framecount_unwrapped) {
-                                    framebulk.frame_count = framecount;
-                                }
-                            }
-
-                            ui.label("frames");
+                                        match &mut framebulk.pitch {
+                                            Some(pitch) => {
+                                                // TODO const value for pitch limit
+                                                ui.add(
+                                                    DragValue::new(pitch)
+                                                        .clamp_range(89.0..=-89.0)
+                                                        .prefix("pitch: ")
+                                                        // TODO speed settings
+                                                        .speed(0.05),
+                                                );
+                                            }
+                                            None => {
+                                                if ui.button("Set Pitch").clicked() {
+                                                    // TODO default pitch settings
+                                                    framebulk.pitch = Some(0.0);
+                                                }
+                                            }
+                                        }
+                                    });
+                                });
+                                ui.vertical(|ui| {
+                                    ui.group(|ui| {
+                                        strafe_key_selector(
+                                            framebulk,
+                                            ui,
+                                            Id::new(format!("strafe_selector_{}", i)),
+                                        );
+                                    });
+                                });
+                            });
                         });
                     }
                     Line::Save(save) => {

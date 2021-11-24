@@ -8,29 +8,22 @@ mod text_editor;
 use std::path::Path;
 use std::{collections::VecDeque, fs, path::PathBuf};
 
-use crate::helpers::egui::button::close_button;
-use crate::helpers::egui::containers::popup_to_widget_right;
 use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
-use crate::helpers::widget_stuff::menu_button::MenuButton;
-use eframe::egui::Button;
-use eframe::{
-    egui::{self, menu, FontDefinitions, FontFamily, Key, Label, Modifiers, Sense},
-    epi,
-};
 use fluent_templates::Loader;
 
 use hltas::HLTAS;
 use hltas_cleaner::cleaners;
+use imgui::{Key, MenuItem, Ui, Window};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
+use winit::event::VirtualKeyCode;
 
 use self::graphics_editor::show_graphics_editor;
 use self::tab::HLTASFileTab;
 use self::text_editor::show_text_editor;
 
-#[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "persistence", serde(default))]
 pub struct MainGUI {
+    test: bool,
     tabs: Vec<HLTASFileTab>,
     // might have a chance to not have any tabs opened
     // TODO use direct reference
@@ -228,350 +221,313 @@ impl Default for MainGUI {
             recent_paths: VecDeque::new(),
             graphics_editor: true,
             locale_lang,
+            test: false,
         }
     }
 }
 
-// TODO separate into different functions to clean this up
-impl epi::App for MainGUI {
-    fn setup(
-        &mut self,
-        ctx: &egui::CtxRef,
-        _frame: &mut epi::Frame<'_>,
-        _storage: Option<&dyn epi::Storage>,
-    ) {
-        #[cfg(feature = "persistence")]
-        if let Some(storage) = _storage {
-            *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
-        }
+impl MainGUI {
+    // fn setup(
+    //     &mut self,
+    //     ctx: &egui::CtxRef,
+    //     _frame: &mut epi::Frame<'_>,
+    //     _storage: Option<&dyn epi::Storage>,
+    // ) {
+    //     #[cfg(feature = "persistence")]
+    //     if let Some(storage) = _storage {
+    //         *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
+    //     }
 
-        // always have 1 tab opened by default
-        if self.tabs.len() == 0 {
-            // self.tabs.push(Tab::default());
-            self.tabs
-                .push(HLTASFileTab::new_file(&self.locale_lang.get_lang()));
-            self.current_tab_index = Some(0);
-        }
+    //     // always have 1 tab opened by default
+    //     if self.tabs.len() == 0 {
+    //         // self.tabs.push(Tab::default());
+    //         self.tabs
+    //             .push(HLTASFileTab::new_file(&self.locale_lang.get_lang()));
+    //         self.current_tab_index = Some(0);
+    //     }
 
-        // TODO use system fonts and somehow match language
-        let mut fonts = FontDefinitions::default();
-        let msgothic_font = String::from("msgothic");
+    //     // TODO use system fonts and somehow match language
+    //     let mut fonts = FontDefinitions::default();
+    //     let msgothic_font = String::from("msgothic");
 
-        fonts.font_data.insert(
-            msgothic_font.to_owned(),
-            std::borrow::Cow::Borrowed(include_bytes!("../../../fonts/msgothic.ttc")),
-        );
-        fonts
-            .fonts_for_family
-            .get_mut(&FontFamily::Proportional)
-            .unwrap()
-            .insert(0, msgothic_font);
+    //     fonts.font_data.insert(
+    //         msgothic_font.to_owned(),
+    //         std::borrow::Cow::Borrowed(include_bytes!("../../../fonts/msgothic.ttc")),
+    //     );
+    //     fonts
+    //         .fonts_for_family
+    //         .get_mut(&FontFamily::Proportional)
+    //         .unwrap()
+    //         .insert(0, msgothic_font);
 
-        ctx.set_fonts(fonts);
+    //     ctx.set_fonts(fonts);
 
-        // attempt to load files cause it could change content
-        // TODO change this into a check if file changed, I still want to store state of edited hltas in the editor
-        let mut stale_tabs = Vec::new();
+    //     // attempt to load files cause it could change content
+    //     // TODO change this into a check if file changed, I still want to store state of edited hltas in the editor
+    //     let mut stale_tabs = Vec::new();
 
-        if self.tabs.len() > 0 {
-            for (i, tab) in self.tabs.iter_mut().enumerate() {
-                if let Some(path) = &tab.path {
-                    match fs::read_to_string(&path) {
-                        Ok(content) => match HLTAS::from_str(&content) {
-                            Ok(hltas) => tab.hltas = hltas,
-                            Err(_) => stale_tabs.push(i),
-                        },
-                        Err(_) => stale_tabs.push(i),
-                    }
+    //     if self.tabs.len() > 0 {
+    //         for (i, tab) in self.tabs.iter_mut().enumerate() {
+    //             if let Some(path) = &tab.path {
+    //                 match fs::read_to_string(&path) {
+    //                     Ok(content) => match HLTAS::from_str(&content) {
+    //                         Ok(hltas) => tab.hltas = hltas,
+    //                         Err(_) => stale_tabs.push(i),
+    //                     },
+    //                     Err(_) => stale_tabs.push(i),
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     // TODO think of a better way to handle this
+    //     stale_tabs.reverse();
+
+    //     for stale_tab in stale_tabs {
+    //         self.close_tab(stale_tab);
+    //     }
+    // }
+
+    pub fn show(&mut self, _run: &mut bool, ui: &mut Ui) {
+        if let Some(main_menu) = ui.begin_main_menu_bar() {
+            ui.menu("File", || {
+                if MenuItem::new("New").shortcut("Ctrl+O").build(ui) || (ui.io().keys_down[VirtualKeyCode::O as usize] && ui.io().key_ctrl ){
+                    self.open_file_by_dialog();
                 }
-            }
+            });
+
+
+            main_menu.end();
         }
 
-        // TODO think of a better way to handle this
-        stale_tabs.reverse();
-
-        for stale_tab in stale_tabs {
-            self.close_tab(stale_tab);
-        }
-    }
-
-    // fn warm_up_enabled(&self) -> bool {
-    //     false
-    // }
-
-    #[cfg(feature = "persistence")]
-    fn save(&mut self, storage: &mut dyn epi::Storage) {
-        epi::set_value(storage, epi::APP_KEY, self);
-    }
-
-    // fn on_exit(&mut self) {}
-
-    // fn auto_save_interval(&self) -> std::time::Duration {
-    //     std::time::Duration::from_secs(30)
-    // }
-
-    // fn clear_color(&self) -> egui::Rgba {
-    //     // NOTE: a bright gray makes the shadows of the windows look weird.
-    //     // We use a bit of transparency so that if the user switches on the
-    //     // `transparent()` option they get immediate results.
-    //     egui::Color32::from_rgba_unmultiplied(12, 12, 12, 180).into()
-    // }
-
-    // fn persist_native_window(&self) -> bool {
-    //     true
-    // }
-
-    // fn persist_egui_memory(&self) -> bool {
-    //     true
-    // }
-
-    fn update(&mut self, ctx: &egui::CtxRef, _frame: &mut epi::Frame<'_>) {
         // TODO even more clean up of this
-        let mut new_file = MenuButton::new(
-            Some((
-                Key::N,
-                Modifiers {
-                    ctrl: true,
-                    command: true,
-                    ..Default::default()
-                },
-            )),
-            "new-file",
-            self.locale_lang.get_lang(),
-            |main_gui| main_gui.new_file(),
-        );
-        let mut open_file = MenuButton::new(
-            Some((
-                Key::O,
-                Modifiers {
-                    ctrl: true,
-                    command: true,
-                    ..Default::default()
-                },
-            )),
-            "open-file",
-            self.locale_lang.get_lang(),
-            |main_gui| main_gui.open_file_by_dialog(),
-        );
-        let mut save_file = MenuButton::new(
-            Some((
-                Key::S,
-                Modifiers {
-                    ctrl: true,
-                    command: true,
-                    ..Default::default()
-                },
-            )),
-            "save-file",
-            self.locale_lang.get_lang(),
-            // TODO error handle
-            |main_gui| {
-                main_gui.save_current_tab(None).ok();
-            },
-        );
-        let mut close_file = MenuButton::new(
-            Some((
-                Key::W,
-                Modifiers {
-                    ctrl: true,
-                    command: true,
-                    ..Default::default()
-                },
-            )),
-            "close-file",
-            self.locale_lang.get_lang(),
-            |main_gui| main_gui.close_current_tab(),
-        );
+        // let mut new_file = MenuButton::new(
+        //     Some((
+        //         Key::N,
+        //         Modifiers {
+        //             ctrl: true,
+        //             command: true,
+        //             ..Default::default()
+        //         },
+        //     )),
+        //     "new-file",
+        //     self.locale_lang.get_lang(),
+        //     |main_gui| main_gui.new_file(),
+        // );
+        // let mut open_file = MenuButton::new(
+        //     Some((
+        //         Key::O,
+        //         Modifiers {
+        //             ctrl: true,
+        //             command: true,
+        //             ..Default::default()
+        //         },
+        //     )),
+        //     "open-file",
+        //     self.locale_lang.get_lang(),
+        //     |main_gui| main_gui.open_file_by_dialog(),
+        // );
+        // let mut save_file = MenuButton::new(
+        //     Some((
+        //         Key::S,
+        //         Modifiers {
+        //             ctrl: true,
+        //             command: true,
+        //             ..Default::default()
+        //         },
+        //     )),
+        //     "save-file",
+        //     self.locale_lang.get_lang(),
+        //     // TODO error handle
+        //     |main_gui| {
+        //         main_gui.save_current_tab(None).ok();
+        //     },
+        // );
+        // let mut close_file = MenuButton::new(
+        //     Some((
+        //         Key::W,
+        //         Modifiers {
+        //             ctrl: true,
+        //             command: true,
+        //             ..Default::default()
+        //         },
+        //     )),
+        //     "close-file",
+        //     self.locale_lang.get_lang(),
+        //     |main_gui| main_gui.close_current_tab(),
+        // );
+        // egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+        //     menu::bar(ui, |ui| {
+        //         menu::menu(
+        //             ui,
+        //             crate::LOCALES.lookup(&self.locale_lang.get_lang(), "file-menu"),
+        //             |ui| {
+        //                 ui.set_width(200.0);
 
-        // menu input checks
-        new_file.key_check(&ctx, self);
-        open_file.key_check(&ctx, self);
-        save_file.key_check(&ctx, self);
-        close_file.key_check(&ctx, self);
+        //                 // TODO make it look like | Recent       > |
+        //                 let recent_popup_id = ui.make_persistent_id("recent_popup_id");
+        //                 let recent_opener = egui::Label::new(
+        //                     crate::LOCALES.lookup(&self.locale_lang.get_lang(), "recent-files"),
+        //                 )
+        //                 .sense(Sense::hover());
+        //                 let recent_opener_response = ui.add(recent_opener);
 
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            menu::bar(ui, |ui| {
-                menu::menu(
-                    ui,
-                    crate::LOCALES.lookup(&self.locale_lang.get_lang(), "file-menu"),
-                    |ui| {
-                        ui.set_width(200.0);
+        //                 if !ui.memory().is_popup_open(recent_popup_id)
+        //                     && recent_opener_response.hovered()
+        //                 {
+        //                     ui.memory().open_popup(recent_popup_id);
+        //                 }
 
-                        new_file.create_button(ui, self);
-                        open_file.create_button(ui, self);
-                        save_file.create_button(ui, self);
-                        close_file.create_button(ui, self);
+        //                 let popup_hovered = popup_to_widget_right(
+        //                     ui,
+        //                     recent_popup_id,
+        //                     &recent_opener_response,
+        //                     |ui| {
+        //                         let clicked_path = {
+        //                             let mut clicked_path = None;
+        //                             for recent_path in &self.recent_paths {
+        //                                 if let Some(path_str) = recent_path.as_os_str().to_str() {
+        //                                     let recent_path_button =
+        //                                         Button::new(path_str).frame(false).wrap(false);
 
-                        // TODO make it look like | Recent       > |
-                        let recent_popup_id = ui.make_persistent_id("recent_popup_id");
-                        let recent_opener = egui::Label::new(
-                            crate::LOCALES.lookup(&self.locale_lang.get_lang(), "recent-files"),
-                        )
-                        .sense(Sense::hover());
-                        let recent_opener_response = ui.add(recent_opener);
+        //                                     if ui.add(recent_path_button).clicked() {
+        //                                         clicked_path = Some(recent_path.to_owned());
+        //                                         break;
+        //                                     }
+        //                                 }
+        //                             }
+        //                             clicked_path
+        //                         };
 
-                        if !ui.memory().is_popup_open(recent_popup_id)
-                            && recent_opener_response.hovered()
-                        {
-                            ui.memory().open_popup(recent_popup_id);
-                        }
+        //                         if let Some(clicked_path) = clicked_path {
+        //                             self.open_file(&clicked_path);
+        //                         }
 
-                        let popup_hovered = popup_to_widget_right(
-                            ui,
-                            recent_popup_id,
-                            &recent_opener_response,
-                            |ui| {
-                                let clicked_path = {
-                                    let mut clicked_path = None;
-                                    for recent_path in &self.recent_paths {
-                                        if let Some(path_str) = recent_path.as_os_str().to_str() {
-                                            let recent_path_button =
-                                                Button::new(path_str).frame(false).wrap(false);
+        //                         return ui.rect_contains_pointer(ui.clip_rect());
+        //                     },
+        //                 );
+        //                 let popup_hovered = {
+        //                     if let Some(hovered) = popup_hovered {
+        //                         hovered
+        //                     } else {
+        //                         false
+        //                     }
+        //                 };
 
-                                            if ui.add(recent_path_button).clicked() {
-                                                clicked_path = Some(recent_path.to_owned());
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    clicked_path
-                                };
+        //                 if !recent_opener_response.hovered() && !popup_hovered {
+        //                     ui.memory().close_popup();
+        //                 }
+        //             },
+        //         );
 
-                                if let Some(clicked_path) = clicked_path {
-                                    self.open_file(&clicked_path);
-                                }
+        //         menu::menu(
+        //             ui,
+        //             crate::LOCALES.lookup(&self.locale_lang.get_lang(), "tools-menu"),
+        //             |ui| {
+        //                 if ui
+        //                     .button(
+        //                         crate::LOCALES
+        //                             .lookup(&self.locale_lang.get_lang(), "hltas-cleaner"),
+        //                     )
+        //                     .clicked()
+        //                 {
+        //                     // TODO show options
+        //                     if let Some(current_index) = self.current_tab_index {
+        //                         // TODO all error handling here
+        //                         let current_hltas = &mut self.tabs[current_index].hltas;
+        //                         cleaners::no_dupe_framebulks(current_hltas);
+        //                     }
+        //                 }
+        //             },
+        //         );
 
-                                return ui.rect_contains_pointer(ui.clip_rect());
-                            },
-                        );
-                        let popup_hovered = {
-                            if let Some(hovered) = popup_hovered {
-                                hovered
-                            } else {
-                                false
-                            }
-                        };
+        //         menu::menu(
+        //             ui,
+        //             crate::LOCALES.lookup(&self.locale_lang.get_lang(), "options-menu"),
+        //             |ui| {
+        //                 if ui
+        //                     .button(
+        //                         crate::LOCALES
+        //                             .lookup(&self.locale_lang.get_lang(), "toggle-graphics-editor"),
+        //                     )
+        //                     .clicked()
+        //                 {
+        //                     self.graphics_editor = !self.graphics_editor;
+        //                 }
+        //             },
+        //         );
+        //     });
 
-                        if !recent_opener_response.hovered() && !popup_hovered {
-                            ui.memory().close_popup();
-                        }
-                    },
-                );
+        //     ui.separator();
 
-                menu::menu(
-                    ui,
-                    crate::LOCALES.lookup(&self.locale_lang.get_lang(), "tools-menu"),
-                    |ui| {
-                        if ui
-                            .button(
-                                crate::LOCALES
-                                    .lookup(&self.locale_lang.get_lang(), "hltas-cleaner"),
-                            )
-                            .clicked()
-                        {
-                            // TODO show options
-                            if let Some(current_index) = self.current_tab_index {
-                                // TODO all error handling here
-                                let current_hltas = &mut self.tabs[current_index].hltas;
-                                cleaners::no_dupe_framebulks(current_hltas);
-                            }
-                        }
-                    },
-                );
+        //     // tabs
+        //     let mut stale_tab: Option<usize> = None;
+        //     egui::ScrollArea::horizontal().show(ui, |ui| {
+        //         ui.horizontal(|ui| {
+        //             let mut new_index: Option<usize> = None;
+        //             for (index, tab) in self.tabs.iter().enumerate() {
+        //                 // tab design
+        //                 ui.group(|ui| {
+        //                     // if label is clicked, switch to that one
+        //                     if ui
+        //                         .add(Label::new(&tab.title).sense(Sense::click()))
+        //                         .clicked()
+        //                     {
+        //                         // FIXME not sure why I can't do this
+        //                         // self.current_tab_index = Some(index);
+        //                         new_index = Some(index);
+        //                     }
 
-                menu::menu(
-                    ui,
-                    crate::LOCALES.lookup(&self.locale_lang.get_lang(), "options-menu"),
-                    |ui| {
-                        if ui
-                            .button(
-                                crate::LOCALES
-                                    .lookup(&self.locale_lang.get_lang(), "toggle-graphics-editor"),
-                            )
-                            .clicked()
-                        {
-                            self.graphics_editor = !self.graphics_editor;
-                        }
-                    },
-                );
-            });
+        //                     let close_button = close_button().small();
 
-            ui.separator();
+        //                     if ui.add(close_button).clicked() {
+        //                         // mark as stale
+        //                         stale_tab = Some(index);
+        //                     }
+        //                 });
+        //             }
 
-            // tabs
-            let mut stale_tab: Option<usize> = None;
-            egui::ScrollArea::horizontal().show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    let mut new_index: Option<usize> = None;
-                    for (index, tab) in self.tabs.iter().enumerate() {
-                        // tab design
-                        ui.group(|ui| {
-                            // if label is clicked, switch to that one
-                            if ui
-                                .add(Label::new(&tab.title).sense(Sense::click()))
-                                .clicked()
-                            {
-                                // FIXME not sure why I can't do this
-                                // self.current_tab_index = Some(index);
-                                new_index = Some(index);
-                            }
+        //             if let Some(_) = new_index {
+        //                 self.current_tab_index = new_index;
+        //             }
+        //         });
+        //     });
 
-                            let close_button = close_button().small();
+        //     // remove stale tab
+        //     if let Some(stale_tab) = stale_tab {
+        //         self.tabs.remove(stale_tab);
+        //     }
 
-                            if ui.add(close_button).clicked() {
-                                // mark as stale
-                                stale_tab = Some(index);
-                            }
-                        });
-                    }
+        //     // fix index if its out of bounds
+        //     if let Some(index) = self.current_tab_index {
+        //         if self.tabs.len() == 0 {
+        //             self.current_tab_index = None;
+        //         } else if index >= self.tabs.len() {
+        //             self.current_tab_index = Some(self.tabs.len() - 1);
+        //         }
+        //     }
+        // });
 
-                    if let Some(_) = new_index {
-                        self.current_tab_index = new_index;
-                    }
-                });
-            });
+        // egui::CentralPanel::default().show(ctx, |ui| {
+        //     // ui.text_edit_multiline(&mut self.raw_content);
+        //     // accept file drops
+        //     for file in &ui.input().raw.dropped_files {
+        //         if let Some(path) = &file.path {
+        //             self.open_file(path);
+        //         }
+        //     }
 
-            // remove stale tab
-            if let Some(stale_tab) = stale_tab {
-                self.tabs.remove(stale_tab);
-            }
+        //     if let Some(current_tab_index) = self.current_tab_index {
+        //         let current_tab = &mut self.tabs[current_tab_index];
 
-            // fix index if its out of bounds
-            if let Some(index) = self.current_tab_index {
-                if self.tabs.len() == 0 {
-                    self.current_tab_index = None;
-                } else if index >= self.tabs.len() {
-                    self.current_tab_index = Some(self.tabs.len() - 1);
-                }
-            }
-        });
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // ui.text_edit_multiline(&mut self.raw_content);
-            // accept file drops
-            for file in &ui.input().raw.dropped_files {
-                if let Some(path) = &file.path {
-                    self.open_file(path);
-                }
-            }
-
-            if let Some(current_tab_index) = self.current_tab_index {
-                let current_tab = &mut self.tabs[current_tab_index];
-
-                if self.graphics_editor {
-                    show_graphics_editor(ui, current_tab);
-                } else {
-                    show_text_editor(ui, current_tab);
-                }
-            }
-        });
+        //         if self.graphics_editor {
+        //             show_graphics_editor(ui, current_tab);
+        //         } else {
+        //             show_text_editor(ui, current_tab);
+        //         }
+        //     }
+        // });
 
         // self.set_current_tab_title();
-    }
-
-    // TODO show current tab file
-    fn name(&self) -> &str {
-        // println!("title is {}", &self.title);
-        &self.title
     }
 }

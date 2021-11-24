@@ -1,8 +1,6 @@
-use eframe::egui::Ui;
+use imgui::Ui;
 
-use super::tab::HLTASFileTab;
-
-pub fn show_text_editor(_ui: &mut Ui, _current_tab: &mut HLTASFileTab) {
+pub fn show_text_editor(_ui: &mut Ui/*, _current_tab: &mut HLTASFileTab*/) {
     // let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
     //     let mut layout_job: egui::text::LayoutJob = my_memoized_highlighter(string);
     //     layout_job.wrap_width = wrap_width;

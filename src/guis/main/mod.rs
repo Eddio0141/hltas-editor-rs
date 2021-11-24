@@ -227,17 +227,6 @@ impl Default for MainGUI {
 }
 
 impl MainGUI {
-    // fn setup(
-    //     &mut self,
-    //     ctx: &egui::CtxRef,
-    //     _frame: &mut epi::Frame<'_>,
-    //     _storage: Option<&dyn epi::Storage>,
-    // ) {
-    //     #[cfg(feature = "persistence")]
-    //     if let Some(storage) = _storage {
-    //         *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
-    //     }
-
     //     // always have 1 tab opened by default
     //     if self.tabs.len() == 0 {
     //         // self.tabs.push(Tab::default());

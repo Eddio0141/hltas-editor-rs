@@ -1,4 +1,4 @@
-use fluent_templates::LanguageIdentifier;
+use fluent_templates::{LanguageIdentifier, Loader};
 use locale_config::Locale;
 
 // TODO move global locale stuff in its own thing
@@ -6,41 +6,17 @@ fn get_fallback_lang() -> LanguageIdentifier {
     "en-US".parse::<LanguageIdentifier>().unwrap()
 }
 
-#[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 pub struct LocaleLang {
-    #[cfg_attr(feature = "persistence", serde(skip))]
     lang: Option<LanguageIdentifier>,
-    // only used for serialization. makes sure it syncs with lang
-    lang_str: Option<String>,
 }
 
 impl LocaleLang {
     pub fn new(lang: Option<LanguageIdentifier>) -> Self {
-        let lang_str = match &lang {
-            Some(some) => Some(some.to_string()),
-            None => None,
-        };
-
-        Self { lang, lang_str }
+        Self { lang }
     }
 
-    pub fn get_lang(&mut self) -> LanguageIdentifier {
-        // deserialization check
-        if self.lang_str.is_some() && self.lang.is_none() {
-            // got checked, lang_str is some
-            let lang = match self
-                .lang_str
-                .to_owned()
-                .unwrap()
-                .parse::<LanguageIdentifier>()
-            {
-                Ok(lang) => lang,
-                Err(_) => get_fallback_lang(),
-            };
-
-            self.lang = Some(lang);
-        }
-
+    // TODO cache
+    pub fn get_lang(&self) -> LanguageIdentifier {
         match &self.lang {
             Some(lang) => lang.to_owned(),
             // shouldn't error
@@ -49,5 +25,9 @@ impl LocaleLang {
                 .parse()
                 .unwrap_or_else(|_| get_fallback_lang()),
         }
+    }
+
+    pub fn get_str_from_id(&self, text_id: &str) -> String {
+        crate::LOCALES.lookup(&self.get_lang(), &text_id)
     }
 }

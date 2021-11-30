@@ -16,7 +16,7 @@ use hltas_cleaner::cleaners;
 use imgui::{Condition, MenuItem, TabBar, TabItem, Ui, Window};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
-use self::tab::{HLTASFileTab, Tabs};
+use self::tab::HLTASFileTab;
 
 pub struct MainGUI {
     tabs: Vec<Rc<RefCell<HLTASFileTab>>>,
@@ -36,7 +36,8 @@ impl MainGUI {
 
     pub fn new_file(&mut self) {
         let new_tab = HLTASFileTab::new_file(&self.locale_lang.get_lang());
-        self.tabs.push_tab(new_tab);
+        self.tabs.push(Rc::new(RefCell::new(new_tab)));
+        // TODO make it an option to auto select new tab?
     }
 
     pub fn open_file_by_dialog(&mut self) {
@@ -73,11 +74,12 @@ impl MainGUI {
 
     pub fn open_file(&mut self, path: &Path) {
         // check for dupe tab and switch to it if found
-        for (i, tab) in self.tabs.iter().enumerate() {
-            if let Some(tab_path) = &tab.path {
+        for tab in &self.tabs {
+            if let Some(tab_path) = &tab.borrow().path {
                 if tab_path == path {
                     // dupe found
-                    self.tabs.set_current_tab(Some(i));
+                    // TODO set current tab to dupe
+                    // self.tabs.set_current_tab(Some(i));
                     return;
                 }
             }
@@ -86,7 +88,8 @@ impl MainGUI {
         if let Ok(file_content) = fs::read_to_string(&path) {
             match HLTASFileTab::open_path(path, &file_content) {
                 Ok(tab) => {
-                    self.tabs.push_tab(tab);
+                    self.tabs.push(Rc::new(RefCell::new(tab)));
+                    // TODO set current tab
 
                     self.add_recent_path(path);
                 }
@@ -108,7 +111,7 @@ impl MainGUI {
             .show_save_single_file()
     }
 
-    pub fn save_current_tab(&mut self, warn_user: Option<String>) -> Result<(), std::io::Error> {
+    pub fn save_current_tab(&self, warn_user: Option<String>) -> Result<(), std::io::Error> {
         if let Some(warning_msg) = warn_user {
             // pop up warning!
             let warning_user_selection = native_dialog::MessageDialog::new()
@@ -124,16 +127,16 @@ impl MainGUI {
             }
         }
 
-        if let Some(tab) = self.tabs.current_tab_mut() {
-            if let Some(path) = &tab.path {
+        if let Some(tab) = &self.current_tab {
+            if let Some(path) = &tab.borrow().path {
                 // save_path = Some(path.to_owned());
-                fs::write(path, hltas_to_str(&tab.hltas))?;
+                fs::write(path, hltas_to_str(&tab.borrow().hltas))?;
             } else {
                 // no file, save as new file
                 if let Ok(path) = Self::ask_hltas_save_location() {
                     if let Some(path) = path {
-                        fs::write(&path, hltas_to_str(&tab.hltas))?;
-                        tab.title =
+                        fs::write(&path, hltas_to_str(&tab.borrow().hltas))?;
+                        tab.borrow_mut().title =
                             HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
                     }
                 }
@@ -144,17 +147,23 @@ impl MainGUI {
     }
 
     pub fn close_current_tab(&mut self) {
-        if let Some(tab) = self.tabs.current_tab() {
-            if tab.got_modified {
-                if let Ok(_) = self.save_current_tab(Some(
-                    "Would you like to save the modified file?".to_string(),
-                )) {
-                    self.tabs.remove_current_tab();
+        let remove_index = if let Some(tab) = &self.current_tab {
+            if tab.borrow().got_modified {
+                if let Err(_) = self.save_current_tab(Some(String::from(
+                    "Would you like to save the modified file?",
+                ))) {
+                    return;
                 }
-                // else do nothing since we can't close the tab
-            } else {
-                self.tabs.remove_current_tab();
             }
+
+            self.tabs.iter().position(|t| t.as_ptr() == tab.as_ptr())
+        } else {
+            None
+        };
+
+        if let Some(remove_index) = remove_index {
+            self.tabs.remove(remove_index);
+            self.current_tab = None;
         }
     }
 
@@ -198,10 +207,14 @@ impl Default for MainGUI {
     // first time opened will always show a new tab
     fn default() -> Self {
         let locale_lang = LocaleLang::new(None);
-        let tabs = Tabs::new(vec![HLTASFileTab::new_file(&locale_lang.get_lang())]);
+        let tabs = vec![Rc::new(RefCell::new(HLTASFileTab::new_file(
+            &locale_lang.get_lang(),
+        )))];
+        let current_tab = Some(Rc::clone(&tabs[0]));
 
         Self {
             tabs,
+            current_tab,
             title: Self::default_title().to_string(),
             recent_paths: VecDeque::new(),
             graphics_editor: true,
@@ -299,8 +312,8 @@ impl MainGUI {
             ui.menu(self.locale_lang.get_str_from_id("tools-menu"), || {
                 if MenuItem::new(self.locale_lang.get_str_from_id("hltas-cleaner")).build(ui) {
                     // TODO show options
-                    if let Some(current_tab) = self.tabs.current_tab_mut() {
-                        cleaners::no_dupe_framebulks(&mut current_tab.hltas);
+                    if let Some(current_tab) = &self.current_tab {
+                        cleaners::no_dupe_framebulks(&mut current_tab.borrow_mut().hltas);
                     }
                 }
             });
@@ -324,16 +337,28 @@ impl MainGUI {
             .build(ui, || {
                 ui.group(|| {
                     TabBar::new("file_tabs").reorderable(true).build(ui, || {
-                        for tab in self.tabs.iter() {
-                            TabItem::new(&tab.title).build(ui, || {
+                        // TODO make this better?
+                        let mut new_tab = None;
+                        for (i, tab) in self.tabs.iter().enumerate() {
+                            TabItem::new(format!("{}#{}", &tab.borrow().title, i)).build(ui, || {
+                                if let Some(current_tab) = &self.current_tab {
+                                    if current_tab.as_ptr() != tab.as_ptr() {
+                                        new_tab = Some(Rc::clone(tab));
+                                    }
+                                }
+                                // current_tab = Some(Rc::clone(tab));
                                 if self.graphics_editor {
-                                    if let Some(path) = &tab.path {
+                                    if let Some(path) = &tab.borrow().path {
                                         ui.text(format!("{:?}", path));
                                     }
                                 } else {
                                     // show_text_editor(ui, current_tab);
                                 }
                             });
+                        }
+
+                        if let Some(current_tab) = new_tab {
+                            self.current_tab = Some(current_tab);
                         }
                     });
                 });

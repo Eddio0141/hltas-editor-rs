@@ -4,23 +4,23 @@ mod strafe_key_selector;
 mod tab;
 mod text_editor;
 
+use std::cell::RefCell;
 use std::path::Path;
+use std::rc::Rc;
 use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 
 use hltas_cleaner::cleaners;
-use imgui::{MenuItem, TabBar, TabItem, Ui, Window};
+use imgui::{Condition, MenuItem, TabBar, TabItem, Ui, Window};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
-use self::tab::HLTASFileTab;
+use self::tab::{HLTASFileTab, Tabs};
 
 pub struct MainGUI {
-    tabs: Vec<HLTASFileTab>,
-    // might have a chance to not have any tabs opened
-    // TODO use direct reference
-    current_tab: Option<usize>,
+    tabs: Vec<Rc<RefCell<HLTASFileTab>>>,
+    current_tab: Option<Rc<RefCell<HLTASFileTab>>>,
     title: String,
     // TODO option to change size
     recent_paths: VecDeque<PathBuf>,
@@ -35,10 +35,8 @@ impl MainGUI {
     }
 
     pub fn new_file(&mut self) {
-        // TODO method to do this tab switching?
-        self.tabs
-            .push(HLTASFileTab::new_file(&self.locale_lang.get_lang()));
-        self.current_tab = Some(self.tabs.len() - 1);
+        let new_tab = HLTASFileTab::new_file(&self.locale_lang.get_lang());
+        self.tabs.push_tab(new_tab);
     }
 
     pub fn open_file_by_dialog(&mut self) {
@@ -75,10 +73,11 @@ impl MainGUI {
 
     pub fn open_file(&mut self, path: &Path) {
         // check for dupe tab and switch to it if found
-        for tab in &self.tabs {
+        for (i, tab) in self.tabs.iter().enumerate() {
             if let Some(tab_path) = &tab.path {
                 if tab_path == path {
                     // dupe found
+                    self.tabs.set_current_tab(Some(i));
                     return;
                 }
             }
@@ -87,8 +86,7 @@ impl MainGUI {
         if let Ok(file_content) = fs::read_to_string(&path) {
             match HLTASFileTab::open_path(path, &file_content) {
                 Ok(tab) => {
-                    self.tabs.push(tab);
-                    self.current_tab = Some(self.tabs.len() - 1);
+                    self.tabs.push_tab(tab);
 
                     self.add_recent_path(path);
                 }
@@ -111,23 +109,22 @@ impl MainGUI {
     }
 
     pub fn save_current_tab(&mut self, warn_user: Option<String>) -> Result<(), std::io::Error> {
-        if let Some(current_tab) = self.current_tab {
-            if let Some(warning_msg) = warn_user {
-                // pop up warning!
-                let warning_user_selection = native_dialog::MessageDialog::new()
-                    .set_title("Warning!")
-                    .set_type(native_dialog::MessageType::Warning)
-                    .set_text(&warning_msg)
-                    .show_confirm();
+        if let Some(warning_msg) = warn_user {
+            // pop up warning!
+            let warning_user_selection = native_dialog::MessageDialog::new()
+                .set_title("Warning!")
+                .set_type(native_dialog::MessageType::Warning)
+                .set_text(&warning_msg)
+                .show_confirm();
 
-                if let Ok(warning_user_selection) = warning_user_selection {
-                    if !warning_user_selection {
-                        return Ok(());
-                    }
+            if let Ok(warning_user_selection) = warning_user_selection {
+                if !warning_user_selection {
+                    return Ok(());
                 }
             }
+        }
 
-            let tab = &mut self.tabs[current_tab];
+        if let Some(tab) = self.tabs.current_tab_mut() {
             if let Some(path) = &tab.path {
                 // save_path = Some(path.to_owned());
                 fs::write(path, hltas_to_str(&tab.hltas))?;
@@ -147,40 +144,38 @@ impl MainGUI {
     }
 
     pub fn close_current_tab(&mut self) {
-        if let Some(index) = self.current_tab {
-            let current_tab = &self.tabs[index];
-
-            if current_tab.got_modified {
+        if let Some(tab) = self.tabs.current_tab() {
+            if tab.got_modified {
                 if let Ok(_) = self.save_current_tab(Some(
                     "Would you like to save the modified file?".to_string(),
                 )) {
-                    self.tabs.remove(index);
+                    self.tabs.remove_current_tab();
                 }
                 // else do nothing since we can't close the tab
             } else {
-                self.tabs.remove(index);
+                self.tabs.remove_current_tab();
             }
         }
     }
 
-    pub fn close_tab(&mut self, index: usize) {
-        if index >= self.tabs.len() {
-            return;
-        }
+    // pub fn close_tab(&mut self, index: usize) {
+    //     if index >= self.tabs.len() {
+    //         return;
+    //     }
 
-        let current_tab = &self.tabs[index];
+    //     let current_tab = &self.tabs[index];
 
-        if current_tab.got_modified {
-            if let Ok(_) = self.save_current_tab(Some(
-                "Would you like to save the modified file?".to_string(),
-            )) {
-                self.tabs.remove(index);
-            }
-            // else do nothing since we can't close the tab
-        } else {
-            self.tabs.remove(index);
-        }
-    }
+    //     if current_tab.got_modified {
+    //         if let Ok(_) = self.save_current_tab(Some(
+    //             "Would you like to save the modified file?".to_string(),
+    //         )) {
+    //             self.tabs.remove(index);
+    //         }
+    //         // else do nothing since we can't close the tab
+    //     } else {
+    //         self.tabs.remove(index);
+    //     }
+    // }
 
     // pub fn set_current_tab_title(&mut self) {
     //     if let Some(index) = self.current_tab_index {
@@ -203,10 +198,10 @@ impl Default for MainGUI {
     // first time opened will always show a new tab
     fn default() -> Self {
         let locale_lang = LocaleLang::new(None);
+        let tabs = Tabs::new(vec![HLTASFileTab::new_file(&locale_lang.get_lang())]);
 
         Self {
-            tabs: vec![HLTASFileTab::new_file(&locale_lang.get_lang())],
-            current_tab: Some(0),
+            tabs,
             title: Self::default_title().to_string(),
             recent_paths: VecDeque::new(),
             graphics_editor: true,
@@ -304,9 +299,8 @@ impl MainGUI {
             ui.menu(self.locale_lang.get_str_from_id("tools-menu"), || {
                 if MenuItem::new(self.locale_lang.get_str_from_id("hltas-cleaner")).build(ui) {
                     // TODO show options
-                    if let Some(current_index) = self.current_tab {
-                        let current_hltas = &mut self.tabs[current_index].hltas;
-                        cleaners::no_dupe_framebulks(current_hltas);
+                    if let Some(current_tab) = self.tabs.current_tab_mut() {
+                        cleaners::no_dupe_framebulks(&mut current_tab.hltas);
                     }
                 }
             });
@@ -320,12 +314,18 @@ impl MainGUI {
             });
         });
 
-        Window::new("main_window").build(ui, || {
-            ui.group(|| {
-                TabBar::new("file_tabs").reorderable(true).build(ui, || {
-                    for tab in &self.tabs {
-                        TabItem::new(&tab.title).build(ui, || {
+        ui.show_default_style_editor();
 
+        Window::new("main_window")
+            .position([0.0, ui.frame_height()], Condition::Always)
+            .size([200.0, 200.0], Condition::Once)
+            .collapsible(false)
+            .title_bar(false)
+            .build(ui, || {
+                ui.group(|| {
+                    TabBar::new("file_tabs").reorderable(true).build(ui, || {
+                        for tab in self.tabs.iter() {
+                            TabItem::new(&tab.title).build(ui, || {
                                 if self.graphics_editor {
                                     if let Some(path) = &tab.path {
                                         ui.text(format!("{:?}", path));
@@ -333,54 +333,54 @@ impl MainGUI {
                                 } else {
                                     // show_text_editor(ui, current_tab);
                                 }
-                        });
-                    }
+                            });
+                        }
+                    });
                 });
+
+                //     // let mut stale_tab: Option<usize> = None;
+
+                //     // let mut new_index: Option<usize> = None;
+                //     // for (index, tab) in self.tabs.iter().enumerate() {
+                //     //     // tab design
+                //     //     ui.group(|ui| {
+                //     //         // if label is clicked, switch to that one
+                //     //         if ui
+                //     //             .add(Label::new(&tab.title).sense(Sense::click()))
+                //     //             .clicked()
+                //     //         {
+                //     //             // self.current_tab_index = Some(index);
+                //     //             new_index = Some(index);
+                //     //         }
+
+                //     //         let close_button = close_button().small();
+
+                //     //         if ui.add(close_button).clicked() {
+                //     //             // mark as stale
+                //     //             stale_tab = Some(index);
+                //     //         }
+                //     //     });
+                //     // }
+
+                //     // if let Some(_) = new_index {
+                //     //     self.current_tab_index = new_index;
+                //     // }
+
+                //     // // remove stale tab
+                //     // if let Some(stale_tab) = stale_tab {
+                //     //     self.tabs.remove(stale_tab);
+                //     // }
+
+                //     // // fix index if its out of bounds
+                //     // if let Some(index) = self.current_tab_index {
+                //     //     if self.tabs.len() == 0 {
+                //     //         self.current_tab_index = None;
+                //     //     } else if index >= self.tabs.len() {
+                //     //         self.current_tab_index = Some(self.tabs.len() - 1);
+                //     //     }
+                //     // }
+                // });
             });
-
-            //     // let mut stale_tab: Option<usize> = None;
-
-            //     // let mut new_index: Option<usize> = None;
-            //     // for (index, tab) in self.tabs.iter().enumerate() {
-            //     //     // tab design
-            //     //     ui.group(|ui| {
-            //     //         // if label is clicked, switch to that one
-            //     //         if ui
-            //     //             .add(Label::new(&tab.title).sense(Sense::click()))
-            //     //             .clicked()
-            //     //         {
-            //     //             // self.current_tab_index = Some(index);
-            //     //             new_index = Some(index);
-            //     //         }
-
-            //     //         let close_button = close_button().small();
-
-            //     //         if ui.add(close_button).clicked() {
-            //     //             // mark as stale
-            //     //             stale_tab = Some(index);
-            //     //         }
-            //     //     });
-            //     // }
-
-            //     // if let Some(_) = new_index {
-            //     //     self.current_tab_index = new_index;
-            //     // }
-
-            //     // // remove stale tab
-            //     // if let Some(stale_tab) = stale_tab {
-            //     //     self.tabs.remove(stale_tab);
-            //     // }
-
-            //     // // fix index if its out of bounds
-            //     // if let Some(index) = self.current_tab_index {
-            //     //     if self.tabs.len() == 0 {
-            //     //         self.current_tab_index = None;
-            //     //     } else if index >= self.tabs.len() {
-            //     //         self.current_tab_index = Some(self.tabs.len() - 1);
-            //     //     }
-            //     // }
-            // });
-        });
 
         // egui::CentralPanel::default().show(ctx, |ui| {
         //     // ui.text_edit_multiline(&mut self.raw_content);

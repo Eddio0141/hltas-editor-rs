@@ -403,49 +403,6 @@ impl MainGUI {
                         }
                     });
                 });
-
-                //     // let mut stale_tab: Option<usize> = None;
-
-                //     // let mut new_index: Option<usize> = None;
-                //     // for (index, tab) in self.tabs.iter().enumerate() {
-                //     //     // tab design
-                //     //     ui.group(|ui| {
-                //     //         // if label is clicked, switch to that one
-                //     //         if ui
-                //     //             .add(Label::new(&tab.title).sense(Sense::click()))
-                //     //             .clicked()
-                //     //         {
-                //     //             // self.current_tab_index = Some(index);
-                //     //             new_index = Some(index);
-                //     //         }
-
-                //     //         let close_button = close_button().small();
-
-                //     //         if ui.add(close_button).clicked() {
-                //     //             // mark as stale
-                //     //             stale_tab = Some(index);
-                //     //         }
-                //     //     });
-                //     // }
-
-                //     // if let Some(_) = new_index {
-                //     //     self.current_tab_index = new_index;
-                //     // }
-
-                //     // // remove stale tab
-                //     // if let Some(stale_tab) = stale_tab {
-                //     //     self.tabs.remove(stale_tab);
-                //     // }
-
-                //     // // fix index if its out of bounds
-                //     // if let Some(index) = self.current_tab_index {
-                //     //     if self.tabs.len() == 0 {
-                //     //         self.current_tab_index = None;
-                //     //     } else if index >= self.tabs.len() {
-                //     //         self.current_tab_index = Some(self.tabs.len() - 1);
-                //     //     }
-                //     // }
-                // });
             });
 
         // ui.show_default_style_editor();

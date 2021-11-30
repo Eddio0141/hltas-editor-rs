@@ -11,6 +11,7 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
+use crate::support::System;
 
 use hltas_cleaner::cleaners;
 use imgui::{Condition, MenuItem, TabBar, TabItem, TabItemFlags, Ui, Window};
@@ -330,12 +331,17 @@ impl MainGUI {
             });
         });
 
-        ui.show_default_style_editor();
+        let window_size = {
+            let mut size = ui.io().display_size;
+            size[1] -= ui.frame_height();
+            size
+        };
 
         Window::new("main_window")
             .position([0.0, ui.frame_height()], Condition::Always)
-            .size([200.0, 200.0], Condition::Once)
+            .size(window_size, Condition::Always)
             .collapsible(false)
+            .resizable(false)
             .title_bar(false)
             .build(ui, || {
                 ui.group(|| {
@@ -441,6 +447,8 @@ impl MainGUI {
                 //     // }
                 // });
             });
+
+        // ui.show_default_style_editor();
 
         // egui::CentralPanel::default().show(ctx, |ui| {
         //     // ui.text_edit_multiline(&mut self.raw_content);

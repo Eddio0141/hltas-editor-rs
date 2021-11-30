@@ -11,7 +11,6 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
-use crate::support::System;
 
 use hltas_cleaner::cleaners;
 use imgui::{Condition, MenuItem, TabBar, TabItem, TabItemFlags, Ui, Window};
@@ -23,7 +22,7 @@ pub struct MainGUI {
     tabs: Vec<Rc<RefCell<HLTASFileTab>>>,
     current_tab: Option<Rc<RefCell<HLTASFileTab>>>,
     tab_switch_index: Option<usize>,
-    title: String,
+    // title: String,
     // TODO option to change size
     recent_paths: VecDeque<PathBuf>,
     graphics_editor: bool,

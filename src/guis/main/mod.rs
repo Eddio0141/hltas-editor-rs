@@ -13,7 +13,7 @@ use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 
 use hltas_cleaner::cleaners;
-use imgui::{Condition, MenuItem, TabBar, TabItem, Ui, Window};
+use imgui::{Condition, MenuItem, TabBar, TabItem, TabItemFlags, Ui, Window};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
 use self::tab::HLTASFileTab;
@@ -90,7 +90,8 @@ impl MainGUI {
             match HLTASFileTab::open_path(path, &file_content) {
                 Ok(tab) => {
                     self.tabs.push(Rc::new(RefCell::new(tab)));
-                    // TODO set current tab
+
+                    self.tab_switch_index = Some(self.tabs.len() - 1);
 
                     self.add_recent_path(path);
                 }
@@ -341,33 +342,49 @@ impl MainGUI {
                     TabBar::new("file_tabs").reorderable(true).build(ui, || {
                         // TODO make this better?
                         let mut new_tab = None;
-                        let mut stale_tabs = Vec::new();
+                        let mut stale_tab = None;
 
                         for (i, tab) in self.tabs.iter().enumerate() {
-                            // let mut opened = match self.tab_switch_index {
-                            //     Some(index) => index == i,
-                            //     None => false,
-                            // };
+                            let flags = {
+                                let mut flags = TabItemFlags::empty();
+
+                                let select_this_tab = match self.tab_switch_index {
+                                    Some(index) => index == i,
+                                    None => false,
+                                };
+
+                                if select_this_tab {
+                                    flags = flags.union(TabItemFlags::SET_SELECTED);
+
+                                    self.tab_switch_index = None;
+                                }
+
+                                flags
+                            };
+
                             let mut opened = true;
 
-                            TabItem::new(format!("{}#{}", &tab.borrow().title, i)).opened(&mut opened).build(ui, || {
-                                if let Some(current_tab) = &self.current_tab {
-                                    if current_tab.as_ptr() != tab.as_ptr() {
-                                        new_tab = Some(Rc::clone(tab));
+                            TabItem::new(format!("{}#{}", &tab.borrow().title, i))
+                                .opened(&mut opened)
+                                .flags(flags)
+                                .build(ui, || {
+                                    if let Some(current_tab) = &self.current_tab {
+                                        if current_tab.as_ptr() != tab.as_ptr() {
+                                            new_tab = Some(Rc::clone(tab));
+                                        }
                                     }
-                                }
-                                // current_tab = Some(Rc::clone(tab));
-                                if self.graphics_editor {
-                                    if let Some(path) = &tab.borrow().path {
-                                        ui.text(format!("{:?}", path));
+                                    // current_tab = Some(Rc::clone(tab));
+                                    if self.graphics_editor {
+                                        if let Some(path) = &tab.borrow().path {
+                                            ui.text(format!("{:?}", path));
+                                        }
+                                    } else {
+                                        // show_text_editor(ui, current_tab);
                                     }
-                                } else {
-                                    // show_text_editor(ui, current_tab);
-                                }
-                            });
+                                });
 
                             if !opened {
-                                stale_tabs.push(i);
+                                stale_tab = Some(i);
                             }
                         }
 
@@ -375,10 +392,8 @@ impl MainGUI {
                             self.current_tab = Some(current_tab);
                         }
 
-                        stale_tabs.reverse();
-
-                        for stale_tab in stale_tabs {
-                            self.tabs.remove(stale_tab);
+                        if let Some(stale_index) = stale_tab {
+                            self.tabs.remove(stale_index);
                         }
                     });
                 });

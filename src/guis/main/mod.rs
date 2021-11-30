@@ -200,9 +200,9 @@ impl MainGUI {
     //     println!("title is {}", &self.title);
     // }
 
-    fn default_title() -> &'static str {
-        "HLTAS Editor"
-    }
+    // fn default_title() -> &'static str {
+    //     "HLTAS Editor"
+    // }
 }
 
 impl Default for MainGUI {
@@ -218,7 +218,7 @@ impl Default for MainGUI {
             tabs,
             current_tab,
             tab_switch_index: None,
-            title: Self::default_title().to_string(),
+            // title: Self::default_title().to_string(),
             recent_paths: VecDeque::new(),
             graphics_editor: true,
             locale_lang,

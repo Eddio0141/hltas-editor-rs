@@ -21,6 +21,7 @@ use self::tab::HLTASFileTab;
 pub struct MainGUI {
     tabs: Vec<Rc<RefCell<HLTASFileTab>>>,
     current_tab: Option<Rc<RefCell<HLTASFileTab>>>,
+    tab_switch_index: Option<usize>,
     title: String,
     // TODO option to change size
     recent_paths: VecDeque<PathBuf>,
@@ -38,6 +39,7 @@ impl MainGUI {
         let new_tab = HLTASFileTab::new_file(&self.locale_lang.get_lang());
         self.tabs.push(Rc::new(RefCell::new(new_tab)));
         // TODO make it an option to auto select new tab?
+        self.tab_switch_index = Some(self.tabs.len() - 1);
     }
 
     pub fn open_file_by_dialog(&mut self) {
@@ -74,12 +76,11 @@ impl MainGUI {
 
     pub fn open_file(&mut self, path: &Path) {
         // check for dupe tab and switch to it if found
-        for tab in &self.tabs {
+        for (i, tab) in self.tabs.iter().enumerate() {
             if let Some(tab_path) = &tab.borrow().path {
                 if tab_path == path {
                     // dupe found
-                    // TODO set current tab to dupe
-                    // self.tabs.set_current_tab(Some(i));
+                    self.tab_switch_index = Some(i);
                     return;
                 }
             }
@@ -215,6 +216,7 @@ impl Default for MainGUI {
         Self {
             tabs,
             current_tab,
+            tab_switch_index: None,
             title: Self::default_title().to_string(),
             recent_paths: VecDeque::new(),
             graphics_editor: true,
@@ -339,8 +341,16 @@ impl MainGUI {
                     TabBar::new("file_tabs").reorderable(true).build(ui, || {
                         // TODO make this better?
                         let mut new_tab = None;
+                        let mut stale_tabs = Vec::new();
+
                         for (i, tab) in self.tabs.iter().enumerate() {
-                            TabItem::new(format!("{}#{}", &tab.borrow().title, i)).build(ui, || {
+                            // let mut opened = match self.tab_switch_index {
+                            //     Some(index) => index == i,
+                            //     None => false,
+                            // };
+                            let mut opened = true;
+
+                            TabItem::new(format!("{}#{}", &tab.borrow().title, i)).opened(&mut opened).build(ui, || {
                                 if let Some(current_tab) = &self.current_tab {
                                     if current_tab.as_ptr() != tab.as_ptr() {
                                         new_tab = Some(Rc::clone(tab));
@@ -355,10 +365,20 @@ impl MainGUI {
                                     // show_text_editor(ui, current_tab);
                                 }
                             });
+
+                            if !opened {
+                                stale_tabs.push(i);
+                            }
                         }
 
                         if let Some(current_tab) = new_tab {
                             self.current_tab = Some(current_tab);
+                        }
+
+                        stale_tabs.reverse();
+
+                        for stale_tab in stale_tabs {
+                            self.tabs.remove(stale_tab);
                         }
                     });
                 });

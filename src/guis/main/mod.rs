@@ -1,4 +1,5 @@
 mod frametime_changer;
+mod property_some_none_field;
 mod property_string_field;
 mod selectable_hltas_button;
 mod strafe_key_selector;
@@ -19,6 +20,7 @@ use imgui::{
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
+use self::property_some_none_field::property_some_none_field_ui;
 use self::property_string_field::property_string_field_ui;
 use self::tab::HLTASFileTab;
 
@@ -395,14 +397,40 @@ impl MainGUI {
                                             property_string_field_ui(
                                                 ui,
                                                 &mut tab.borrow_mut().hltas.properties.demo,
+                                                true,
                                                 "Demo name",
                                                 "Set demo recording",
                                             );
                                             property_string_field_ui(
                                                 ui,
                                                 &mut tab.borrow_mut().hltas.properties.save,
+                                                true,
                                                 "Save name",
                                                 "Save after hltas",
+                                            );
+
+                                            // TODO, make this easier to edit
+                                            property_some_none_field_ui(
+                                                ui,
+                                                &mut tab
+                                                    .borrow_mut()
+                                                    .hltas
+                                                    .properties
+                                                    .frametime_0ms,
+                                                // TODO make this an option
+                                                "0.0000000001".to_string(),
+                                                "Enable 0ms ducktap",
+                                                |s| {
+                                                    InputText::new(ui, "0ms frametime", s)
+                                                        .chars_noblank(true)
+                                                        .hint("0ms frametime")
+                                                        .chars_decimal(true)
+                                                        .build();
+
+                                                    ui.same_line();
+
+                                                    !ui.button("x")
+                                                },
                                             );
                                         }
                                     } else {

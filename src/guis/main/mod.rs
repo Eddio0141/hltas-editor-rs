@@ -1,8 +1,8 @@
 mod frametime_changer;
+mod property_string_field;
 mod selectable_hltas_button;
 mod strafe_key_selector;
 mod tab;
-mod text_editor;
 
 use std::cell::RefCell;
 use std::path::Path;
@@ -13,9 +13,13 @@ use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 
 use hltas_cleaner::cleaners;
-use imgui::{Condition, MenuItem, TabBar, TabItem, TabItemFlags, Ui, Window};
+use imgui::{
+    CollapsingHeader, ColorButton, Condition, InputText, InputTextFlags, MenuItem, TabBar, TabItem,
+    TabItemFlags, Ui, Window,
+};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
+use self::property_string_field::property_string_field_ui;
 use self::tab::HLTASFileTab;
 
 pub struct MainGUI {
@@ -378,13 +382,29 @@ impl MainGUI {
                                             new_tab = Some(Rc::clone(tab));
                                         }
                                     }
-                                    // current_tab = Some(Rc::clone(tab));
+
                                     if self.graphics_editor {
-                                        if let Some(path) = &tab.borrow().path {
-                                            ui.text(format!("{:?}", path));
+                                        // show_graphics_editor(ui, &mut tab.borrow_mut());
+
+                                        if CollapsingHeader::new("Properties")
+                                            .default_open(true)
+                                            .build(ui)
+                                        {
+                                            property_string_field_ui(
+                                                ui,
+                                                &mut tab.borrow_mut().hltas.properties.demo,
+                                                "Demo name",
+                                                "Set demo recording",
+                                            );
+                                            property_string_field_ui(
+                                                ui,
+                                                &mut tab.borrow_mut().hltas.properties.save,
+                                                "Save name",
+                                                "Save after hltas",
+                                            );
                                         }
                                     } else {
-                                        // show_text_editor(ui, current_tab);
+                                        // show_text_editor(ui);
                                     }
                                 });
 

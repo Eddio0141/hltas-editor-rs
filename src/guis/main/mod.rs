@@ -31,6 +31,7 @@ pub struct MainGUI {
     recent_paths: VecDeque<PathBuf>,
     graphics_editor: bool,
     locale_lang: LocaleLang,
+    test_string: String,
 }
 
 impl MainGUI {
@@ -219,6 +220,7 @@ impl Default for MainGUI {
         let current_tab = Some(Rc::clone(&tabs[0]));
 
         Self {
+            test_string: String::new(),
             tabs,
             current_tab,
             tab_switch_index: None,

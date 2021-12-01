@@ -3,15 +3,15 @@ use imgui::{InputText, Ui};
 pub fn property_string_field_ui(
     ui: &Ui,
     field: &mut Option<String>,
-    input_text_hint: &str,
+    label: &str,
     enable_field_button_name: &str,
 ) {
     let field_enabled = match field {
         Some(demo) => {
             ui.group(|| {
-                InputText::new(ui, " ", demo)
+                InputText::new(ui, label, demo)
                     .chars_noblank(true)
-                    .hint(input_text_hint)
+                    .hint(enable_field_button_name)
                     .build();
 
                 ui.same_line();

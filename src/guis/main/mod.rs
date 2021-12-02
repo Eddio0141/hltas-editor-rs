@@ -14,7 +14,7 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 
-use hltas::types::Seeds;
+use hltas::types::{Line, Seeds};
 use hltas_cleaner::cleaners;
 use imgui::{
     CollapsingHeader, Condition, Drag, InputText, MenuItem, TabBar, TabItem, TabItemFlags, Ui,
@@ -531,6 +531,24 @@ impl MainGUI {
                                                 !ui.button("x")
                                             },
                                         );
+
+                                        for line in &mut tab.borrow_mut().hltas.lines {
+                                            match line {
+                                                Line::FrameBulk(framebulk) => {}
+                                                Line::Save(save) => {}
+                                                Line::SharedSeed(shared_seed) => {}
+                                                Line::Buttons(buttons) => {}
+                                                Line::LGAGSTMinSpeed(lgagst_min_spd) => {}
+                                                Line::Reset { non_shared_seed } => {}
+                                                Line::Comment(comment) => {}
+                                                Line::VectorialStrafing(vectorial_strafing) => {}
+                                                Line::VectorialStrafingConstraints(
+                                                    vectorial_strafing_constraints,
+                                                ) => {}
+                                                Line::Change(change) => {}
+                                                Line::TargetYawOverride(target_yaw_override) => {}
+                                            }
+                                        }
                                     }
                                 } else {
                                     // show_text_editor(ui);

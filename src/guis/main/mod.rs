@@ -22,6 +22,7 @@ use imgui::{
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
+use self::cmd_editor::cmd_editor_ui;
 use self::property_some_none_field::property_some_none_field_ui;
 use self::property_string_field::property_string_field_ui;
 use self::tab::HLTASFileTab;
@@ -510,6 +511,20 @@ impl MainGUI {
                                                 }
 
                                                 item_width_token.pop(ui);
+
+                                                ui.same_line();
+
+                                                !ui.button("x")
+                                            },
+                                        );
+
+                                        property_some_none_field_ui(
+                                            ui,
+                                            &mut tab.borrow_mut().hltas.properties.load_command,
+                                            String::new(),
+                                            "set hltas load commands",
+                                            |cmds| {
+                                                cmd_editor_ui(ui, cmds, "load commands");
 
                                                 ui.same_line();
 

@@ -1,4 +1,3 @@
-mod frametime_changer;
 mod property_some_none_field;
 mod property_string_field;
 mod selectable_hltas_button;
@@ -16,7 +15,7 @@ use crate::helpers::locale::locale_lang::LocaleLang;
 use hltas::types::Seeds;
 use hltas_cleaner::cleaners;
 use imgui::{
-    CollapsingHeader, Condition, Drag, DragRange, InputText, MenuItem, TabBar, TabItem,
+    CollapsingHeader, Condition, Drag, InputText, MenuItem, TabBar, TabItem,
     TabItemFlags, Ui, Window,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};

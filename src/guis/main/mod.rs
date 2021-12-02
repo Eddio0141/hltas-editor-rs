@@ -5,6 +5,7 @@ mod strafe_key_selector;
 mod tab;
 
 use std::cell::RefCell;
+use std::num::NonZeroU32;
 use std::path::Path;
 use std::rc::Rc;
 use std::{collections::VecDeque, fs, path::PathBuf};
@@ -15,8 +16,8 @@ use crate::helpers::locale::locale_lang::LocaleLang;
 use hltas::types::Seeds;
 use hltas_cleaner::cleaners;
 use imgui::{
-    CollapsingHeader, Condition, Drag, InputText, MenuItem, TabBar, TabItem,
-    TabItemFlags, Ui, Window,
+    CollapsingHeader, Condition, Drag, InputText, MenuItem, TabBar, TabItem, TabItemFlags, Ui,
+    Window,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
@@ -427,8 +428,8 @@ impl MainGUI {
 
                                                     InputText::new(ui, "0ms frametime", frametime)
                                                         .chars_noblank(true)
-                                                        .hint("0ms frametime")
                                                         .chars_decimal(true)
+                                                        .hint("0ms frametime")
                                                         .build();
 
                                                     item_width_token.pop(ui);
@@ -470,6 +471,51 @@ impl MainGUI {
                                                     Drag::new("non-shared rng")
                                                         .speed(0.05)
                                                         .build(ui, &mut seeds.non_shared);
+
+                                                    item_width_token.pop(ui);
+
+                                                    ui.same_line();
+
+                                                    !ui.button("x")
+                                                },
+                                            );
+
+                                            // TODO better way for this to be showen? maybe a version check?
+                                            // TODO figure out "default"
+                                            property_some_none_field_ui(
+                                                ui,
+                                                &mut tab
+                                                    .borrow_mut()
+                                                    .hltas
+                                                    .properties
+                                                    .hlstrafe_version,
+                                                NonZeroU32::new(3).unwrap(),
+                                                "set hlstrafe version",
+                                                |hlstrafe_version| {
+                                                    let item_width_token = ui.push_item_width(
+                                                        ui.window_content_region_width() * 0.25,
+                                                    );
+
+                                                    let mut hlstrafe_version_string =
+                                                        hlstrafe_version.to_string();
+
+                                                    if InputText::new(
+                                                        ui,
+                                                        "hlstrafe version",
+                                                        &mut hlstrafe_version_string,
+                                                    )
+                                                    .chars_noblank(true)
+                                                    .chars_decimal(true)
+                                                    .hint("hlstrafe version")
+                                                    .build()
+                                                    {
+                                                        if let Ok(str_to_nonzero) =
+                                                            hlstrafe_version_string
+                                                                .parse::<NonZeroU32>()
+                                                        {
+                                                            *hlstrafe_version = str_to_nonzero;
+                                                        }
+                                                    }
 
                                                     item_width_token.pop(ui);
 

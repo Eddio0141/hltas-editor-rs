@@ -13,9 +13,11 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 
+use hltas::types::Seeds;
 use hltas_cleaner::cleaners;
 use imgui::{
-    CollapsingHeader, Condition, InputText, MenuItem, TabBar, TabItem, TabItemFlags, Ui, Window,
+    CollapsingHeader, Condition, Drag, DragRange, InputText, MenuItem, TabBar, TabItem,
+    TabItemFlags, Ui, Window,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
@@ -397,6 +399,7 @@ impl MainGUI {
                                                 true,
                                                 "Demo name",
                                                 "Set demo recording",
+                                                0.5,
                                             );
                                             property_string_field_ui(
                                                 ui,
@@ -404,6 +407,7 @@ impl MainGUI {
                                                 true,
                                                 "Save name",
                                                 "Save after hltas",
+                                                0.5,
                                             );
 
                                             // TODO, make this easier to edit
@@ -417,12 +421,58 @@ impl MainGUI {
                                                 // TODO make this an option
                                                 "0.0000000001".to_string(),
                                                 "Enable 0ms ducktap",
-                                                |s| {
-                                                    InputText::new(ui, "0ms frametime", s)
+                                                |frametime| {
+                                                    let item_width_token = ui.push_item_width(
+                                                        ui.window_content_region_width() * 0.25,
+                                                    );
+
+                                                    InputText::new(ui, "0ms frametime", frametime)
                                                         .chars_noblank(true)
                                                         .hint("0ms frametime")
                                                         .chars_decimal(true)
                                                         .build();
+
+                                                    item_width_token.pop(ui);
+
+                                                    ui.same_line();
+
+                                                    !ui.button("x")
+                                                },
+                                            );
+
+                                            // TODO some easy way of increasing shared / nonshared rng
+                                            //  since if people want different rng results, they can just add 1
+                                            property_some_none_field_ui(
+                                                ui,
+                                                &mut tab.borrow_mut().hltas.properties.seeds,
+                                                Seeds {
+                                                    shared: 0,
+                                                    non_shared: 0,
+                                                },
+                                                "enable shared / non-shared rng set",
+                                                |seeds| {
+                                                    let item_width_token = ui.push_item_width(
+                                                        ui.window_content_region_width() * 0.25,
+                                                    );
+
+                                                    Drag::new("shared rng")
+                                                        .speed(0.05)
+                                                        .build(ui, &mut seeds.shared);
+
+                                                    ui.same_line();
+
+                                                    ui.text(format!(
+                                                        "(mod 256 = {})",
+                                                        seeds.shared % 256
+                                                    ));
+
+                                                    ui.same_line();
+
+                                                    Drag::new("non-shared rng")
+                                                        .speed(0.05)
+                                                        .build(ui, &mut seeds.non_shared);
+
+                                                    item_width_token.pop(ui);
 
                                                     ui.same_line();
 

@@ -1,5 +1,10 @@
 use imgui::Ui;
 
+/// Used to display ui components to modify hltas property field that has
+/// Some or None.
+/// some_edit must return a boolean where true will keep the some edit ui
+/// enabled and false to show a button that enables a button to change none
+/// into some with the field_default value.
 pub fn property_some_none_field_ui<T, E>(
     ui: &Ui,
     field: &mut Option<T>,

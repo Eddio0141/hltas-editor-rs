@@ -1,3 +1,4 @@
+mod cmd_editor;
 mod property_some_none_field;
 mod property_string_field;
 mod selectable_hltas_button;
@@ -350,199 +351,189 @@ impl MainGUI {
             .resizable(false)
             .title_bar(false)
             .build(ui, || {
-                ui.group(|| {
-                    TabBar::new("file_tabs").reorderable(true).build(ui, || {
-                        // TODO make this better?
-                        let mut new_tab = None;
-                        let mut stale_tab = None;
+                TabBar::new("file_tabs").reorderable(true).build(ui, || {
+                    // TODO make this better?
+                    let mut new_tab = None;
+                    let mut stale_tab = None;
 
-                        for (i, tab) in self.tabs.iter().enumerate() {
-                            let flags = {
-                                let mut flags = TabItemFlags::empty();
+                    for (i, tab) in self.tabs.iter().enumerate() {
+                        let flags = {
+                            let mut flags = TabItemFlags::empty();
 
-                                let select_this_tab = match self.tab_switch_index {
-                                    Some(index) => index == i,
-                                    None => false,
-                                };
-
-                                if select_this_tab {
-                                    flags = flags.union(TabItemFlags::SET_SELECTED);
-
-                                    self.tab_switch_index = None;
-                                }
-
-                                flags
+                            let select_this_tab = match self.tab_switch_index {
+                                Some(index) => index == i,
+                                None => false,
                             };
 
-                            let mut opened = true;
+                            if select_this_tab {
+                                flags = flags.union(TabItemFlags::SET_SELECTED);
 
-                            TabItem::new(format!("{}#{}", &tab.borrow().title, i))
-                                .opened(&mut opened)
-                                .flags(flags)
-                                .build(ui, || {
-                                    if let Some(current_tab) = &self.current_tab {
-                                        if current_tab.as_ptr() != tab.as_ptr() {
-                                            new_tab = Some(Rc::clone(tab));
-                                        }
+                                self.tab_switch_index = None;
+                            }
+
+                            flags
+                        };
+
+                        let mut opened = true;
+
+                        TabItem::new(format!("{}#{}", &tab.borrow().title, i))
+                            .opened(&mut opened)
+                            .flags(flags)
+                            .build(ui, || {
+                                if let Some(current_tab) = &self.current_tab {
+                                    if current_tab.as_ptr() != tab.as_ptr() {
+                                        new_tab = Some(Rc::clone(tab));
                                     }
+                                }
 
-                                    if self.graphics_editor {
-                                        // show_graphics_editor(ui, &mut tab.borrow_mut());
+                                if self.graphics_editor {
+                                    // show_graphics_editor(ui, &mut tab.borrow_mut());
 
-                                        if CollapsingHeader::new("Properties")
-                                            .default_open(true)
-                                            .build(ui)
-                                        {
-                                            property_string_field_ui(
-                                                ui,
-                                                &mut tab.borrow_mut().hltas.properties.demo,
-                                                true,
-                                                "Demo name",
-                                                "Set demo recording",
-                                                0.5,
-                                            );
-                                            property_string_field_ui(
-                                                ui,
-                                                &mut tab.borrow_mut().hltas.properties.save,
-                                                true,
-                                                "Save name",
-                                                "Save after hltas",
-                                                0.5,
-                                            );
+                                    if CollapsingHeader::new("Properties")
+                                        .default_open(true)
+                                        .build(ui)
+                                    {
+                                        property_string_field_ui(
+                                            ui,
+                                            &mut tab.borrow_mut().hltas.properties.demo,
+                                            true,
+                                            "Demo name",
+                                            "Set demo recording",
+                                            0.5,
+                                        );
+                                        property_string_field_ui(
+                                            ui,
+                                            &mut tab.borrow_mut().hltas.properties.save,
+                                            true,
+                                            "Save name",
+                                            "Save after hltas",
+                                            0.5,
+                                        );
 
-                                            // TODO, make this easier to edit
-                                            property_some_none_field_ui(
-                                                ui,
-                                                &mut tab
-                                                    .borrow_mut()
-                                                    .hltas
-                                                    .properties
-                                                    .frametime_0ms,
-                                                // TODO make this an option
-                                                "0.0000000001".to_string(),
-                                                "Enable 0ms ducktap",
-                                                |frametime| {
-                                                    let item_width_token = ui.push_item_width(
-                                                        ui.window_content_region_width() * 0.25,
-                                                    );
+                                        // TODO, make this easier to edit
+                                        property_some_none_field_ui(
+                                            ui,
+                                            &mut tab.borrow_mut().hltas.properties.frametime_0ms,
+                                            // TODO make this an option
+                                            "0.0000000001".to_string(),
+                                            "Enable 0ms ducktap",
+                                            |frametime| {
+                                                let item_width_token = ui.push_item_width(
+                                                    ui.window_content_region_width() * 0.25,
+                                                );
 
-                                                    InputText::new(ui, "0ms frametime", frametime)
-                                                        .chars_noblank(true)
-                                                        .chars_decimal(true)
-                                                        .hint("0ms frametime")
-                                                        .build();
-
-                                                    item_width_token.pop(ui);
-
-                                                    ui.same_line();
-
-                                                    !ui.button("x")
-                                                },
-                                            );
-
-                                            // TODO some easy way of increasing shared / nonshared rng
-                                            //  since if people want different rng results, they can just add 1
-                                            property_some_none_field_ui(
-                                                ui,
-                                                &mut tab.borrow_mut().hltas.properties.seeds,
-                                                Seeds {
-                                                    shared: 0,
-                                                    non_shared: 0,
-                                                },
-                                                "enable shared / non-shared rng set",
-                                                |seeds| {
-                                                    let item_width_token = ui.push_item_width(
-                                                        ui.window_content_region_width() * 0.25,
-                                                    );
-
-                                                    Drag::new("shared rng")
-                                                        .speed(0.05)
-                                                        .build(ui, &mut seeds.shared);
-
-                                                    ui.same_line();
-
-                                                    ui.text(format!(
-                                                        "(mod 256 = {})",
-                                                        seeds.shared % 256
-                                                    ));
-
-                                                    ui.same_line();
-
-                                                    Drag::new("non-shared rng")
-                                                        .speed(0.05)
-                                                        .build(ui, &mut seeds.non_shared);
-
-                                                    item_width_token.pop(ui);
-
-                                                    ui.same_line();
-
-                                                    !ui.button("x")
-                                                },
-                                            );
-
-                                            // TODO better way for this to be showen? maybe a version check?
-                                            // TODO figure out "default"
-                                            property_some_none_field_ui(
-                                                ui,
-                                                &mut tab
-                                                    .borrow_mut()
-                                                    .hltas
-                                                    .properties
-                                                    .hlstrafe_version,
-                                                NonZeroU32::new(3).unwrap(),
-                                                "set hlstrafe version",
-                                                |hlstrafe_version| {
-                                                    let item_width_token = ui.push_item_width(
-                                                        ui.window_content_region_width() * 0.25,
-                                                    );
-
-                                                    let mut hlstrafe_version_string =
-                                                        hlstrafe_version.to_string();
-
-                                                    if InputText::new(
-                                                        ui,
-                                                        "hlstrafe version",
-                                                        &mut hlstrafe_version_string,
-                                                    )
+                                                InputText::new(ui, "0ms frametime", frametime)
                                                     .chars_noblank(true)
                                                     .chars_decimal(true)
-                                                    .hint("hlstrafe version")
-                                                    .build()
+                                                    .hint("0ms frametime")
+                                                    .build();
+
+                                                item_width_token.pop(ui);
+
+                                                ui.same_line();
+
+                                                !ui.button("x")
+                                            },
+                                        );
+
+                                        // TODO some easy way of increasing shared / nonshared rng
+                                        //  since if people want different rng results, they can just add 1
+                                        property_some_none_field_ui(
+                                            ui,
+                                            &mut tab.borrow_mut().hltas.properties.seeds,
+                                            Seeds {
+                                                shared: 0,
+                                                non_shared: 0,
+                                            },
+                                            "enable shared / non-shared rng set",
+                                            |seeds| {
+                                                let item_width_token = ui.push_item_width(
+                                                    ui.window_content_region_width() * 0.25,
+                                                );
+
+                                                Drag::new("shared rng")
+                                                    .speed(0.05)
+                                                    .build(ui, &mut seeds.shared);
+
+                                                ui.same_line();
+
+                                                ui.text(format!(
+                                                    "(mod 256 = {})",
+                                                    seeds.shared % 256
+                                                ));
+
+                                                ui.same_line();
+
+                                                Drag::new("non-shared rng")
+                                                    .speed(0.05)
+                                                    .build(ui, &mut seeds.non_shared);
+
+                                                item_width_token.pop(ui);
+
+                                                ui.same_line();
+
+                                                !ui.button("x")
+                                            },
+                                        );
+
+                                        // TODO better way for this to be showen? maybe a version check?
+                                        // TODO figure out "default"
+                                        property_some_none_field_ui(
+                                            ui,
+                                            &mut tab.borrow_mut().hltas.properties.hlstrafe_version,
+                                            NonZeroU32::new(3).unwrap(),
+                                            "set hlstrafe version",
+                                            |hlstrafe_version| {
+                                                let item_width_token = ui.push_item_width(
+                                                    ui.window_content_region_width() * 0.25,
+                                                );
+
+                                                let mut hlstrafe_version_string =
+                                                    hlstrafe_version.to_string();
+
+                                                if InputText::new(
+                                                    ui,
+                                                    "hlstrafe version",
+                                                    &mut hlstrafe_version_string,
+                                                )
+                                                .chars_noblank(true)
+                                                .chars_decimal(true)
+                                                .hint("hlstrafe version")
+                                                .build()
+                                                {
+                                                    if let Ok(str_to_nonzero) =
+                                                        hlstrafe_version_string
+                                                            .parse::<NonZeroU32>()
                                                     {
-                                                        if let Ok(str_to_nonzero) =
-                                                            hlstrafe_version_string
-                                                                .parse::<NonZeroU32>()
-                                                        {
-                                                            *hlstrafe_version = str_to_nonzero;
-                                                        }
+                                                        *hlstrafe_version = str_to_nonzero;
                                                     }
+                                                }
 
-                                                    item_width_token.pop(ui);
+                                                item_width_token.pop(ui);
 
-                                                    ui.same_line();
+                                                ui.same_line();
 
-                                                    !ui.button("x")
-                                                },
-                                            );
-                                        }
-                                    } else {
-                                        // show_text_editor(ui);
+                                                !ui.button("x")
+                                            },
+                                        );
                                     }
-                                });
+                                } else {
+                                    // show_text_editor(ui);
+                                }
+                            });
 
-                            if !opened {
-                                stale_tab = Some(i);
-                            }
+                        if !opened {
+                            stale_tab = Some(i);
                         }
+                    }
 
-                        if let Some(current_tab) = new_tab {
-                            self.current_tab = Some(current_tab);
-                        }
+                    if let Some(current_tab) = new_tab {
+                        self.current_tab = Some(current_tab);
+                    }
 
-                        if let Some(stale_index) = stale_tab {
-                            self.tabs.remove(stale_index);
-                        }
-                    });
+                    if let Some(stale_index) = stale_tab {
+                        self.tabs.remove(stale_index);
+                    }
                 });
             });
 

@@ -14,11 +14,11 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 
-use hltas::types::{Line, Seeds};
+use hltas::types::{AutoMovement, Line, Seeds, StrafeDir};
 use hltas_cleaner::cleaners;
 use imgui::{
-    CollapsingHeader, Condition, Drag, InputText, MenuItem, TabBar, TabItem, TabItemFlags, Ui,
-    Window,
+    CollapsingHeader, Condition, Drag, ImColor32, InputText, MenuItem, TabBar, TabItem,
+    TabItemFlags, Ui, Window,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
@@ -532,9 +532,57 @@ impl MainGUI {
                                             },
                                         );
 
-                                        for line in &mut tab.borrow_mut().hltas.lines {
+                                        for (i, line) in &mut tab.borrow_mut().hltas.lines.iter_mut().enumerate() {
                                             match line {
-                                                Line::FrameBulk(framebulk) => {}
+                                                Line::FrameBulk(framebulk) => {
+                                                    ui.group(|| {
+                                                        ui.group(|| {
+                                                            match &mut framebulk
+                                                                .auto_actions
+                                                                .movement
+                                                            {
+                                                                Some(auto_movement) => {
+                                                                    let yaw_editor = |yaw| {
+                                                                        let item_width_token = ui.push_item_width(100.0);
+
+                                                                        Drag::new(format!("yaw##yaw_set{}", i))
+                                                                        .speed(0.05)
+                                                                        .build(
+                                                                            ui,
+                                                                            yaw,
+                                                                        );
+
+                                                                        item_width_token.pop(ui);
+                                                                    };
+
+                                                                    match auto_movement {
+                                                                        AutoMovement::SetYaw(yaw) => yaw_editor(yaw),
+                                                                        AutoMovement::Strafe(strafe_settings) => {
+                                                                            match &mut strafe_settings.dir {
+                                                                                StrafeDir::Yaw(yaw) => yaw_editor(yaw),
+                                                                                StrafeDir::Line { yaw } => yaw_editor(yaw),
+                                                                                _ => (),
+                                                                            }
+                                                                        },
+                                                                    }
+                                                                }
+                                                                None => {
+                                                                    // show yaw button
+                                                                }
+                                                            };
+                                                        });
+                                                    });
+
+                                                    // draw square thingy around
+                                                    // let draw_list = ui.get_window_draw_list();
+                                                    // draw_list
+                                                    //     .add_line(
+                                                    //         [0.0, 0.0],
+                                                    //         [100.0, 100.0],
+                                                    //         ImColor32::from_rgb(255, 0, 0),
+                                                    //     )
+                                                    //     .build();
+                                                }
                                                 Line::Save(save) => {}
                                                 Line::SharedSeed(shared_seed) => {}
                                                 Line::Buttons(buttons) => {}

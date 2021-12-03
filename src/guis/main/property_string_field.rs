@@ -16,8 +16,13 @@ pub fn property_string_field_ui(
         String::new(),
         enable_field_button_name,
         |field_some| {
+            // TODO find proper "x" button
+            let x_button_clicked = !ui.button(format!("x##{}", label));
+
+            ui.same_line();
+
             let item_width_token =
-                ui.push_item_width(ui.window_content_region_width() * input_text_window_scale);
+            ui.push_item_width(ui.window_content_region_width() * input_text_window_scale);
 
             InputText::new(ui, label, field_some)
                 .chars_noblank(chars_noblank)
@@ -26,10 +31,7 @@ pub fn property_string_field_ui(
 
             item_width_token.pop(ui);
 
-            ui.same_line();
-
-            // TODO find proper "x" button
-            !ui.button(format!("x##{}", label))
+            x_button_clicked
         },
     );
 }

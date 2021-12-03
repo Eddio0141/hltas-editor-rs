@@ -435,6 +435,10 @@ impl MainGUI {
                                             "0.0000000001".to_string(),
                                             "Enable 0ms ducktap",
                                             |frametime| {
+                                                let x_button_clicked = !ui.button("x##frametime");
+                                                
+                                                ui.same_line();
+                                                
                                                 let item_width_token = ui.push_item_width(
                                                     ui.window_content_region_width() * 0.25,
                                                 );
@@ -447,9 +451,7 @@ impl MainGUI {
 
                                                 item_width_token.pop(ui);
 
-                                                ui.same_line();
-
-                                                !ui.button("x##frametime")
+                                                x_button_clicked
                                             },
                                         );
 
@@ -464,6 +466,10 @@ impl MainGUI {
                                             },
                                             "enable shared / non-shared rng set",
                                             |seeds| {
+                                                let x_button_clicked = !ui.button("x##seeds");
+
+                                                ui.same_line();
+                                                
                                                 let item_width_token = ui.push_item_width(
                                                     ui.window_content_region_width() * 0.25,
                                                 );
@@ -487,9 +493,7 @@ impl MainGUI {
 
                                                 item_width_token.pop(ui);
 
-                                                ui.same_line();
-
-                                                !ui.button("x##seeds")
+                                                x_button_clicked
                                             },
                                         );
 
@@ -501,6 +505,10 @@ impl MainGUI {
                                             NonZeroU32::new(3).unwrap(),
                                             "set hlstrafe version",
                                             |hlstrafe_version| {
+                                                let x_button_clicked = !ui.button("x##hlstrafe_version");
+
+                                                ui.same_line();
+
                                                 let item_width_token = ui.push_item_width(
                                                     ui.window_content_region_width() * 0.25,
                                                 );
@@ -528,9 +536,7 @@ impl MainGUI {
 
                                                 item_width_token.pop(ui);
 
-                                                ui.same_line();
-
-                                                !ui.button("x##hlstrafe_version")
+                                                x_button_clicked
                                             },
                                         );
 
@@ -540,11 +546,13 @@ impl MainGUI {
                                             String::new(),
                                             "set hltas load commands",
                                             |cmds| {
-                                                cmd_editor_ui(ui, cmds, "load commands");
+                                                let x_button_clicked = !ui.button("x##load_commands");
 
                                                 ui.same_line();
 
-                                                !ui.button("x##load_commands")
+                                                cmd_editor_ui(ui, cmds, "load commands");
+
+                                                x_button_clicked
                                             },
                                         );
                                     }
@@ -552,7 +560,7 @@ impl MainGUI {
                                     ui.separator();
                                     ui.text("Lines");
                                     // ui.show_demo_window(&mut true);
-                                    
+
                                     for (i, line) in &mut tab.borrow_mut().hltas.lines.iter_mut().enumerate() {
                                         match line {
                                             Line::FrameBulk(framebulk) => {

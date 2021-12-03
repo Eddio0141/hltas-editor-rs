@@ -2,7 +2,7 @@ use guis::main::MainGUI;
 
 mod guis;
 mod helpers;
-mod widgets;
+mod support;
 
 // TODO move global locale stuff in its own thing
 fluent_templates::static_loader! {
@@ -14,10 +14,7 @@ fluent_templates::static_loader! {
 }
 
 fn main() {
-    let main_gui = MainGUI::default();
-    let native_options = eframe::NativeOptions {
-        drag_and_drop_support: true,
-        ..Default::default()
-    };
-    eframe::run_native(Box::new(main_gui), native_options);
+    let system = support::init("HLTAS Editor");
+    let mut main_gui = MainGUI::default();
+    system.main_loop(move |run, ui| main_gui.show(run, ui));
 }

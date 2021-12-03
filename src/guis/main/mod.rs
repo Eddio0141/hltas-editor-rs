@@ -206,19 +206,10 @@ impl MainGUI {
         self.tabs.remove(index);
     }
 
-    // pub fn set_current_tab_title(&mut self) {
-    //     if let Some(index) = self.current_tab_index {
-    //         // println!("current index {}", index);
-    //         self.title = Self::default_title().to_string() + " - " + &self.tabs[index].title;
-    //         return;
-    //     } else {
-    //         // println!("none");
-    //         self.title = Self::default_title().to_string();
-    //     }
-    //     println!("title is {}", &self.title);
-    // }
+    // pub fn set_current_tab_title(&mut self)
 
     // fn default_title() -> &'static str {
+    //      TODO translation
     //     "HLTAS Editor"
     // }
 }
@@ -245,56 +236,6 @@ impl Default for MainGUI {
 }
 
 impl MainGUI {
-    //     // always have 1 tab opened by default
-    //     if self.tabs.len() == 0 {
-    //         // self.tabs.push(Tab::default());
-    //         self.tabs
-    //             .push(HLTASFileTab::new_file(&self.locale_lang.get_lang()));
-    //         self.current_tab_index = Some(0);
-    //     }
-
-    //     // TODO use system fonts and somehow match language
-    //     let mut fonts = FontDefinitions::default();
-    //     let msgothic_font = String::from("msgothic");
-
-    //     fonts.font_data.insert(
-    //         msgothic_font.to_owned(),
-    //         std::borrow::Cow::Borrowed(include_bytes!("../../../fonts/msgothic.ttc")),
-    //     );
-    //     fonts
-    //         .fonts_for_family
-    //         .get_mut(&FontFamily::Proportional)
-    //         .unwrap()
-    //         .insert(0, msgothic_font);
-
-    //     ctx.set_fonts(fonts);
-
-    //     // attempt to load files cause it could change content
-    //     // TODO change this into a check if file changed, I still want to store state of edited hltas in the editor
-    //     let mut stale_tabs = Vec::new();
-
-    //     if self.tabs.len() > 0 {
-    //         for (i, tab) in self.tabs.iter_mut().enumerate() {
-    //             if let Some(path) = &tab.path {
-    //                 match fs::read_to_string(&path) {
-    //                     Ok(content) => match HLTAS::from_str(&content) {
-    //                         Ok(hltas) => tab.hltas = hltas,
-    //                         Err(_) => stale_tabs.push(i),
-    //                     },
-    //                     Err(_) => stale_tabs.push(i),
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     // TODO think of a better way to handle this
-    //     stale_tabs.reverse();
-
-    //     for stale_tab in stale_tabs {
-    //         self.close_tab(stale_tab);
-    //     }
-    // }
-
     pub fn show(&mut self, _run: &mut bool, ui: &mut Ui) {
         ui.main_menu_bar(|| {
             ui.menu(self.locale_lang.get_str_from_id("file-menu"), || {
@@ -418,19 +359,5 @@ impl MainGUI {
                     }
                 });
             });
-
-        // ui.show_default_style_editor();
-
-        // egui::CentralPanel::default().show(ctx, |ui| {
-        //     // ui.text_edit_multiline(&mut self.raw_content);
-        //     // accept file drops
-        //     for file in &ui.input().raw.dropped_files {
-        //         if let Some(path) = &file.path {
-        //             self.open_file(path);
-        //         }
-        //     }
-        // });
-
-        // self.set_current_tab_title();
     }
 }

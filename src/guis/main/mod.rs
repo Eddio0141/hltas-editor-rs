@@ -17,7 +17,7 @@ use crate::helpers::locale::locale_lang::LocaleLang;
 use hltas::types::{AutoMovement, Line, Seeds, StrafeDir};
 use hltas_cleaner::cleaners;
 use imgui::{
-    CollapsingHeader, Condition, Drag, ImColor32, InputText, MenuItem, TabBar, TabItem,
+    CollapsingHeader, Condition, Drag, InputText, MenuItem, TabBar, TabItem,
     TabItemFlags, Ui, Window,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
@@ -326,6 +326,7 @@ impl MainGUI {
                     // TODO show options
                     if let Some(current_tab) = &self.current_tab {
                         cleaners::no_dupe_framebulks(&mut current_tab.borrow_mut().hltas);
+                        current_tab.borrow_mut().got_modified = true;
                     }
                 }
             });

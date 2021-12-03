@@ -377,7 +377,7 @@ impl MainGUI {
 
                         let mut opened = true;
 
-                        TabItem::new(format!("{}#{}", &tab.borrow().title, i))
+                        TabItem::new(format!("{}##tab_{}", &tab.borrow().title, i))
                             .opened(&mut opened)
                             .flags(flags)
                             .build(ui, || {

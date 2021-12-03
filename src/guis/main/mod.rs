@@ -553,37 +553,50 @@ impl MainGUI {
                                                 Line::FrameBulk(framebulk) => {
                                                     ui.group(|| {
                                                         ui.group(|| {
+                                                            let yaw_editor = |yaw| {
+                                                                let item_width_token = ui.push_item_width(100.0);
+
+                                                                Drag::new(format!("yaw##yaw_set{}", i))
+                                                                .speed(0.1)
+                                                                .build(
+                                                                    ui,
+                                                                    yaw,
+                                                                );
+
+                                                                item_width_token.pop(ui);
+                                                            };
+
+                                                            let yaw_button = |disabled, auto_movement: &mut Option<AutoMovement>| {
+                                                                let item_width_token = ui.push_item_width(100.0);
+                                                                
+                                                                ui.disabled(disabled, || {
+                                                                    if ui.button("set yaw") {
+                                                                        *auto_movement = Some(AutoMovement::SetYaw(0.0));
+                                                                    }
+                                                                });
+
+                                                                item_width_token.pop(ui);
+                                                            };
+
                                                             match &mut framebulk
                                                                 .auto_actions
                                                                 .movement
                                                             {
                                                                 Some(auto_movement) => {
-                                                                    let yaw_editor = |yaw| {
-                                                                        let item_width_token = ui.push_item_width(100.0);
-
-                                                                        Drag::new(format!("yaw##yaw_set{}", i))
-                                                                        .speed(0.1)
-                                                                        .build(
-                                                                            ui,
-                                                                            yaw,
-                                                                        );
-
-                                                                        item_width_token.pop(ui);
-                                                                    };
-
                                                                     match auto_movement {
                                                                         AutoMovement::SetYaw(yaw) => yaw_editor(yaw),
                                                                         AutoMovement::Strafe(strafe_settings) => {
                                                                             match &mut strafe_settings.dir {
                                                                                 StrafeDir::Yaw(yaw) => yaw_editor(yaw),
                                                                                 StrafeDir::Line { yaw } => yaw_editor(yaw),
-                                                                                _ => (),
+                                                                                _ => yaw_button(true, &mut framebulk.auto_actions.movement),
                                                                             }
                                                                         },
                                                                     }
                                                                 }
                                                                 None => {
                                                                     // show yaw button
+                                                                    yaw_button(false, &mut framebulk.auto_actions.movement)
                                                                 }
                                                             };
                                                         });

@@ -546,7 +546,7 @@ impl MainGUI {
                                                                         let item_width_token = ui.push_item_width(100.0);
 
                                                                         Drag::new(format!("yaw##yaw_set{}", i))
-                                                                        .speed(0.05)
+                                                                        .speed(0.1)
                                                                         .build(
                                                                             ui,
                                                                             yaw,

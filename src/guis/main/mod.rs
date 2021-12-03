@@ -1,4 +1,5 @@
 mod cmd_editor;
+mod graphics_editor;
 mod property_some_none_field;
 mod property_string_field;
 mod selectable_hltas_button;
@@ -6,7 +7,6 @@ mod strafe_key_selector;
 mod tab;
 
 use std::cell::RefCell;
-use std::num::NonZeroU32;
 use std::path::Path;
 use std::rc::Rc;
 use std::{collections::VecDeque, fs, path::PathBuf};
@@ -14,17 +14,11 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 
-use hltas::types::{AutoMovement, Line, Seeds, StrafeDir};
 use hltas_cleaner::cleaners;
-use imgui::{
-    CollapsingHeader, Condition, Drag, InputText, MenuItem, TabBar, TabItem, TabItemFlags, Ui,
-    Window, Slider,
-};
+use imgui::{Condition, MenuItem, TabBar, TabItem, TabItemFlags, Ui, Window};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
-use self::cmd_editor::cmd_editor_ui;
-use self::property_some_none_field::property_some_none_field_ui;
-use self::property_string_field::property_string_field_ui;
+use self::graphics_editor::show_graphics_editor;
 use self::tab::HLTASFileTab;
 
 pub struct MainGUI {
@@ -404,256 +398,7 @@ impl MainGUI {
                                 }
 
                                 if self.graphics_editor {
-                                    // show_graphics_editor(ui, &mut tab.borrow_mut());
-
-                                    if CollapsingHeader::new("Properties")
-                                        .default_open(true)
-                                        .build(ui)
-                                    {
-                                        property_string_field_ui(
-                                            ui,
-                                            &mut tab.borrow_mut().hltas.properties.demo,
-                                            true,
-                                            "Demo name",
-                                            "Set demo recording",
-                                            0.5,
-                                        );
-                                        property_string_field_ui(
-                                            ui,
-                                            &mut tab.borrow_mut().hltas.properties.save,
-                                            true,
-                                            "Save name",
-                                            "Save after hltas",
-                                            0.5,
-                                        );
-
-                                        // TODO, make this easier to edit
-                                        property_some_none_field_ui(
-                                            ui,
-                                            &mut tab.borrow_mut().hltas.properties.frametime_0ms,
-                                            // TODO make this an option
-                                            "0.0000000001".to_string(),
-                                            "Enable 0ms ducktap",
-                                            |frametime| {
-                                                let x_button_clicked = !ui.button("x##frametime");
-                                                
-                                                ui.same_line();
-                                                
-                                                let item_width_token = ui.push_item_width(
-                                                    ui.window_content_region_width() * 0.25,
-                                                );
-
-                                                InputText::new(ui, "0ms frametime", frametime)
-                                                    .chars_noblank(true)
-                                                    .chars_decimal(true)
-                                                    .hint("0ms frametime")
-                                                    .build();
-
-                                                item_width_token.pop(ui);
-
-                                                x_button_clicked
-                                            },
-                                        );
-
-                                        // TODO some easy way of increasing shared / nonshared rng
-                                        //  since if people want different rng results, they can just add 1
-                                        property_some_none_field_ui(
-                                            ui,
-                                            &mut tab.borrow_mut().hltas.properties.seeds,
-                                            Seeds {
-                                                shared: 0,
-                                                non_shared: 0,
-                                            },
-                                            "enable shared / non-shared rng set",
-                                            |seeds| {
-                                                let x_button_clicked = !ui.button("x##seeds");
-
-                                                ui.same_line();
-                                                
-                                                let item_width_token = ui.push_item_width(
-                                                    ui.window_content_region_width() * 0.25,
-                                                );
-
-                                                Drag::new("shared rng")
-                                                    .speed(0.05)
-                                                    .build(ui, &mut seeds.shared);
-
-                                                ui.same_line();
-
-                                                ui.text(format!(
-                                                    "(mod 256 = {})",
-                                                    seeds.shared % 256
-                                                ));
-
-                                                ui.same_line();
-
-                                                Drag::new("non-shared rng")
-                                                    .speed(0.05)
-                                                    .build(ui, &mut seeds.non_shared);
-
-                                                item_width_token.pop(ui);
-
-                                                x_button_clicked
-                                            },
-                                        );
-
-                                        // TODO better way for this to be showen? maybe a version check?
-                                        // TODO figure out "default"
-                                        property_some_none_field_ui(
-                                            ui,
-                                            &mut tab.borrow_mut().hltas.properties.hlstrafe_version,
-                                            NonZeroU32::new(3).unwrap(),
-                                            "set hlstrafe version",
-                                            |hlstrafe_version| {
-                                                let x_button_clicked = !ui.button("x##hlstrafe_version");
-
-                                                ui.same_line();
-
-                                                let item_width_token = ui.push_item_width(
-                                                    ui.window_content_region_width() * 0.25,
-                                                );
-
-                                                let mut hlstrafe_version_string =
-                                                    hlstrafe_version.to_string();
-
-                                                if InputText::new(
-                                                    ui,
-                                                    "hlstrafe version",
-                                                    &mut hlstrafe_version_string,
-                                                )
-                                                .chars_noblank(true)
-                                                .chars_decimal(true)
-                                                .hint("hlstrafe version")
-                                                .build()
-                                                {
-                                                    if let Ok(str_to_nonzero) =
-                                                        hlstrafe_version_string
-                                                            .parse::<NonZeroU32>()
-                                                    {
-                                                        *hlstrafe_version = str_to_nonzero;
-                                                    }
-                                                }
-
-                                                item_width_token.pop(ui);
-
-                                                x_button_clicked
-                                            },
-                                        );
-
-                                        property_some_none_field_ui(
-                                            ui,
-                                            &mut tab.borrow_mut().hltas.properties.load_command,
-                                            String::new(),
-                                            "set hltas load commands",
-                                            |cmds| {
-                                                let x_button_clicked = !ui.button("x##load_commands");
-
-                                                ui.same_line();
-
-                                                cmd_editor_ui(ui, cmds, "load commands");
-
-                                                x_button_clicked
-                                            },
-                                        );
-                                    }
-
-                                    ui.separator();
-                                    ui.text("Lines");
-                                    // ui.show_demo_window(&mut true);
-
-                                    for (i, line) in &mut tab.borrow_mut().hltas.lines.iter_mut().enumerate() {
-                                        match line {
-                                            Line::FrameBulk(framebulk) => {
-                                                ui.group(|| {
-                                                    ui.group(|| {
-                                                        let yaw_editor = |yaw| {
-                                                            // TODO 100.0 into something that works automatically maybe
-                                                            let item_width_token = ui.push_item_width(200.0);
-                                                            Drag::new(format!("yaw##yaw_set{}", i))
-                                                            .speed(0.1)
-                                                            .build(
-                                                                ui,
-                                                                yaw,
-                                                            );
-                                                            item_width_token.pop(ui);
-                                                        };
-                                                        let yaw_button = |disabled, auto_movement: &mut Option<AutoMovement>| {
-                                                            let item_width_token = ui.push_item_width(200.0);
-                                                            
-                                                            ui.disabled(disabled, || {
-                                                                if ui.button(format!("set yaw##yaw_set_button{}", i)) {
-                                                                    *auto_movement = Some(AutoMovement::SetYaw(0.0));
-                                                                }
-                                                            });
-                                                            item_width_token.pop(ui);
-                                                        };
-                                                        match &mut framebulk
-                                                            .auto_actions
-                                                            .movement
-                                                        {
-                                                            Some(auto_movement) => {
-                                                                match auto_movement {
-                                                                    AutoMovement::SetYaw(yaw) => yaw_editor(yaw),
-                                                                    AutoMovement::Strafe(strafe_settings) => {
-                                                                        match &mut strafe_settings.dir {
-                                                                            StrafeDir::Yaw(yaw) => yaw_editor(yaw),
-                                                                            StrafeDir::Line { yaw } => yaw_editor(yaw),
-                                                                            _ => yaw_button(true, &mut framebulk.auto_actions.movement),
-                                                                        }
-                                                                    },
-                                                                }
-                                                            }
-                                                            None => {
-                                                                // show yaw button
-                                                                yaw_button(false, &mut framebulk.auto_actions.movement)
-                                                            }
-                                                        };
-                                                        
-                                                        match &mut framebulk.pitch {
-                                                            Some(pitch) => {
-                                                                let item_width_token = ui.push_item_width(200.0);
-                                                                Slider::new(format!("pitch##pitch_set{}", i), -89.0, 89.0)
-                                                                .build(
-                                                                    ui,
-                                                                    pitch,
-                                                                );
-                                                                item_width_token.pop(ui);
-                                                            },
-                                                            None => {
-                                                                let item_width_token = ui.push_item_width(200.0);
-                                                                
-                                                                if ui.button(format!("set pitch##pitch_set_button{}", i)) {
-                                                                    framebulk.pitch = Some(0.0);
-                                                                }
-                                                                item_width_token.pop(ui);
-                                                            },
-                                                        }
-                                                    });
-                                                });
-                                                // draw square thingy around
-                                                // let draw_list = ui.get_window_draw_list();
-                                                // draw_list
-                                                //     .add_line(
-                                                //         [0.0, 0.0],
-                                                //         [100.0, 100.0],
-                                                //         ImColor32::from_rgb(255, 0, 0),
-                                                //     )
-                                                //     .build();
-                                            }
-                                            Line::Save(save) => {}
-                                            Line::SharedSeed(shared_seed) => {}
-                                            Line::Buttons(buttons) => {}
-                                            Line::LGAGSTMinSpeed(lgagst_min_spd) => {}
-                                            Line::Reset { non_shared_seed } => {}
-                                            Line::Comment(comment) => {}
-                                            Line::VectorialStrafing(vectorial_strafing) => {}
-                                            Line::VectorialStrafingConstraints(
-                                                vectorial_strafing_constraints,
-                                            ) => {}
-                                            Line::Change(change) => {}
-                                            Line::TargetYawOverride(target_yaw_override) => {}
-                                        }
-                                    }
+                                    show_graphics_editor(ui, &mut tab.borrow_mut());
                                 } else {
                                     // show_text_editor(ui);
                                 }

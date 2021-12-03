@@ -29,7 +29,7 @@ pub fn property_string_field_ui(
             ui.same_line();
 
             // TODO find proper "x" button
-            !ui.button("x")
+            !ui.button(format!("x##{}", label))
         },
     );
 }

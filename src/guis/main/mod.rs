@@ -17,8 +17,8 @@ use crate::helpers::locale::locale_lang::LocaleLang;
 use hltas::types::{AutoMovement, Line, Seeds, StrafeDir};
 use hltas_cleaner::cleaners;
 use imgui::{
-    CollapsingHeader, Condition, Drag, InputText, MenuItem, TabBar, TabItem,
-    TabItemFlags, Ui, Window,
+    CollapsingHeader, Condition, Drag, InputText, MenuItem, TabBar, TabItem, TabItemFlags, Ui,
+    Window,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
@@ -123,6 +123,18 @@ impl MainGUI {
     }
 
     pub fn save_current_tab(&self, warn_user: Option<String>) -> Result<(), std::io::Error> {
+        if let Some(tab) = &self.current_tab {
+            self.save_tab(warn_user, &mut tab.borrow_mut())?;
+        }
+
+        Ok(())
+    }
+
+    pub fn save_tab(
+        &self,
+        warn_user: Option<String>,
+        tab: &mut HLTASFileTab,
+    ) -> Result<(), std::io::Error> {
         if let Some(warning_msg) = warn_user {
             // pop up warning!
             let warning_user_selection = native_dialog::MessageDialog::new()
@@ -138,18 +150,15 @@ impl MainGUI {
             }
         }
 
-        if let Some(tab) = &self.current_tab {
-            if let Some(path) = &tab.borrow().path {
-                // save_path = Some(path.to_owned());
-                fs::write(path, hltas_to_str(&tab.borrow().hltas))?;
-            } else {
-                // no file, save as new file
-                if let Ok(path) = Self::ask_hltas_save_location() {
-                    if let Some(path) = path {
-                        fs::write(&path, hltas_to_str(&tab.borrow().hltas))?;
-                        tab.borrow_mut().title =
-                            HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
-                    }
+        if let Some(path) = &tab.path {
+            // save_path = Some(path.to_owned());
+            fs::write(path, hltas_to_str(&tab.hltas))?;
+        } else {
+            // no file, save as new file
+            if let Ok(path) = Self::ask_hltas_save_location() {
+                if let Some(path) = path {
+                    fs::write(&path, hltas_to_str(&tab.hltas))?;
+                    tab.title = HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
                 }
             }
         }
@@ -161,6 +170,7 @@ impl MainGUI {
         let remove_index = if let Some(tab) = &self.current_tab {
             if tab.borrow().got_modified {
                 if let Err(_) = self.save_current_tab(Some(String::from(
+                    // TODO translation
                     "Would you like to save the modified file?",
                 ))) {
                     return;
@@ -178,24 +188,29 @@ impl MainGUI {
         }
     }
 
-    // pub fn close_tab(&mut self, index: usize) {
-    //     if index >= self.tabs.len() {
-    //         return;
-    //     }
+    pub fn close_tab(&mut self, index: usize) {
+        if index >= self.tabs.len() {
+            return;
+        }
 
-    //     let current_tab = &self.tabs[index];
+        {
+            let mut tab = self.tabs[index].borrow_mut();
 
-    //     if current_tab.got_modified {
-    //         if let Ok(_) = self.save_current_tab(Some(
-    //             "Would you like to save the modified file?".to_string(),
-    //         )) {
-    //             self.tabs.remove(index);
-    //         }
-    //         // else do nothing since we can't close the tab
-    //     } else {
-    //         self.tabs.remove(index);
-    //     }
-    // }
+            if tab.got_modified {
+                if let Err(_) = self.save_tab(
+                    Some(String::from(
+                        // TODO translation
+                        "Would you like to save the modified file?",
+                    )),
+                    &mut tab,
+                ) {
+                    return;
+                }
+            }
+        }
+
+        self.tabs.remove(index);
+    }
 
     // pub fn set_current_tab_title(&mut self) {
     //     if let Some(index) = self.current_tab_index {
@@ -434,7 +449,7 @@ impl MainGUI {
 
                                                 ui.same_line();
 
-                                                !ui.button("x")
+                                                !ui.button("x##frametime")
                                             },
                                         );
 
@@ -474,7 +489,7 @@ impl MainGUI {
 
                                                 ui.same_line();
 
-                                                !ui.button("x")
+                                                !ui.button("x##seeds")
                                             },
                                         );
 
@@ -515,7 +530,7 @@ impl MainGUI {
 
                                                 ui.same_line();
 
-                                                !ui.button("x")
+                                                !ui.button("x##hlstrafe_version")
                                             },
                                         );
 
@@ -529,7 +544,7 @@ impl MainGUI {
 
                                                 ui.same_line();
 
-                                                !ui.button("x")
+                                                !ui.button("x##load_commands")
                                             },
                                         );
 
@@ -614,7 +629,7 @@ impl MainGUI {
                     }
 
                     if let Some(stale_index) = stale_tab {
-                        self.tabs.remove(stale_index);
+                        self.close_tab(stale_index);
                     }
                 });
             });

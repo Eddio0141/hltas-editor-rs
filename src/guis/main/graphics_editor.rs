@@ -8,6 +8,7 @@ use super::{
     property_string_field::property_string_field_ui, tab::HLTASFileTab,
 };
 
+// TODO am I suppose to have translation for those? maybe for some, not all
 pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
     if CollapsingHeader::new("Properties")
         .default_open(true)

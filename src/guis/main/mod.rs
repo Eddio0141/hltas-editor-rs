@@ -18,7 +18,7 @@ use hltas::types::{AutoMovement, Line, Seeds, StrafeDir};
 use hltas_cleaner::cleaners;
 use imgui::{
     CollapsingHeader, Condition, Drag, InputText, MenuItem, TabBar, TabItem, TabItemFlags, Ui,
-    Window,
+    Window, Slider,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
@@ -548,13 +548,16 @@ impl MainGUI {
                                             },
                                         );
 
+                                        // ui.show_demo_window(&mut true);
+
                                         for (i, line) in &mut tab.borrow_mut().hltas.lines.iter_mut().enumerate() {
                                             match line {
                                                 Line::FrameBulk(framebulk) => {
                                                     ui.group(|| {
                                                         ui.group(|| {
                                                             let yaw_editor = |yaw| {
-                                                                let item_width_token = ui.push_item_width(100.0);
+                                                                // TODO 100.0 into something that works automatically maybe
+                                                                let item_width_token = ui.push_item_width(200.0);
 
                                                                 Drag::new(format!("yaw##yaw_set{}", i))
                                                                 .speed(0.1)
@@ -567,10 +570,10 @@ impl MainGUI {
                                                             };
 
                                                             let yaw_button = |disabled, auto_movement: &mut Option<AutoMovement>| {
-                                                                let item_width_token = ui.push_item_width(100.0);
+                                                                let item_width_token = ui.push_item_width(200.0);
                                                                 
                                                                 ui.disabled(disabled, || {
-                                                                    if ui.button("set yaw") {
+                                                                    if ui.button(format!("set yaw##yaw_set_button{}", i)) {
                                                                         *auto_movement = Some(AutoMovement::SetYaw(0.0));
                                                                     }
                                                                 });
@@ -599,6 +602,29 @@ impl MainGUI {
                                                                     yaw_button(false, &mut framebulk.auto_actions.movement)
                                                                 }
                                                             };
+                                                            
+                                                            match &mut framebulk.pitch {
+                                                                Some(pitch) => {
+                                                                    let item_width_token = ui.push_item_width(200.0);
+
+                                                                    Slider::new(format!("pitch##pitch_set{}", i), -89.0, 89.0)
+                                                                    .build(
+                                                                        ui,
+                                                                        pitch,
+                                                                    );
+
+                                                                    item_width_token.pop(ui);
+                                                                },
+                                                                None => {
+                                                                    let item_width_token = ui.push_item_width(200.0);
+                                                                    
+                                                                    if ui.button(format!("set pitch##pitch_set_button{}", i)) {
+                                                                        framebulk.pitch = Some(0.0);
+                                                                    }
+
+                                                                    item_width_token.pop(ui);
+                                                                },
+                                                            }
                                                         });
                                                     });
 

@@ -1,7 +1,9 @@
 use std::num::NonZeroU32;
 
 use hltas::types::{AutoMovement, Line, Seeds, StrafeDir};
-use imgui::{CollapsingHeader, Drag, ImColor32, InputText, Slider, StyleColor, Ui};
+use imgui::{CollapsingHeader, Drag, InputText, Slider, StyleColor, Ui};
+
+use crate::guis::x_button::show_x_button;
 
 use super::{
     cmd_editor::cmd_editor_ui, property_some_none_field::property_some_none_field_ui,
@@ -39,7 +41,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             "0.0000000001".to_string(),
             "Enable 0ms ducktap",
             |frametime| {
-                let x_button_clicked = !ui.button("x##frametime");
+                let x_button_clicked = !show_x_button(ui, "frametime");
 
                 ui.same_line();
 
@@ -68,8 +70,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             },
             "enable shared / non-shared rng set",
             |seeds| {
-                let x_button_clicked = !ui.button("x##seeds");
-
+                let x_button_clicked = !show_x_button(ui, "seeds");
                 ui.same_line();
 
                 let item_width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
@@ -102,7 +103,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             NonZeroU32::new(3).unwrap(),
             "set hlstrafe version",
             |hlstrafe_version| {
-                let x_button_clicked = !ui.button("x##hlstrafe_version");
+                let x_button_clicked = !show_x_button(ui, "hlstrafe_version");
 
                 ui.same_line();
 
@@ -133,7 +134,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             String::new(),
             "set hltas load commands",
             |cmds| {
-                let x_button_clicked = !ui.button("x##load_commands");
+                let x_button_clicked = !show_x_button(ui, "load_commands");
 
                 ui.same_line();
 

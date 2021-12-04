@@ -1,9 +1,9 @@
 use std::num::NonZeroU32;
 
-use hltas::types::{AutoMovement, Line, Seeds, StrafeDir};
+use hltas::types::{AutoMovement, Line, Seeds, StrafeDir, StrafeType};
 use imgui::{CollapsingHeader, Drag, InputText, Slider, StyleColor, TabBar, TabItem, Ui};
 
-use crate::guis::x_button::show_x_button;
+use crate::guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button};
 
 use super::{
     cmd_editor::cmd_editor_ui, property_some_none_field::property_some_none_field_ui,
@@ -147,7 +147,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
     ui.separator();
     ui.text("Lines");
-    // ui.show_demo_window(&mut true);
+    ui.show_demo_window(&mut true);
 
     for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
         match line {
@@ -236,7 +236,27 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     ui.group(|| {
                         TabBar::new(format!("strafe_menu##{}", i)).build(ui, || {
                             TabItem::new(format!("strafe tab##{}", i)).build(ui, || {
-                                ui.text("strafe menu");
+                                if let Some(auto_movement) = &mut framebulk.auto_actions.movement {
+                                    if let AutoMovement::Strafe(strafe_settings) = auto_movement {
+                                        show_radio_button_enum(
+                                            ui,
+                                            &mut strafe_settings.type_,
+                                            vec![
+                                                StrafeType::MaxAccel,
+                                                StrafeType::MaxAngle,
+                                                StrafeType::MaxDeccel,
+                                                StrafeType::ConstSpeed,
+                                            ],
+                                            vec![
+                                                "Max accel",
+                                                "Max angle",
+                                                "Mac deccel",
+                                                "Const speed",
+                                            ],
+                                            false,
+                                        );
+                                    }
+                                }
                             });
                             TabItem::new(format!("key tab##{}", i)).build(ui, || {
                                 ui.text("key menu");

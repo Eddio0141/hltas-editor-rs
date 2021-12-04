@@ -2,8 +2,6 @@ mod cmd_editor;
 mod graphics_editor;
 mod property_some_none_field;
 mod property_string_field;
-mod selectable_hltas_button;
-mod strafe_key_selector;
 mod tab;
 
 use std::cell::RefCell;

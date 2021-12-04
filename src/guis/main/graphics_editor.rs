@@ -154,6 +154,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             Line::FrameBulk(framebulk) => {
                 ui.group(|| {
                     let top_bottom_spacing = 5.0;
+                    // yaw pitch menu
                     ui.group(|| {
                         ui.dummy([0.0, top_bottom_spacing]);
                         ui.indent_by(top_bottom_spacing);
@@ -220,13 +221,15 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             ui.item_rect_min(),
                             {
                                 let mut rect_max = ui.item_rect_max();
-                                rect_max[0] = ui.window_content_region_width();
+                                rect_max[0] += top_bottom_spacing;
                                 rect_max
                             },
                             ui.style_color(StyleColor::Header),
                         )
                         .thickness(2.0)
                         .build();
+
+                    // strafe menu
                 });
             }
             Line::Save(save) => {}

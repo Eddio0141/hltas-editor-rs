@@ -1,7 +1,7 @@
 use std::num::NonZeroU32;
 
 use hltas::types::{AutoMovement, Line, Seeds, StrafeDir};
-use imgui::{CollapsingHeader, Drag, InputText, Slider, Ui};
+use imgui::{CollapsingHeader, Drag, ImColor32, InputText, Slider, StyleColor, Ui};
 
 use super::{
     cmd_editor::cmd_editor_ui, property_some_none_field::property_some_none_field_ui,
@@ -152,9 +152,13 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
         match line {
             Line::FrameBulk(framebulk) => {
                 ui.group(|| {
+                    let top_bottom_spacing = 5.0;
                     ui.group(|| {
+                        ui.dummy([0.0, top_bottom_spacing]);
+                        ui.indent_by(top_bottom_spacing);
+
                         let yaw_editor = |yaw| {
-                            // TODO 100.0 into something that works automatically maybe
+                            // TODO 200.0 into something that works automatically maybe
                             let item_width_token = ui.push_item_width(200.0);
                             Drag::new(format!("yaw##yaw_set{}", i))
                                 .speed(0.1)
@@ -204,17 +208,25 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                 item_width_token.pop(ui);
                             }
                         }
+
+                        ui.dummy([0.0, top_bottom_spacing]);
                     });
+
+                    let draw_list = ui.get_window_draw_list();
+
+                    draw_list
+                        .add_rect(
+                            ui.item_rect_min(),
+                            {
+                                let mut rect_max = ui.item_rect_max();
+                                rect_max[0] = ui.window_content_region_width();
+                                rect_max
+                            },
+                            ui.style_color(StyleColor::Header),
+                        )
+                        .thickness(2.0)
+                        .build();
                 });
-                // draw square thingy around
-                // let draw_list = ui.get_window_draw_list();
-                // draw_list
-                //     .add_line(
-                //         [0.0, 0.0],
-                //         [100.0, 100.0],
-                //         ImColor32::from_rgb(255, 0, 0),
-                //     )
-                //     .build();
             }
             Line::Save(save) => {}
             Line::SharedSeed(shared_seed) => {}

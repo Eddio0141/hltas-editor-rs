@@ -1,7 +1,7 @@
 use std::num::NonZeroU32;
 
 use hltas::types::{AutoMovement, Line, Seeds, StrafeDir};
-use imgui::{CollapsingHeader, Drag, InputText, Slider, StyleColor, Ui};
+use imgui::{CollapsingHeader, Drag, InputText, Slider, StyleColor, TabBar, TabItem, Ui};
 
 use crate::guis::x_button::show_x_button;
 
@@ -154,6 +154,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             Line::FrameBulk(framebulk) => {
                 ui.group(|| {
                     let top_bottom_spacing = 5.0;
+
                     // yaw pitch menu
                     ui.group(|| {
                         ui.dummy([0.0, top_bottom_spacing]);
@@ -229,7 +230,19 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         .thickness(2.0)
                         .build();
 
+                    ui.same_line();
+
                     // strafe menu
+                    ui.group(|| {
+                        TabBar::new(format!("strafe_menu##{}", i)).build(ui, || {
+                            TabItem::new(format!("strafe tab##{}", i)).build(ui, || {
+                                ui.text("strafe menu");
+                            });
+                            TabItem::new(format!("key tab##{}", i)).build(ui, || {
+                                ui.text("key menu");
+                            });
+                        });
+                    });
                 });
             }
             Line::Save(save) => {}

@@ -1,5 +1,7 @@
 use imgui::{InputText, Ui};
 
+use crate::guis::x_button::show_x_button;
+
 use super::property_some_none_field::property_some_none_field_ui;
 
 pub fn property_string_field_ui(
@@ -16,8 +18,7 @@ pub fn property_string_field_ui(
         String::new(),
         enable_field_button_name,
         |field_some| {
-            // TODO find proper "x" button
-            let x_button_clicked = !ui.button(format!("x##{}", label));
+            let x_button_clicked = !show_x_button(ui, label);
 
             ui.same_line();
 

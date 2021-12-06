@@ -5,16 +5,22 @@ pub fn show_radio_button_enum<T: Copy + PartialEq>(
     value: &mut T,
     enums: Vec<T>,
     labels: Vec<&str>,
+    id: String,
     same_line: bool,
-) {
+) -> bool {
     assert_eq!(enums.len(), labels.len());
 
+    let mut radio_button_clicked = false;
     let loop_end = enums.len();
     for i in 0..loop_end {
-        ui.radio_button(labels[i], value, enums[i]);
+        if ui.radio_button(format!("{}##{}", labels[i], id), value, enums[i]) {
+            radio_button_clicked = true;
+        }
 
         if same_line {
             ui.same_line();
         }
     }
+
+    radio_button_clicked
 }

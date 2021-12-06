@@ -1,13 +1,15 @@
 use std::num::NonZeroU32;
 
-use hltas::types::{AutoMovement, Line, Seeds, StrafeDir, StrafeType};
+use hltas::types::{AutoMovement, Line, Seeds, StrafeDir, StrafeSettings, StrafeType};
 use imgui::{CollapsingHeader, Drag, InputText, Slider, StyleColor, TabBar, TabItem, Ui};
 
 use crate::guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button};
 
 use super::{
-    cmd_editor::cmd_editor_ui, property_some_none_field::property_some_none_field_ui,
-    property_string_field::property_string_field_ui, tab::HLTASFileTab,
+    cmd_editor::cmd_editor_ui,
+    property_some_none_field::property_some_none_field_ui,
+    property_string_field::property_string_field_ui,
+    tab::{HLTASFileTab, HLTASMenuState, StrafeMenuSelection},
 };
 
 // TODO am I suppose to have translation for those? maybe for some, not all
@@ -149,7 +151,11 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
     ui.text("Lines");
     ui.show_demo_window(&mut true);
 
+    let tab_menu_data = &mut tab.tab_menu_data;
+
     for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
+        let strafe_menu_selection = &mut tab_menu_data.strafe_menu_selections[i];
+
         match line {
             Line::FrameBulk(framebulk) => {
                 ui.group(|| {
@@ -234,34 +240,107 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                     // strafe menu
                     ui.group(|| {
-                        TabBar::new(format!("strafe_menu##{}", i)).build(ui, || {
-                            TabItem::new(format!("strafe tab##{}", i)).build(ui, || {
-                                if let Some(auto_movement) = &mut framebulk.auto_actions.movement {
-                                    if let AutoMovement::Strafe(strafe_settings) = auto_movement {
-                                        show_radio_button_enum(
-                                            ui,
-                                            &mut strafe_settings.type_,
-                                            vec![
-                                                StrafeType::MaxAccel,
-                                                StrafeType::MaxAngle,
-                                                StrafeType::MaxDeccel,
-                                                StrafeType::ConstSpeed,
-                                            ],
-                                            vec![
-                                                "Max accel",
-                                                "Max angle",
-                                                "Mac deccel",
-                                                "Const speed",
-                                            ],
-                                            false,
-                                        );
+                        if ui.button("Strafe tab") {
+                            *strafe_menu_selection = Some(StrafeMenuSelection::Strafe);
+                        }
+
+                        ui.same_line();
+
+                        if ui.button("Key tab") {
+                            *strafe_menu_selection = Some(StrafeMenuSelection::Keys);
+                        }
+
+                        match strafe_menu_selection {
+                            Some(menu_selection) => match menu_selection {
+                                StrafeMenuSelection::Strafe => {
+                                    // using Some with auto_movement to show the strafetype options with an extra "None" option
+                                    let mut strafe_type_selection =
+                                        match &framebulk.auto_actions.movement {
+                                            Some(auto_movement) => match auto_movement {
+                                                AutoMovement::SetYaw(_) => None,
+                                                AutoMovement::Strafe(strafe_settings) => {
+                                                    Some(strafe_settings.type_)
+                                                }
+                                            },
+                                            None => None,
+                                        };
+
+                                    if show_radio_button_enum(
+                                        ui,
+                                        &mut strafe_type_selection,
+                                        vec![
+                                            Some(StrafeType::MaxAccel),
+                                            Some(StrafeType::MaxAngle),
+                                            Some(StrafeType::MaxDeccel),
+                                            Some(StrafeType::ConstSpeed),
+                                            None,
+                                        ],
+                                        vec![
+                                            "Max accel",
+                                            "Max angle",
+                                            "Max deccel",
+                                            "Const speed",
+                                            "None",
+                                        ],
+                                        i.to_string(),
+                                        false,
+                                    ) {
+                                        let prev_yaw = match &framebulk.auto_actions.movement {
+                                            Some(auto_movement) => match auto_movement {
+                                                AutoMovement::SetYaw(yaw) => Some(*yaw),
+                                                AutoMovement::Strafe(strafe_settings) => {
+                                                    match strafe_settings.dir {
+                                                        StrafeDir::Yaw(yaw) => Some(yaw),
+                                                        StrafeDir::Line { yaw } => Some(yaw),
+                                                        _ => None,
+                                                    }
+                                                }
+                                            },
+                                            None => None,
+                                        };
+
+                                        match strafe_type_selection {
+                                            Some(strafe_type) => {
+                                                framebulk.auto_actions.movement =
+                                                    Some(AutoMovement::Strafe(StrafeSettings {
+                                                        type_: strafe_type,
+                                                        // TODO make this an option to auto select direction for each strafe type
+                                                        dir: match strafe_type {
+                                                            StrafeType::MaxDeccel => {
+                                                                StrafeDir::Best
+                                                            }
+                                                            _ => {
+                                                                StrafeDir::Yaw(match prev_yaw {
+                                                                    Some(yaw) => yaw,
+                                                                    // TODO store "default" yaw value somewhere
+                                                                    None => 0.0,
+                                                                })
+                                                            }
+                                                        },
+                                                    }));
+                                            }
+                                            None => {
+                                                framebulk.auto_actions.movement = match prev_yaw {
+                                                    Some(yaw) => Some(AutoMovement::SetYaw(yaw)),
+                                                    None => None,
+                                                };
+                                            }
+                                        }
                                     }
                                 }
-                            });
-                            TabItem::new(format!("key tab##{}", i)).build(ui, || {
-                                ui.text("key menu");
-                            });
-                        });
+                                StrafeMenuSelection::Keys => {
+                                    ui.text("key menu");
+                                }
+                            },
+                            None => unreachable!(),
+                        }
+                        // TabBar::new(format!("strafe_menu##{}", i)).build(ui, || {
+                        //     TabItem::new(format!("strafe tab##{}", i)).build(ui, || {
+
+                        //     });
+                        //     TabItem::new(format!("key tab##{}", i)).build(ui, || {
+                        //     });
+                        // });
                     });
                 });
             }

@@ -4,13 +4,15 @@ use std::{
 };
 
 use fluent_templates::{LanguageIdentifier, Loader};
-use hltas::HLTAS;
+use hltas::{types::Line, HLTAS};
 
 pub struct HLTASFileTab {
     pub title: String,
     pub path: Option<PathBuf>,
     pub hltas: HLTAS,
     pub got_modified: bool,
+
+    pub tab_menu_data: HLTASMenuState,
 }
 
 // TODO think if pathbuf can be a generic type
@@ -29,11 +31,14 @@ impl<'a> HLTASFileTab {
             }
         };
 
+        let tab_menu_data = HLTASMenuState::new(&hltas);
+
         Ok(Self {
             title,
             path: Some(path.to_path_buf()),
             got_modified: false,
             hltas,
+            tab_menu_data,
         })
     }
 
@@ -60,7 +65,53 @@ impl<'a> HLTASFileTab {
             path: None,
             got_modified: false,
             hltas: HLTAS::default(),
+            tab_menu_data: HLTASMenuState::new(&HLTAS::default()),
         }
         // Self::default()
     }
+}
+
+/// Struct to keep track of some menu states for the hltas object in the tab
+pub struct HLTASMenuState {
+    pub strafe_menu_selections: Vec<Option<StrafeMenuSelection>>,
+}
+
+impl HLTASMenuState {
+    pub fn new(hltas: &HLTAS) -> Self {
+        let strafe_menu_selections = hltas
+            .lines
+            .iter()
+            .map(|framebulk| {
+                if let Line::FrameBulk(framebulk) = framebulk {
+                    if let Some(_) = &framebulk.auto_actions.movement {
+                        Some(StrafeMenuSelection::Strafe)
+                    } else {
+                        let movement_keys = &framebulk.movement_keys;
+                        if movement_keys.down
+                            || movement_keys.up
+                            || movement_keys.forward
+                            || movement_keys.left
+                            || movement_keys.right
+                            || movement_keys.back
+                        {
+                            Some(StrafeMenuSelection::Keys)
+                        } else {
+                            Some(StrafeMenuSelection::Strafe)
+                        }
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        Self {
+            strafe_menu_selections,
+        }
+    }
+}
+
+pub enum StrafeMenuSelection {
+    Strafe,
+    Keys,
 }

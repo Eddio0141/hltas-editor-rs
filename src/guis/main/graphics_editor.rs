@@ -256,13 +256,14 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                     // strafe menu
                     ui.group(|| {
-                        if ui.button("Strafe tab") {
+                        if ui.button(format!("Strafe tab##{}", i)) {
                             *strafe_menu_selection = Some(StrafeMenuSelection::Strafe);
                         }
 
                         ui.same_line();
 
-                        if ui.button("Key tab") {
+                        let key_tab_pos = ui.cursor_screen_pos();
+                        if ui.button(format!("Key tab##{}", i)) {
                             *strafe_menu_selection = Some(StrafeMenuSelection::Keys);
                         }
 
@@ -345,7 +346,20 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                     }
                                 }
                                 StrafeMenuSelection::Keys => {
-                                    ui.text("key menu");
+                                    // TODO key layout
+                                    let keys = &mut framebulk.movement_keys;
+                                    ui.checkbox("Forward", &mut keys.forward);
+                                    ui.same_line();
+                                    let y_pos_next = ui.cursor_screen_pos()[1];
+                                    ui.set_cursor_screen_pos([key_tab_pos[0], y_pos_next]);
+                                    ui.checkbox("Up", &mut keys.up);
+                                    ui.checkbox("Left", &mut keys.left);
+                                    ui.same_line();
+                                    let y_pos_next = ui.cursor_screen_pos()[1];
+                                    ui.set_cursor_screen_pos([key_tab_pos[0], y_pos_next]);
+                                    ui.checkbox("Down", &mut keys.down);
+                                    ui.checkbox("Right", &mut keys.right);
+                                    ui.checkbox("Back", &mut keys.back);
                                 }
                             },
                             None => unreachable!(),

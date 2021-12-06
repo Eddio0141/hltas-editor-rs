@@ -1,7 +1,7 @@
 use std::num::NonZeroU32;
 
 use hltas::types::{AutoMovement, Line, Seeds, StrafeDir, StrafeSettings, StrafeType};
-use imgui::{CollapsingHeader, Drag, InputText, Slider, StyleColor, TabBar, TabItem, Ui};
+use imgui::{CollapsingHeader, Drag, InputText, Slider, StyleColor, Ui};
 
 use crate::guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button};
 
@@ -9,7 +9,7 @@ use super::{
     cmd_editor::cmd_editor_ui,
     property_some_none_field::property_some_none_field_ui,
     property_string_field::property_string_field_ui,
-    tab::{HLTASFileTab, HLTASMenuState, StrafeMenuSelection},
+    tab::{HLTASFileTab, StrafeMenuSelection},
 };
 
 // TODO am I suppose to have translation for those? maybe for some, not all

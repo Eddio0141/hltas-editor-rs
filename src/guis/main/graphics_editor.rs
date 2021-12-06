@@ -149,9 +149,11 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
     ui.separator();
     ui.text("Lines");
-    ui.show_demo_window(&mut true);
+    // ui.show_demo_window(&mut true);
 
     let tab_menu_data = &mut tab.tab_menu_data;
+
+    // TODO, only render the lines required to save a lot of performance
 
     for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
         let strafe_menu_selection = &mut tab_menu_data.strafe_menu_selections[i];
@@ -166,10 +168,13 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     let pitch_text = "pitch";
 
                     // let top_bottom_spacing = 5.0;
-                    let widget_width = ui.window_content_region_width() * 0.2;
 
                     // yaw pitch menu
+                    ui.text(format!("{}", i));
+                    ui.same_line();
+
                     ui.group(|| {
+                        let widget_width = ui.window_content_region_width() * 0.2;
                         // ui.dummy([0.0, top_bottom_spacing]);
                         // ui.indent_by(top_bottom_spacing);
 
@@ -245,7 +250,10 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                     ui.same_line();
 
-                    ui.set_cursor_screen_pos([ui.window_content_region_width() * 0.3, ui.cursor_screen_pos()[1]]);
+                    ui.set_cursor_screen_pos([
+                        ui.window_content_region_width() * 0.3,
+                        ui.cursor_screen_pos()[1],
+                    ]);
 
                     // strafe menu
                     ui.group(|| {

@@ -1,6 +1,8 @@
 use std::num::NonZeroU32;
 
-use hltas::types::{AutoMovement, Line, Seeds, StrafeDir, StrafeSettings, StrafeType};
+use hltas::types::{
+    AutoMovement, ChangeTarget, Line, Seeds, StrafeDir, StrafeSettings, StrafeType,
+};
 use imgui::{CollapsingHeader, Drag, ImColor32, InputText, Slider, StyleColor, StyleVar, Ui};
 
 use crate::guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button};
@@ -392,8 +394,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                 let comment_frame_bg =
                     ui.push_style_color(StyleColor::FrameBg, [0.0, 0.0, 0.0, 0.0]);
                 // TODO customizable comment colour
-                let comment_colour =
-                    ui.push_style_color(StyleColor::Text, [0.0, 1.0, 0.0, 1.0]);
+                let comment_colour = ui.push_style_color(StyleColor::Text, [0.0, 1.0, 0.0, 1.0]);
 
                 InputText::new(ui, format!("##comment_editor{}", i), comment).build();
 
@@ -402,7 +403,42 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             }
             Line::VectorialStrafing(vectorial_strafing) => {}
             Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => {}
-            Line::Change(change) => {}
+            Line::Change(change) => {
+                let drag_size = ui.window_content_region_width() * 0.1;
+
+                ui.text("Change");
+                ui.same_line();
+                let drag_size_token = ui.push_item_width(drag_size);
+                show_radio_button_enum(
+                    ui,
+                    &mut change.target,
+                    vec![
+                        ChangeTarget::Yaw,
+                        ChangeTarget::Pitch,
+                        ChangeTarget::VectorialStrafingYaw,
+                    ],
+                    vec!["Yaw", "Pitch", "Target Yaw"],
+                    format!("change_radio_buttons{}", i),
+                    true,
+                );
+                drag_size_token.pop(ui);
+                ui.same_line();
+                ui.text("to");
+                ui.same_line();
+                let drag_size_token = ui.push_item_width(drag_size);
+                Drag::new(format!("##change_angle{}", i))
+                    .speed(0.1)
+                    .build(ui, &mut change.final_value);
+                drag_size_token.pop(ui);
+                ui.same_line();
+                ui.text("over");
+                ui.same_line();
+                let drag_size_token = ui.push_item_width(drag_size);
+                Drag::new(format!("s##change_over{}", i))
+                    .speed(0.1)
+                    .build(ui, &mut change.over);
+                drag_size_token.pop(ui);
+            }
             Line::TargetYawOverride(target_yaw_override) => {}
         }
     }

@@ -17,7 +17,7 @@ pub fn show_radio_button_enum<T: Copy + PartialEq>(
             radio_button_clicked = true;
         }
 
-        if same_line {
+        if same_line && i < loop_end - 1 {
             ui.same_line();
         }
     }

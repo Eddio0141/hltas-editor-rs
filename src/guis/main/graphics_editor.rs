@@ -166,19 +166,26 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     let yaw_text = "yaw";
                     let pitch_text = "pitch";
 
-                    // let top_bottom_spacing = 5.0;
-
                     // yaw pitch menu
                     ui.text(format!("{}", i));
                     ui.same_line();
+                    let line_count_offset = ui.cursor_screen_pos()[0];
 
                     ui.group(|| {
-                        let widget_width = ui.window_content_region_width() * 0.2;
-                        // ui.dummy([0.0, top_bottom_spacing]);
-                        // ui.indent_by(top_bottom_spacing);
+                        let yaw_pitch_changer_offset = ui.window_content_region_width() * 0.025 + line_count_offset;
+                        let yaw_pitch_setter_width = ui.window_content_region_width() * 0.2;
 
                         let yaw_editor = |yaw| {
-                            let item_width_token = ui.push_item_width(widget_width);
+                            show_x_button(ui, &format!("yaw_set_close{}", i));
+
+                            ui.same_line();
+
+                            ui.set_cursor_screen_pos([
+                                yaw_pitch_changer_offset,
+                                ui.cursor_screen_pos()[1],
+                            ]);
+
+                            let item_width_token = ui.push_item_width(yaw_pitch_setter_width);
                             Drag::new(format!("{}##yaw_set{}", yaw_text, i))
                                 .speed(0.1)
                                 .build(ui, yaw);
@@ -186,9 +193,14 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         };
                         let yaw_button = |disabled, auto_movement: &mut Option<AutoMovement>| {
                             ui.disabled(disabled, || {
+                                ui.set_cursor_screen_pos([
+                                    yaw_pitch_changer_offset,
+                                    ui.cursor_screen_pos()[1],
+                                ]);
+
                                 if ui.button_with_size(
                                     format!("{}##yaw_set_button{}", set_yaw_text, i),
-                                    [widget_width, 0.0],
+                                    [yaw_pitch_setter_width, 0.0],
                                 ) {
                                     *auto_movement = Some(AutoMovement::SetYaw(0.0));
                                 }
@@ -213,44 +225,40 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                         match &mut framebulk.pitch {
                             Some(pitch) => {
-                                // TODO come up with a better solution for this, it works but its not good
-                                let item_width_token = ui.push_item_width(widget_width);
+                                show_x_button(ui, &format!("pitch_set_close{}", i));
+                                
+                                ui.same_line();
+
+                                ui.set_cursor_screen_pos([
+                                    yaw_pitch_changer_offset,
+                                    ui.cursor_screen_pos()[1],
+                                ]);
+
+                                let item_width_token = ui.push_item_width(yaw_pitch_setter_width);
                                 Slider::new(format!("{}##pitch_set{}", pitch_text, i), -89.0, 89.0)
                                     .build(ui, pitch);
                                 item_width_token.pop(ui);
                             }
                             None => {
+                                ui.set_cursor_screen_pos([
+                                    yaw_pitch_changer_offset,
+                                    ui.cursor_screen_pos()[1],
+                                ]);
+
                                 if ui.button_with_size(
                                     format!("{}##pitch_set_button{}", set_pitch_text, i),
-                                    [widget_width, 0.0],
+                                    [yaw_pitch_setter_width, 0.0],
                                 ) {
                                     framebulk.pitch = Some(0.0);
                                 }
                             }
                         }
-
-                        // ui.dummy([0.0, top_bottom_spacing]);
                     });
-
-                    // let draw_list = ui.get_window_draw_list();
-
-                    // draw_list
-                    //     .add_rect(
-                    //         ui.item_rect_min(),
-                    //         {
-                    //             let mut rect_max = ui.item_rect_max();
-                    //             rect_max[0] += top_bottom_spacing;
-                    //             rect_max
-                    //         },
-                    //         ui.style_color(StyleColor::Header),
-                    //     )
-                    //     .thickness(2.0)
-                    //     .build();
 
                     ui.same_line();
 
                     ui.set_cursor_screen_pos([
-                        ui.window_content_region_width() * 0.3,
+                        line_count_offset + ui.window_content_region_width() * 0.28,
                         ui.cursor_screen_pos()[1],
                     ]);
 

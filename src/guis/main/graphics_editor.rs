@@ -1,7 +1,7 @@
 use std::num::NonZeroU32;
 
 use hltas::types::{AutoMovement, Line, Seeds, StrafeDir, StrafeSettings, StrafeType};
-use imgui::{CollapsingHeader, Drag, InputText, Slider, StyleColor, Ui};
+use imgui::{CollapsingHeader, Drag, InputText, Slider, Ui};
 
 use crate::guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button};
 
@@ -149,7 +149,6 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
     ui.separator();
     ui.text("Lines");
-    // ui.show_demo_window(&mut true);
 
     let tab_menu_data = &mut tab.tab_menu_data;
 

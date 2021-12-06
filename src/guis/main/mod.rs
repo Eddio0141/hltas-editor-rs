@@ -357,5 +357,8 @@ impl MainGUI {
                     }
                 });
             });
+
+        #[cfg(debug_assertions)]
+        ui.show_demo_window(&mut true);
     }
 }

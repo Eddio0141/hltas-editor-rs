@@ -1,7 +1,7 @@
 use std::num::NonZeroU32;
 
 use hltas::types::{AutoMovement, Line, Seeds, StrafeDir, StrafeSettings, StrafeType};
-use imgui::{CollapsingHeader, Drag, InputText, Slider, Ui};
+use imgui::{CollapsingHeader, Drag, ImColor32, InputText, Slider, StyleColor, StyleVar, Ui};
 
 use crate::guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button};
 
@@ -157,6 +157,10 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
     for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
         let strafe_menu_selection = &mut tab_menu_data.strafe_menu_selections[i];
 
+        ui.text(format!("{}", i));
+        ui.same_line();
+        let line_count_offset = ui.cursor_screen_pos()[0];
+
         match line {
             Line::FrameBulk(framebulk) => {
                 ui.group(|| {
@@ -167,12 +171,9 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     let pitch_text = "pitch";
 
                     // yaw pitch menu
-                    ui.text(format!("{}", i));
-                    ui.same_line();
-                    let line_count_offset = ui.cursor_screen_pos()[0];
-
                     ui.group(|| {
-                        let yaw_pitch_changer_offset = ui.window_content_region_width() * 0.025 + line_count_offset;
+                        let yaw_pitch_changer_offset =
+                            ui.window_content_region_width() * 0.025 + line_count_offset;
                         let yaw_pitch_setter_width = ui.window_content_region_width() * 0.2;
 
                         let yaw_editor = |yaw| {
@@ -226,7 +227,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         match &mut framebulk.pitch {
                             Some(pitch) => {
                                 show_x_button(ui, &format!("pitch_set_close{}", i));
-                                
+
                                 ui.same_line();
 
                                 ui.set_cursor_screen_pos([
@@ -387,7 +388,18 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             Line::Buttons(buttons) => {}
             Line::LGAGSTMinSpeed(lgagst_min_spd) => {}
             Line::Reset { non_shared_seed } => {}
-            Line::Comment(comment) => {}
+            Line::Comment(comment) => {
+                let comment_frame_bg =
+                    ui.push_style_color(StyleColor::FrameBg, [0.0, 0.0, 0.0, 0.0]);
+                // TODO customizable comment colour
+                let comment_colour =
+                    ui.push_style_color(StyleColor::Text, [0.0, 1.0, 0.0, 1.0]);
+
+                InputText::new(ui, format!("##comment_editor{}", i), comment).build();
+
+                comment_colour.pop();
+                comment_frame_bg.pop();
+            }
             Line::VectorialStrafing(vectorial_strafing) => {}
             Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => {}
             Line::Change(change) => {}

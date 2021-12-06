@@ -159,30 +159,36 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
         match line {
             Line::FrameBulk(framebulk) => {
                 ui.group(|| {
-                    let top_bottom_spacing = 5.0;
+                    // TODO translation
+                    let set_yaw_text = "set yaw";
+                    let set_pitch_text = "set pitch";
+                    let yaw_text = "yaw";
+                    let pitch_text = "pitch";
+
+                    // let top_bottom_spacing = 5.0;
+                    let widget_width = ui.window_content_region_width() * 0.2;
 
                     // yaw pitch menu
                     ui.group(|| {
-                        ui.dummy([0.0, top_bottom_spacing]);
-                        ui.indent_by(top_bottom_spacing);
+                        // ui.dummy([0.0, top_bottom_spacing]);
+                        // ui.indent_by(top_bottom_spacing);
 
                         let yaw_editor = |yaw| {
-                            // TODO 200.0 into something that works automatically maybe
-                            let item_width_token = ui.push_item_width(200.0);
-                            Drag::new(format!("yaw##yaw_set{}", i))
+                            let item_width_token = ui.push_item_width(widget_width);
+                            Drag::new(format!("{}##yaw_set{}", yaw_text, i))
                                 .speed(0.1)
                                 .build(ui, yaw);
                             item_width_token.pop(ui);
                         };
                         let yaw_button = |disabled, auto_movement: &mut Option<AutoMovement>| {
-                            let item_width_token = ui.push_item_width(200.0);
-
                             ui.disabled(disabled, || {
-                                if ui.button(format!("set yaw##yaw_set_button{}", i)) {
+                                if ui.button_with_size(
+                                    format!("{}##yaw_set_button{}", set_yaw_text, i),
+                                    [widget_width, 0.0],
+                                ) {
                                     *auto_movement = Some(AutoMovement::SetYaw(0.0));
                                 }
                             });
-                            item_width_token.pop(ui);
                         };
                         match &mut framebulk.auto_actions.movement {
                             Some(auto_movement) => match auto_movement {
@@ -203,40 +209,43 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                         match &mut framebulk.pitch {
                             Some(pitch) => {
-                                let item_width_token = ui.push_item_width(200.0);
-                                Slider::new(format!("pitch##pitch_set{}", i), -89.0, 89.0)
+                                // TODO come up with a better solution for this, it works but its not good
+                                let item_width_token = ui.push_item_width(widget_width);
+                                Slider::new(format!("{}##pitch_set{}", pitch_text, i), -89.0, 89.0)
                                     .build(ui, pitch);
                                 item_width_token.pop(ui);
                             }
                             None => {
-                                let item_width_token = ui.push_item_width(200.0);
-
-                                if ui.button(format!("set pitch##pitch_set_button{}", i)) {
+                                if ui.button_with_size(
+                                    format!("{}##pitch_set_button{}", set_pitch_text, i),
+                                    [widget_width, 0.0],
+                                ) {
                                     framebulk.pitch = Some(0.0);
                                 }
-                                item_width_token.pop(ui);
                             }
                         }
 
-                        ui.dummy([0.0, top_bottom_spacing]);
+                        // ui.dummy([0.0, top_bottom_spacing]);
                     });
 
-                    let draw_list = ui.get_window_draw_list();
+                    // let draw_list = ui.get_window_draw_list();
 
-                    draw_list
-                        .add_rect(
-                            ui.item_rect_min(),
-                            {
-                                let mut rect_max = ui.item_rect_max();
-                                rect_max[0] += top_bottom_spacing;
-                                rect_max
-                            },
-                            ui.style_color(StyleColor::Header),
-                        )
-                        .thickness(2.0)
-                        .build();
+                    // draw_list
+                    //     .add_rect(
+                    //         ui.item_rect_min(),
+                    //         {
+                    //             let mut rect_max = ui.item_rect_max();
+                    //             rect_max[0] += top_bottom_spacing;
+                    //             rect_max
+                    //         },
+                    //         ui.style_color(StyleColor::Header),
+                    //     )
+                    //     .thickness(2.0)
+                    //     .build();
 
                     ui.same_line();
+
+                    ui.set_cursor_screen_pos([ui.window_content_region_width() * 0.3, ui.cursor_screen_pos()[1]]);
 
                     // strafe menu
                     ui.group(|| {

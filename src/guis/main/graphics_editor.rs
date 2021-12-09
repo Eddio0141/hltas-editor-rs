@@ -444,7 +444,19 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     yaw_pitch_edited || strafe_menu_edited
                 })
             }
-            Line::Save(save) => false,
+            Line::Save(save) => {
+                ui.text("save");
+                ui.same_line();
+                let save_edit_width = ui.push_item_width(ui.window_content_region_width() * 0.5);
+                // TODO limit save max char size
+                let save_edit_input_edited =
+                    InputText::new(ui, format!("##save_edit_input{}", i), save)
+                        .chars_noblank(true)
+                        .build();
+                save_edit_width.pop(ui);
+
+                save_edit_input_edited
+            }
             Line::SharedSeed(shared_seed) => false,
             Line::Buttons(buttons) => false,
             Line::LGAGSTMinSpeed(lgagst_min_spd) => false,

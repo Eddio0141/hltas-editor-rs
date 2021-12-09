@@ -473,7 +473,19 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             }
             Line::Buttons(buttons) => false,
             Line::LGAGSTMinSpeed(lgagst_min_spd) => false,
-            Line::Reset { non_shared_seed } => false,
+            Line::Reset { non_shared_seed } => {
+                // TODO use the same nonshared seed editor as the one in properties
+                ui.text("reset");
+                ui.same_line();
+
+                let width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
+                let seed_edited = Drag::new(format!("##nonshared_seed_edit{}", i))
+                    .speed(0.05)
+                    .build(ui, non_shared_seed);
+                width_token.pop(ui);
+
+                seed_edited
+            }
             Line::Comment(comment) => {
                 let comment_frame_bg =
                     ui.push_style_color(StyleColor::FrameBg, [0.0, 0.0, 0.0, 0.0]);

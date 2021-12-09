@@ -652,7 +652,34 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 target_edited || angle_edited || seconds_edited
             }
-            Line::TargetYawOverride(target_yaw_override) => false,
+            Line::TargetYawOverride(target_yaw_override) => {
+                let override_ui_id = format!("target_yaw_override_popup{}", i);
+
+                let mut edited_target_yaw = false;
+                ui.popup(&override_ui_id, || {
+                    // its unlikely the user will manually edit this, so I use an input text editor
+                    for (j, yaw) in target_yaw_override.iter_mut().enumerate() {
+                        if InputFloat::new(
+                            ui,
+                            format!("##target_yaw_override_input{}{}", i, j),
+                            yaw,
+                        )
+                        .build()
+                            && !edited_target_yaw
+                        {
+                            edited_target_yaw = true;
+                        }
+                    }
+                });
+
+                ui.text("target_yaw override");
+                ui.same_line();
+                if ui.button(format!("...##target_yaw_override_open_popup{}", i)) {
+                    ui.open_popup(&override_ui_id);
+                }
+
+                edited_target_yaw
+            }
         };
 
         if !lines_edited && line_edited {

@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use hltas::types::{
     AutoMovement, ChangeTarget, Line, Seeds, StrafeDir, StrafeSettings, StrafeType,
 };
-use imgui::{CollapsingHeader, Drag, InputText, Slider, StyleColor, Ui};
+use imgui::{CollapsingHeader, Drag, InputFloat, InputText, Slider, StyleColor, Ui};
 
 use crate::guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button};
 
@@ -472,7 +472,18 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                 seed_edited
             }
             Line::Buttons(buttons) => false,
-            Line::LGAGSTMinSpeed(lgagst_min_spd) => false,
+            Line::LGAGSTMinSpeed(lgagst_min_spd) => {
+                ui.text("lgagst min speed");
+                ui.same_line();
+
+                let width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
+                let edited =
+                    InputFloat::new(ui, format!("##lgagstminspd_editor{}", i), lgagst_min_spd)
+                        .build();
+                width_token.pop(ui);
+
+                edited
+            }
             Line::Reset { non_shared_seed } => {
                 // TODO use the same nonshared seed editor as the one in properties
                 ui.text("reset");

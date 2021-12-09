@@ -14,6 +14,7 @@ use super::{
     tab::{HLTASFileTab, StrafeMenuSelection},
 };
 
+// TODO drag speed variables stored somewhere in the function for convinience
 // TODO am I suppose to have translation for those? maybe for some, not all
 pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
     let properties_edited = if CollapsingHeader::new("Properties")
@@ -457,7 +458,19 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 save_edit_input_edited
             }
-            Line::SharedSeed(shared_seed) => false,
+            Line::SharedSeed(shared_seed) => {
+                // TODO use the same seed editor as the one in properties
+                ui.text("seed");
+                ui.same_line();
+
+                let width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
+                let seed_edited = Drag::new(format!("##shared_seed_edit{}", i))
+                    .speed(0.05)
+                    .build(ui, shared_seed);
+                width_token.pop(ui);
+
+                seed_edited
+            }
             Line::Buttons(buttons) => false,
             Line::LGAGSTMinSpeed(lgagst_min_spd) => false,
             Line::Reset { non_shared_seed } => false,

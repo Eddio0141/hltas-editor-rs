@@ -3,24 +3,24 @@ use std::num::NonZeroU32;
 use hltas::types::{
     AutoMovement, ChangeTarget, Line, Seeds, StrafeDir, StrafeSettings, StrafeType,
 };
-use imgui::{CollapsingHeader, Drag, ImColor32, InputText, Slider, StyleColor, StyleVar, Ui};
+use imgui::{CollapsingHeader, Drag, InputText, Slider, StyleColor, Ui};
 
 use crate::guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button};
 
 use super::{
     cmd_editor::cmd_editor_ui,
-    property_some_none_field::property_some_none_field_ui,
+    property_some_none_field::{property_some_none_field_ui, PropertyFieldResult},
     property_string_field::property_string_field_ui,
     tab::{HLTASFileTab, StrafeMenuSelection},
 };
 
 // TODO am I suppose to have translation for those? maybe for some, not all
 pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
-    if CollapsingHeader::new("Properties")
+    let properties_edited = if CollapsingHeader::new("Properties")
         .default_open(true)
         .build(ui)
     {
-        property_string_field_ui(
+        let demo_edited = property_string_field_ui(
             ui,
             &mut tab.hltas.properties.demo,
             true,
@@ -28,7 +28,8 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             "Set demo recording",
             0.5,
         );
-        property_string_field_ui(
+
+        let save_after_edited = property_string_field_ui(
             ui,
             &mut tab.hltas.properties.save,
             true,
@@ -38,7 +39,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
         );
 
         // TODO, make this easier to edit
-        property_some_none_field_ui(
+        let ducktap_0ms_edited = property_some_none_field_ui(
             ui,
             &mut tab.hltas.properties.frametime_0ms,
             // TODO make this an option
@@ -51,7 +52,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 let item_width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
 
-                InputText::new(ui, "0ms frametime", frametime)
+                let input_text_edited = InputText::new(ui, "0ms frametime", frametime)
                     .chars_noblank(true)
                     .chars_decimal(true)
                     .hint("0ms frametime")
@@ -59,13 +60,16 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 item_width_token.pop(ui);
 
-                x_button_clicked
+                PropertyFieldResult {
+                    field_enabled: x_button_clicked,
+                    edited: input_text_edited,
+                }
             },
         );
 
         // TODO some easy way of increasing shared / nonshared rng
         //  since if people want different rng results, they can just add 1
-        property_some_none_field_ui(
+        let seed_edited = property_some_none_field_ui(
             ui,
             &mut tab.hltas.properties.seeds,
             Seeds {
@@ -79,7 +83,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 let item_width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
 
-                Drag::new("shared rng")
+                let shared_rng_edited = Drag::new("shared rng")
                     .speed(0.05)
                     .build(ui, &mut seeds.shared);
 
@@ -89,19 +93,22 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 ui.same_line();
 
-                Drag::new("non-shared rng")
+                let nonshared_rng_edited = Drag::new("non-shared rng")
                     .speed(0.05)
                     .build(ui, &mut seeds.non_shared);
 
                 item_width_token.pop(ui);
 
-                x_button_clicked
+                PropertyFieldResult {
+                    field_enabled: x_button_clicked,
+                    edited: shared_rng_edited || nonshared_rng_edited,
+                }
             },
         );
 
         // TODO better way for this to be showen? maybe a version check?
         // TODO figure out "default"
-        property_some_none_field_ui(
+        let hlstrafe_version_edited = property_some_none_field_ui(
             ui,
             &mut tab.hltas.properties.hlstrafe_version,
             NonZeroU32::new(3).unwrap(),
@@ -115,24 +122,31 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 let mut hlstrafe_version_string = hlstrafe_version.to_string();
 
-                if InputText::new(ui, "hlstrafe version", &mut hlstrafe_version_string)
-                    .chars_noblank(true)
-                    .chars_decimal(true)
-                    .hint("hlstrafe version")
-                    .build()
-                {
-                    if let Ok(str_to_nonzero) = hlstrafe_version_string.parse::<NonZeroU32>() {
-                        *hlstrafe_version = str_to_nonzero;
-                    }
-                }
+                let hlstrafe_version_edited =
+                    if InputText::new(ui, "hlstrafe version", &mut hlstrafe_version_string)
+                        .chars_noblank(true)
+                        .chars_decimal(true)
+                        .hint("hlstrafe version")
+                        .build()
+                    {
+                        if let Ok(str_to_nonzero) = hlstrafe_version_string.parse::<NonZeroU32>() {
+                            *hlstrafe_version = str_to_nonzero;
+                        }
+                        true
+                    } else {
+                        false
+                    };
 
                 item_width_token.pop(ui);
 
-                x_button_clicked
+                PropertyFieldResult {
+                    field_enabled: x_button_clicked,
+                    edited: hlstrafe_version_edited,
+                }
             },
         );
 
-        property_some_none_field_ui(
+        let load_cmds_edited = property_some_none_field_ui(
             ui,
             &mut tab.hltas.properties.load_command,
             String::new(),
@@ -142,20 +156,33 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 ui.same_line();
 
-                cmd_editor_ui(ui, cmds, "load commands");
+                let command_edited = cmd_editor_ui(ui, cmds, "load commands");
 
-                x_button_clicked
+                PropertyFieldResult {
+                    field_enabled: x_button_clicked,
+                    edited: command_edited,
+                }
             },
         );
-    }
+
+        demo_edited
+            || save_after_edited
+            || ducktap_0ms_edited
+            || seed_edited
+            || hlstrafe_version_edited
+            || load_cmds_edited
+    } else {
+        false
+    };
 
     ui.separator();
     ui.text("Lines");
 
     let tab_menu_data = &mut tab.tab_menu_data;
 
-    // TODO, only render the lines required to save a lot of performance
-
+    // very hacky
+    let mut lines_edited = false;
+    // TODO, only render the text required to save a lot of performance
     for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
         let strafe_menu_selection = &mut tab_menu_data.strafe_menu_selections[i];
 
@@ -163,7 +190,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
         ui.same_line();
         let line_count_offset = ui.cursor_screen_pos()[0];
 
-        match line {
+        let line_edited = match line {
             Line::FrameBulk(framebulk) => {
                 ui.group(|| {
                     // TODO translation
@@ -173,13 +200,14 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     let pitch_text = "pitch";
 
                     // yaw pitch menu
-                    ui.group(|| {
+                    let yaw_pitch_edited = ui.group(|| {
                         let yaw_pitch_changer_offset =
                             ui.window_content_region_width() * 0.025 + line_count_offset;
                         let yaw_pitch_setter_width = ui.window_content_region_width() * 0.2;
 
                         let yaw_editor = |yaw| {
-                            show_x_button(ui, &format!("yaw_set_close{}", i));
+                            let x_button_clicked =
+                                show_x_button(ui, &format!("yaw_set_close{}", i));
 
                             ui.same_line();
 
@@ -189,12 +217,16 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             ]);
 
                             let item_width_token = ui.push_item_width(yaw_pitch_setter_width);
-                            Drag::new(format!("{}##yaw_set{}", yaw_text, i))
+                            let yaw_set_changed = Drag::new(format!("{}##yaw_set{}", yaw_text, i))
                                 .speed(0.1)
                                 .build(ui, yaw);
                             item_width_token.pop(ui);
+
+                            x_button_clicked || yaw_set_changed
                         };
                         let yaw_button = |disabled, auto_movement: &mut Option<AutoMovement>| {
+                            // ui.disabled returns nothing so hacky work around
+                            let mut edited = false;
                             ui.disabled(disabled, || {
                                 ui.set_cursor_screen_pos([
                                     yaw_pitch_changer_offset,
@@ -206,10 +238,13 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                     [yaw_pitch_setter_width, 0.0],
                                 ) {
                                     *auto_movement = Some(AutoMovement::SetYaw(0.0));
+                                    edited = true;
                                 }
                             });
+                            edited
                         };
-                        match &mut framebulk.auto_actions.movement {
+
+                        let edited_yaw = match &mut framebulk.auto_actions.movement {
                             Some(auto_movement) => match auto_movement {
                                 AutoMovement::SetYaw(yaw) => yaw_editor(yaw),
                                 AutoMovement::Strafe(strafe_settings) => {
@@ -226,9 +261,10 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             }
                         };
 
-                        match &mut framebulk.pitch {
+                        let edited_pitch = match &mut framebulk.pitch {
                             Some(pitch) => {
-                                show_x_button(ui, &format!("pitch_set_close{}", i));
+                                let pitch_x_clicked =
+                                    show_x_button(ui, &format!("pitch_set_close{}", i));
 
                                 ui.same_line();
 
@@ -238,9 +274,15 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                 ]);
 
                                 let item_width_token = ui.push_item_width(yaw_pitch_setter_width);
-                                Slider::new(format!("{}##pitch_set{}", pitch_text, i), -89.0, 89.0)
-                                    .build(ui, pitch);
+                                let pitch_set_changed = Slider::new(
+                                    format!("{}##pitch_set{}", pitch_text, i),
+                                    -89.0,
+                                    89.0,
+                                )
+                                .build(ui, pitch);
                                 item_width_token.pop(ui);
+
+                                pitch_x_clicked || pitch_set_changed
                             }
                             None => {
                                 ui.set_cursor_screen_pos([
@@ -253,9 +295,14 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                     [yaw_pitch_setter_width, 0.0],
                                 ) {
                                     framebulk.pitch = Some(0.0);
+                                    true
+                                } else {
+                                    false
                                 }
                             }
-                        }
+                        };
+
+                        edited_yaw || edited_pitch
                     });
 
                     ui.same_line();
@@ -266,7 +313,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     ]);
 
                     // strafe menu
-                    ui.group(|| {
+                    let strafe_menu_edited = ui.group(|| {
                         if ui.button(format!("Strafe tab##{}", i)) {
                             *strafe_menu_selection = Some(StrafeMenuSelection::Strafe);
                         }
@@ -354,23 +401,33 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                                 };
                                             }
                                         }
+                                        true
+                                    } else {
+                                        false
                                     }
                                 }
                                 StrafeMenuSelection::Keys => {
                                     // TODO key layout
                                     let keys = &mut framebulk.movement_keys;
-                                    ui.checkbox("Forward", &mut keys.forward);
+                                    let forward_edited = ui.checkbox("Forward", &mut keys.forward);
                                     ui.same_line();
                                     let y_pos_next = ui.cursor_screen_pos()[1];
                                     ui.set_cursor_screen_pos([key_tab_pos[0], y_pos_next]);
-                                    ui.checkbox("Up", &mut keys.up);
-                                    ui.checkbox("Left", &mut keys.left);
+                                    let up_edited = ui.checkbox("Up", &mut keys.up);
+                                    let left_edited = ui.checkbox("Left", &mut keys.left);
                                     ui.same_line();
                                     let y_pos_next = ui.cursor_screen_pos()[1];
                                     ui.set_cursor_screen_pos([key_tab_pos[0], y_pos_next]);
-                                    ui.checkbox("Down", &mut keys.down);
-                                    ui.checkbox("Right", &mut keys.right);
-                                    ui.checkbox("Back", &mut keys.back);
+                                    let down_edited = ui.checkbox("Down", &mut keys.down);
+                                    let right_edited = ui.checkbox("Right", &mut keys.right);
+                                    let back_edited = ui.checkbox("Back", &mut keys.back);
+
+                                    forward_edited
+                                        || up_edited
+                                        || left_edited
+                                        || down_edited
+                                        || right_edited
+                                        || back_edited
                                 }
                             },
                             None => unreachable!(),
@@ -383,35 +440,40 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         //     });
                         // });
                     });
-                });
+
+                    yaw_pitch_edited || strafe_menu_edited
+                })
             }
-            Line::Save(save) => {}
-            Line::SharedSeed(shared_seed) => {}
-            Line::Buttons(buttons) => {}
-            Line::LGAGSTMinSpeed(lgagst_min_spd) => {}
-            Line::Reset { non_shared_seed } => {}
+            Line::Save(save) => false,
+            Line::SharedSeed(shared_seed) => false,
+            Line::Buttons(buttons) => false,
+            Line::LGAGSTMinSpeed(lgagst_min_spd) => false,
+            Line::Reset { non_shared_seed } => false,
             Line::Comment(comment) => {
                 let comment_frame_bg =
                     ui.push_style_color(StyleColor::FrameBg, [0.0, 0.0, 0.0, 0.0]);
                 // TODO customizable comment colour
                 let comment_colour = ui.push_style_color(StyleColor::Text, [0.0, 1.0, 0.0, 1.0]);
 
-                InputText::new(ui, format!("##comment_editor{}", i), comment).build();
+                let comment_edited =
+                    InputText::new(ui, format!("##comment_editor{}", i), comment).build();
 
                 comment_colour.pop();
                 comment_frame_bg.pop();
+
+                comment_edited
             }
             Line::VectorialStrafing(vectorial_strafing) => {
-                ui.checkbox(format!("Vectorial strafing##{}", i), vectorial_strafing);
+                ui.checkbox(format!("Vectorial strafing##{}", i), vectorial_strafing)
             }
-            Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => {}
+            Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => false,
             Line::Change(change) => {
                 let drag_size = ui.window_content_region_width() * 0.1;
 
                 ui.text("Change");
                 ui.same_line();
                 let drag_size_token = ui.push_item_width(drag_size);
-                show_radio_button_enum(
+                let target_edited = show_radio_button_enum(
                     ui,
                     &mut change.target,
                     vec![
@@ -428,7 +490,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                 ui.text("to");
                 ui.same_line();
                 let drag_size_token = ui.push_item_width(drag_size);
-                Drag::new(format!("##change_angle{}", i))
+                let angle_edited = Drag::new(format!("##change_angle{}", i))
                     .speed(0.1)
                     .build(ui, &mut change.final_value);
                 drag_size_token.pop(ui);
@@ -436,12 +498,22 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                 ui.text("over");
                 ui.same_line();
                 let drag_size_token = ui.push_item_width(drag_size);
-                Drag::new(format!("s##change_over{}", i))
+                let seconds_edited = Drag::new(format!("s##change_over{}", i))
                     .speed(0.1)
                     .build(ui, &mut change.over);
                 drag_size_token.pop(ui);
+
+                target_edited || angle_edited || seconds_edited
             }
-            Line::TargetYawOverride(target_yaw_override) => {}
+            Line::TargetYawOverride(target_yaw_override) => false,
+        };
+
+        if !lines_edited && line_edited {
+            lines_edited = true;
         }
+    }
+
+    if properties_edited || lines_edited {
+        tab.got_modified = true;
     }
 }

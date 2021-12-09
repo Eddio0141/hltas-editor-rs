@@ -321,6 +321,10 @@ impl MainGUI {
                                 self.tab_switch_index = None;
                             }
 
+                            if tab.borrow().got_modified {
+                                flags = flags.union(TabItemFlags::UNSAVED_DOCUMENT);
+                            }
+
                             flags
                         };
 

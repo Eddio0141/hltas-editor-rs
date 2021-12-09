@@ -401,7 +401,9 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                 comment_colour.pop();
                 comment_frame_bg.pop();
             }
-            Line::VectorialStrafing(vectorial_strafing) => {}
+            Line::VectorialStrafing(vectorial_strafing) => {
+                ui.checkbox(format!("Vectorial strafing##{}", i), vectorial_strafing);
+            }
             Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => {}
             Line::Change(change) => {
                 let drag_size = ui.window_content_region_width() * 0.1;

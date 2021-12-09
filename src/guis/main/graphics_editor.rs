@@ -2,6 +2,7 @@ use std::num::NonZeroU32;
 
 use hltas::types::{
     AutoMovement, ChangeTarget, Line, Seeds, StrafeDir, StrafeSettings, StrafeType,
+    VectorialStrafingConstraints,
 };
 use imgui::{CollapsingHeader, Drag, InputFloat, InputText, Slider, StyleColor, Ui};
 
@@ -514,7 +515,105 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             Line::VectorialStrafing(vectorial_strafing) => {
                 ui.checkbox(format!("Vectorial strafing##{}", i), vectorial_strafing)
             }
-            Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => false,
+            Line::VectorialStrafingConstraints(vectorial_strafing_constraints) => {
+                let yaw_tolerance_width = ui.window_content_region_width() * 0.2;
+
+                let tolerance_ui = |tolerance: &mut f32, zero_button| {
+                    if zero_button && *tolerance == 0.0 {
+                        if ui.button(format!("Set tolerance##{}", i)) {
+                            *tolerance = 1.0;
+                            true
+                        } else {
+                            false
+                        }
+                    } else {
+                        let width_token = ui.push_item_width(yaw_tolerance_width);
+                        let drag_edited = Drag::new(format!("##tolerance_drag{}", i))
+                            .speed(0.01)
+                            .display_format("+- %f")
+                            .range(0.01, f32::MAX)
+                            .build(ui, tolerance);
+                        width_token.pop(ui);
+
+                        let x_clicked = if zero_button {
+                            ui.same_line();
+                            let x_clicked = if show_x_button(ui, &format!("tolerance_zero{}", i)) {
+                                *tolerance = 0.0;
+                                true
+                            } else {
+                                false
+                            };
+
+                            x_clicked
+                        } else {
+                            false
+                        };
+
+                        drag_edited || x_clicked
+                    }
+                };
+
+                ui.text("target_yaw");
+                ui.same_line();
+
+                match vectorial_strafing_constraints {
+                    // velocity +- ?
+                    VectorialStrafingConstraints::VelocityYaw { tolerance } => {
+                        ui.text("velocity");
+                        ui.same_line();
+                        tolerance_ui(tolerance, false)
+                    }
+                    // velocity_avg
+                    VectorialStrafingConstraints::AvgVelocityYaw { tolerance } => {
+                        ui.text("velocity_avg");
+                        ui.same_line();
+                        tolerance_ui(tolerance, false)
+                    }
+                    // velocity_lock +- ?
+                    VectorialStrafingConstraints::VelocityYawLocking { tolerance } => {
+                        ui.text("velocity_lock");
+                        ui.same_line();
+                        tolerance_ui(tolerance, true)
+                    }
+                    // ? +- ?
+                    VectorialStrafingConstraints::Yaw { yaw, tolerance } => {
+                        // TODO use same settings as small yaw editor
+                        let width_token = ui.push_item_width(yaw_tolerance_width);
+                        let drag_edited = Drag::new(format!("##vectorial_yaw_drag{}", i))
+                            .speed(0.05)
+                            .build(ui, yaw);
+                        width_token.pop(ui);
+
+                        ui.same_line();
+                        let tolerance_edited = tolerance_ui(tolerance, true);
+
+                        drag_edited || tolerance_edited
+                    }
+                    // from ? to ?
+                    VectorialStrafingConstraints::YawRange { from, to } => {
+                        ui.text("from");
+                        ui.same_line();
+                        // TODO read above
+                        let width_token = ui.push_item_width(yaw_tolerance_width);
+                        let from_edited = Drag::new(format!("##vectorial_from_drag{}", i))
+                            .speed(0.05)
+                            .build(ui, from);
+                        width_token.pop(ui);
+
+                        ui.same_line();
+                        ui.text("to");
+                        ui.same_line();
+
+                        let width_token = ui.push_item_width(yaw_tolerance_width);
+                        let to_edited = Drag::new(format!("##vectorial_to_drag{}", i))
+                            .speed(0.05)
+                            .build(ui, to);
+                        width_token.pop(ui);
+
+                        from_edited || to_edited
+                    }
+                }
+            }
             Line::Change(change) => {
                 let drag_size = ui.window_content_region_width() * 0.1;
 

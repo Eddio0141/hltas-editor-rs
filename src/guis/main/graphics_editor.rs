@@ -229,7 +229,11 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                 .build(ui, yaw);
                             item_width_token.pop(ui);
 
-                            x_button_clicked || yaw_set_changed
+                            if x_button_clicked {
+                                None
+                            } else {
+                                Some(yaw_set_changed)
+                            }
                         };
                         let yaw_button = |disabled, auto_movement: &mut Option<AutoMovement>| {
                             // ui.disabled returns nothing so hacky work around
@@ -248,7 +252,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                     edited = true;
                                 }
                             });
-                            edited
+                            Some(edited)
                         };
 
                         let edited_yaw = match &mut framebulk.auto_actions.movement {
@@ -265,6 +269,14 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             None => {
                                 // show yaw button
                                 yaw_button(false, &mut framebulk.auto_actions.movement)
+                            }
+                        };
+
+                        let edited_yaw = match edited_yaw {
+                            Some(edited_yaw) => edited_yaw,
+                            None => {
+                                framebulk.auto_actions.movement = None;
+                                true
                             }
                         };
 

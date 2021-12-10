@@ -1,12 +1,17 @@
 use std::num::NonZeroU32;
 
 use hltas::types::{
-    AutoMovement, ChangeTarget, Line, Seeds, StrafeDir, StrafeSettings, StrafeType,
-    VectorialStrafingConstraints,
+    AutoMovement, Button, Buttons, ChangeTarget, Line, Seeds, StrafeDir, StrafeSettings,
+    StrafeType, VectorialStrafingConstraints,
 };
-use imgui::{CollapsingHeader, Drag, InputFloat, InputText, Slider, StyleColor, Ui};
+use imgui::{
+    CollapsingHeader, ComboBox, Drag, InputFloat, InputText, Selectable, Slider, StyleColor, Ui,
+};
 
-use crate::guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button};
+use crate::{
+    guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button},
+    helpers::hltas::button_to_str,
+};
 
 use super::{
     cmd_editor::cmd_editor_ui,
@@ -472,7 +477,100 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 seed_edited
             }
-            Line::Buttons(buttons) => false,
+            Line::Buttons(buttons) => {
+                let set_text = "set";
+                let reset_text = "reset";
+
+                ui.text("buttons");
+                ui.same_line();
+                ui.text(match buttons {
+                    Buttons::Reset => reset_text,
+                    Buttons::Set { .. } => set_text,
+                });
+                ui.same_line();
+
+                let buttons_toggle_clicked = if ui.button(match buttons {
+                    Buttons::Reset => set_text,
+                    Buttons::Set { .. } => reset_text,
+                }) {
+                    match buttons {
+                        Buttons::Reset => {
+                            *buttons = Buttons::Set {
+                                air_left: Button::Left,
+                                air_right: Button::Right,
+                                ground_left: Button::Left,
+                                ground_right: Button::Right,
+                            }
+                        }
+                        Buttons::Set { .. } => *buttons = Buttons::Reset,
+                    }
+                    true
+                } else {
+                    false
+                };
+
+                let buttons_edited = if let Buttons::Set {
+                    air_left,
+                    air_right,
+                    ground_left,
+                    ground_right,
+                } = buttons
+                {
+                    let button_editor = |button: &mut Button, id| {
+                        let button_editor_result =
+                            ComboBox::new(format!("##button_editor{}{}", i, id))
+                                .preview_value(button_to_str(button))
+                                .build(ui, || {
+                                    let button_enums = vec![
+                                        Button::Forward,
+                                        Button::ForwardLeft,
+                                        Button::Left,
+                                        Button::BackLeft,
+                                        Button::Back,
+                                        Button::BackRight,
+                                        Button::Right,
+                                        Button::ForwardRight,
+                                    ];
+
+                                    let mut selected_button = None;
+                                    for (j, button_enum) in button_enums.iter().enumerate() {
+                                        if Selectable::new(format!(
+                                            "{}##buttons_editor_selectable{}{}{}",
+                                            button_to_str(button_enum),
+                                            i,
+                                            j,
+                                            id
+                                        ))
+                                        .build(ui)
+                                        {
+                                            selected_button = Some(*button_enum);
+                                        }
+                                    }
+
+                                    selected_button
+                                });
+
+                        if let Some(button_new) = button_editor_result {
+                            if let Some(button_new) = button_new {
+                                *button = button_new;
+                            }
+                        }
+
+                        false
+                    };
+
+                    let air_left_edited = button_editor(air_left, "air_left");
+                    let air_right_edited = button_editor(air_right, "air_right");
+                    let ground_left_edited = button_editor(ground_left, "ground_left");
+                    let ground_right_edited = button_editor(ground_right, "ground_right");
+
+                    air_left_edited || air_right_edited || ground_left_edited || ground_right_edited
+                } else {
+                    false
+                };
+
+                buttons_toggle_clicked || buttons_edited
+            }
             Line::LGAGSTMinSpeed(lgagst_min_spd) => {
                 ui.text("lgagst min speed");
                 ui.same_line();

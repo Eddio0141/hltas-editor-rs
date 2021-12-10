@@ -22,6 +22,7 @@ use super::{
 
 // TODO drag speed variables stored somewhere in the function for convinience
 // TODO am I suppose to have translation for those? maybe for some, not all
+// TODO minimal view to limit each line to be easier to read with shortcut
 pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
     let properties_edited = if CollapsingHeader::new("Properties")
         .default_open(true)
@@ -770,6 +771,8 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                 let drag_size_token = ui.push_item_width(drag_size);
                 let seconds_edited = Drag::new(format!("s##change_over{}", i))
                     .speed(0.1)
+                    // TODO change limiter option
+                    .range(0.001, f32::MAX)
                     .build(ui, &mut change.over);
                 drag_size_token.pop(ui);
 

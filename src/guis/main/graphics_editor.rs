@@ -513,7 +513,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             };
 
                         let jumpbug_enabled = match &framebulk.auto_actions.jump_bug {
-                            Some(jumpbug) => true,
+                            Some(_) => true,
                             None => false,
                         };
 
@@ -594,7 +594,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                 }
                             } else if let Some(lgagst_state) = lgagst_state {
                                 framebulk.auto_actions.jump_bug = None;
-                                
+
                                 // toggle lgagst
                                 if lgagst_selected {
                                     if lgagst_enabled {

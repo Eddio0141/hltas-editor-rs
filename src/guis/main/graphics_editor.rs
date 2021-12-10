@@ -301,7 +301,11 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                 .build(ui, pitch);
                                 item_width_token.pop(ui);
 
-                                pitch_x_clicked || pitch_set_changed
+                                if pitch_x_clicked {
+                                    None
+                                } else {
+                                    Some(pitch_set_changed)
+                                }
                             }
                             None => {
                                 ui.set_cursor_screen_pos([
@@ -309,15 +313,24 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                     ui.cursor_screen_pos()[1],
                                 ]);
 
-                                if ui.button_with_size(
+                                let pitch_set_button_clicked = ui.button_with_size(
                                     format!("{}##pitch_set_button{}", set_pitch_text, i),
                                     [yaw_pitch_setter_width, 0.0],
-                                ) {
+                                );
+
+                                if pitch_set_button_clicked {
                                     framebulk.pitch = Some(0.0);
-                                    true
-                                } else {
-                                    false
                                 }
+
+                                Some(pitch_set_button_clicked)
+                            }
+                        };
+
+                        let edited_pitch = match edited_pitch {
+                            Some(edited_pitch) => edited_pitch,
+                            None => {
+                                framebulk.pitch = None;
+                                true
                             }
                         };
 

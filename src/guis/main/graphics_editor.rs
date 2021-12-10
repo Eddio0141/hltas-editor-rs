@@ -1,8 +1,9 @@
 use std::num::NonZeroU32;
 
 use hltas::types::{
-    AutoMovement, Button, Buttons, ChangeTarget, Line, Seeds, StrafeDir, StrafeSettings,
-    StrafeType, VectorialStrafingConstraints,
+    AutoMovement, Button, Buttons, ChangeTarget, JumpBug, LeaveGroundAction,
+    LeaveGroundActionSpeed, LeaveGroundActionType, Line, Seeds, StrafeDir, StrafeSettings,
+    StrafeType, Times, VectorialStrafingConstraints,
 };
 use imgui::{
     CollapsingHeader, ComboBox, Drag, InputFloat, InputText, Selectable, Slider, StyleColor, Ui,
@@ -339,7 +340,6 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     });
 
                     ui.same_line();
-
                     ui.set_cursor_screen_pos([
                         line_count_offset + ui.window_content_region_width() * 0.28,
                         ui.cursor_screen_pos()[1],
@@ -474,7 +474,194 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         // });
                     });
 
-                    yaw_pitch_edited || strafe_menu_edited
+                    ui.same_line();
+                    ui.set_cursor_screen_pos([
+                        line_count_offset + ui.window_content_region_width() * 0.44,
+                        ui.cursor_screen_pos()[1],
+                    ]);
+
+                    // jump menu
+                    let jump_menu_edited = ui.group(|| {
+                        let jump_ducktap_menu_width = ui.window_content_region_width() * 0.06;
+                        let disabled_text_selectable =
+                            |selectable: &dyn Fn(&Ui) -> bool, grey_condition: bool| {
+                                let color_token = if !grey_condition {
+                                    None
+                                } else {
+                                    Some(ui.push_style_color(
+                                        StyleColor::Text,
+                                        ui.style_color(StyleColor::TextDisabled),
+                                    ))
+                                };
+
+                                let selectable_changed = selectable(ui);
+
+                                if let Some(color_token) = color_token {
+                                    color_token.pop();
+                                }
+
+                                selectable_changed
+                            };
+
+                        let (jump_enabled, ducktap_enabled) =
+                            match &framebulk.auto_actions.leave_ground_action {
+                                Some(leave_ground_action) => match leave_ground_action.type_ {
+                                    LeaveGroundActionType::Jump => (true, false),
+                                    LeaveGroundActionType::DuckTap { .. } => (false, true),
+                                },
+                                None => (false, false),
+                            };
+
+                        let jumpbug_enabled = match &framebulk.auto_actions.jump_bug {
+                            Some(jumpbug) => true,
+                            None => false,
+                        };
+
+                        ui.text("jump / ducktaps");
+
+                        let duck_tap_selected = disabled_text_selectable(
+                            &|ui| {
+                                Selectable::new(format!("ducktap##jump_menu{}", i))
+                                    .selected(ducktap_enabled)
+                                    .size([jump_ducktap_menu_width, 0.0])
+                                    .build(ui)
+                            },
+                            !ducktap_enabled,
+                        );
+
+                        let jump_selected = disabled_text_selectable(
+                            &|ui| {
+                                Selectable::new(format!("autojump##jump_menu{}", i))
+                                    .selected(jump_enabled)
+                                    .size([jump_ducktap_menu_width, 0.0])
+                                    .build(ui)
+                            },
+                            !jump_enabled,
+                        );
+
+                        let jumpbug_selected = disabled_text_selectable(
+                            &|ui| {
+                                Selectable::new(format!("jumpbug##jump_menu{}", i))
+                                    .selected(jumpbug_enabled)
+                                    .size([jump_ducktap_menu_width, 0.0])
+                                    .build(ui)
+                            },
+                            !jumpbug_enabled,
+                        );
+
+                        ui.dummy([0.0, 15.0]);
+
+                        let mut lgagst_changed = false;
+                        ui.disabled(!ducktap_enabled && !jump_enabled, || {
+                            let width = ui.window_content_region_width() * 0.14;
+
+                            let lgagst_state = match &mut framebulk.auto_actions.leave_ground_action
+                            {
+                                Some(leave_ground_action) => Some(&mut leave_ground_action.speed),
+                                None => None,
+                            };
+                            let (lgagst_enabled, lgagst_max_spd_enabled) = match &lgagst_state {
+                                Some(leave_ground_action_speed) => match &leave_ground_action_speed
+                                {
+                                    LeaveGroundActionSpeed::Any => (false, false),
+                                    LeaveGroundActionSpeed::Optimal => (true, false),
+                                    LeaveGroundActionSpeed::OptimalWithFullMaxspeed => {
+                                        (false, true)
+                                    }
+                                },
+                                None => (false, false),
+                            };
+
+                            let lgagst_selected =
+                                Selectable::new(format!("lgagst##jump_menu{}", i))
+                                    .selected(lgagst_enabled)
+                                    .size([width, 0.0])
+                                    .build(ui);
+                            let lgagst_max_spd_selected =
+                                Selectable::new(format!("lgagst with max spd##jump_menu{}", i))
+                                    .selected(lgagst_max_spd_enabled)
+                                    .size([width, 0.0])
+                                    .build(ui);
+
+                            if jumpbug_selected {
+                                if jumpbug_enabled {
+                                    framebulk.auto_actions.jump_bug = None;
+                                } else {
+                                    framebulk.auto_actions.leave_ground_action = None;
+                                    framebulk.auto_actions.jump_bug = Some(JumpBug {
+                                        times: Times::UnlimitedWithinFrameBulk,
+                                    });
+                                }
+                            } else if let Some(lgagst_state) = lgagst_state {
+                                framebulk.auto_actions.jump_bug = None;
+                                
+                                // toggle lgagst
+                                if lgagst_selected {
+                                    if lgagst_enabled {
+                                        *lgagst_state = LeaveGroundActionSpeed::Any;
+                                    } else {
+                                        *lgagst_state = LeaveGroundActionSpeed::Optimal;
+                                    }
+                                }
+
+                                // toggle lgagst max spd
+                                if lgagst_max_spd_selected {
+                                    if lgagst_max_spd_enabled {
+                                        *lgagst_state = LeaveGroundActionSpeed::Any;
+                                    } else {
+                                        *lgagst_state =
+                                            LeaveGroundActionSpeed::OptimalWithFullMaxspeed;
+                                    }
+                                }
+                            }
+
+                            lgagst_changed =
+                                lgagst_selected || lgagst_max_spd_selected || jumpbug_selected;
+                        });
+
+                        // this toggles the ducktap state
+                        if duck_tap_selected {
+                            if ducktap_enabled {
+                                framebulk.auto_actions.leave_ground_action = None;
+                            } else {
+                                // TODO 0ms detector or option to have 0ms by default
+                                // TODO option for lgagst on by default
+                                // TODO ask about "times" field
+                                framebulk.auto_actions.leave_ground_action =
+                                    Some(LeaveGroundAction {
+                                        speed: match framebulk.auto_actions.leave_ground_action {
+                                            Some(leave_ground_action) => leave_ground_action.speed,
+                                            None => LeaveGroundActionSpeed::Optimal,
+                                        },
+                                        times: Times::UnlimitedWithinFrameBulk,
+                                        type_: LeaveGroundActionType::DuckTap { zero_ms: true },
+                                    })
+                            }
+                        }
+
+                        // this toggles the jump state
+                        if jump_selected {
+                            if jump_enabled {
+                                framebulk.auto_actions.leave_ground_action = None;
+                            } else {
+                                // TODO option for lgagst on by default
+                                // TODO ask about "times" field
+                                framebulk.auto_actions.leave_ground_action =
+                                    Some(LeaveGroundAction {
+                                        speed: match framebulk.auto_actions.leave_ground_action {
+                                            Some(leave_ground_action) => leave_ground_action.speed,
+                                            None => LeaveGroundActionSpeed::Optimal,
+                                        },
+                                        times: Times::UnlimitedWithinFrameBulk,
+                                        type_: LeaveGroundActionType::Jump,
+                                    })
+                            }
+                        }
+
+                        duck_tap_selected || jump_selected
+                    });
+
+                    yaw_pitch_edited || strafe_menu_edited || jump_menu_edited
                 })
             }
             Line::Save(save) => {

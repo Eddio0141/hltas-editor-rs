@@ -10,7 +10,10 @@ use imgui::{
 };
 
 use crate::{
-    guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button},
+    guis::{
+        list_box_enum::show_list_box_enum, radio_button_enum::show_radio_button_enum,
+        x_button::show_x_button,
+    },
     helpers::hltas::button_to_str,
 };
 
@@ -189,7 +192,6 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
     let tab_menu_data = &mut tab.tab_menu_data;
 
-    // very hacky
     let mut lines_edited = false;
     // TODO, only render the text required to save a lot of performance
     for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
@@ -391,7 +393,9 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                             None => None,
                                         };
 
-                                    if show_radio_button_enum(
+                                    let strafe_list_box_width_token = ui.push_item_width(140.0);
+
+                                    let list_box_changed = show_list_box_enum(
                                         ui,
                                         &mut strafe_type_selection,
                                         vec![
@@ -408,9 +412,10 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                             "Const speed",
                                             "None",
                                         ],
-                                        i.to_string(),
-                                        false,
-                                    ) {
+                                        format!("strafe_selector_list_box{}", i.to_string()),
+                                    );
+
+                                    if list_box_changed {
                                         let prev_yaw = match &framebulk.auto_actions.movement {
                                             Some(auto_movement) => match auto_movement {
                                                 AutoMovement::SetYaw(yaw) => Some(*yaw),
@@ -452,10 +457,11 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                                 };
                                             }
                                         }
-                                        true
-                                    } else {
-                                        false
                                     }
+
+                                    strafe_list_box_width_token.pop(ui);
+
+                                    list_box_changed
                                 }
                                 StrafeMenuSelection::Keys => {
                                     // TODO key layout

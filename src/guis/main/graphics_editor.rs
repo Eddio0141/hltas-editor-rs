@@ -199,19 +199,41 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
         ui.same_line();
         let line_count_offset = ui.cursor_screen_pos()[0];
 
+        // TODO translation
         let line_edited = match line {
             Line::FrameBulk(framebulk) => {
                 ui.group(|| {
-                    // TODO translation
-                    let set_yaw_text = "set yaw";
-                    let set_pitch_text = "set pitch";
-                    let yaw_text = "yaw";
-                    let pitch_text = "pitch";
+                    let (
+                        yaw_pitch_menu_offset,
+                        strafe_menu_offset,
+                        jump_menu_offset,
+                        duck_menu_offset,
+                        action_keys_offset,
+                    ) = {
+                        let window_width = ui.window_content_region_width();
+
+                        let yaw_pitch_menu_width = window_width * 0.2 + 15.0;
+                        let strafe_menu_width = 150.0;
+                        let jump_menu_width = window_width * 0.13 + 20.0;
+                        let duck_menu_width = 150.0;
+
+                        let yaw_pitch_menu_offset = line_count_offset + 18.0;
+                        let strafe_menu_offset = yaw_pitch_menu_offset + yaw_pitch_menu_width;
+                        let jump_menu_offset = strafe_menu_offset + strafe_menu_width;
+                        let duck_menu_offset = jump_menu_offset + jump_menu_width;
+                        let action_keys_offset = duck_menu_offset + duck_menu_width;
+
+                        (
+                            yaw_pitch_menu_offset,
+                            strafe_menu_offset,
+                            jump_menu_offset,
+                            duck_menu_offset,
+                            action_keys_offset,
+                        )
+                    };
 
                     // yaw pitch menu
                     let yaw_pitch_edited = ui.group(|| {
-                        let yaw_pitch_changer_offset =
-                            ui.window_content_region_width() * 0.025 + line_count_offset;
                         let yaw_pitch_setter_width = ui.window_content_region_width() * 0.2;
 
                         let yaw_editor = |yaw| {
@@ -221,13 +243,14 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             ui.same_line();
 
                             ui.set_cursor_screen_pos([
-                                yaw_pitch_changer_offset,
+                                yaw_pitch_menu_offset,
                                 ui.cursor_screen_pos()[1],
                             ]);
 
                             let item_width_token = ui.push_item_width(yaw_pitch_setter_width);
-                            let yaw_set_changed = Drag::new(format!("{}##yaw_set{}", yaw_text, i))
+                            let yaw_set_changed = Drag::new(format!("##yaw_set{}", i))
                                 .speed(0.1)
+                                .display_format("yaw: %f")
                                 .build(ui, yaw);
                             item_width_token.pop(ui);
 
@@ -242,12 +265,12 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             let mut edited = false;
                             ui.disabled(disabled, || {
                                 ui.set_cursor_screen_pos([
-                                    yaw_pitch_changer_offset,
+                                    yaw_pitch_menu_offset,
                                     ui.cursor_screen_pos()[1],
                                 ]);
 
                                 if ui.button_with_size(
-                                    format!("{}##yaw_set_button{}", set_yaw_text, i),
+                                    format!("{}##yaw_set_button{}", "set yaw", i),
                                     [yaw_pitch_setter_width, 0.0],
                                 ) {
                                     *auto_movement = Some(AutoMovement::SetYaw(0.0));
@@ -290,17 +313,15 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                 ui.same_line();
 
                                 ui.set_cursor_screen_pos([
-                                    yaw_pitch_changer_offset,
+                                    yaw_pitch_menu_offset,
                                     ui.cursor_screen_pos()[1],
                                 ]);
 
                                 let item_width_token = ui.push_item_width(yaw_pitch_setter_width);
-                                let pitch_set_changed = Slider::new(
-                                    format!("{}##pitch_set{}", pitch_text, i),
-                                    -89.0,
-                                    89.0,
-                                )
-                                .build(ui, pitch);
+                                let pitch_set_changed =
+                                    Slider::new(format!("##pitch_set{}", i), -89.0, 89.0)
+                                        .display_format("pitch: %f")
+                                        .build(ui, pitch);
                                 item_width_token.pop(ui);
 
                                 if pitch_x_clicked {
@@ -311,12 +332,12 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             }
                             None => {
                                 ui.set_cursor_screen_pos([
-                                    yaw_pitch_changer_offset,
+                                    yaw_pitch_menu_offset,
                                     ui.cursor_screen_pos()[1],
                                 ]);
 
                                 let pitch_set_button_clicked = ui.button_with_size(
-                                    format!("{}##pitch_set_button{}", set_pitch_text, i),
+                                    format!("{}##pitch_set_button{}", "set pitch", i),
                                     [yaw_pitch_setter_width, 0.0],
                                 );
 
@@ -340,10 +361,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     });
 
                     ui.same_line();
-                    ui.set_cursor_screen_pos([
-                        line_count_offset + ui.window_content_region_width() * 0.28,
-                        ui.cursor_screen_pos()[1],
-                    ]);
+                    ui.set_cursor_screen_pos([strafe_menu_offset, ui.cursor_screen_pos()[1]]);
 
                     // strafe menu
                     let strafe_menu_edited = ui.group(|| {
@@ -475,10 +493,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     });
 
                     ui.same_line();
-                    ui.set_cursor_screen_pos([
-                        line_count_offset + ui.window_content_region_width() * 0.44,
-                        ui.cursor_screen_pos()[1],
-                    ]);
+                    ui.set_cursor_screen_pos([jump_menu_offset, ui.cursor_screen_pos()[1]]);
 
                     // jump menu
                     let jump_menu_edited = ui.group(|| {
@@ -553,7 +568,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                         let mut lgagst_changed = false;
                         ui.disabled(!ducktap_enabled && !jump_enabled, || {
-                            let width = ui.window_content_region_width() * 0.14;
+                            let width = ui.window_content_region_width() * 0.13;
 
                             let lgagst_state = match &mut framebulk.auto_actions.leave_ground_action
                             {
@@ -662,10 +677,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     });
 
                     ui.same_line();
-                    ui.set_cursor_screen_pos([
-                        line_count_offset + ui.window_content_region_width() * 0.6,
-                        ui.cursor_screen_pos()[1],
-                    ]);
+                    ui.set_cursor_screen_pos([duck_menu_offset, ui.cursor_screen_pos()[1]]);
 
                     // duck menu
                     let duck_menu_edited = ui.group(|| {
@@ -758,10 +770,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     });
 
                     ui.same_line();
-                    ui.set_cursor_screen_pos([
-                        line_count_offset + ui.window_content_region_width() * 0.75,
-                        ui.cursor_screen_pos()[1],
-                    ]);
+                    ui.set_cursor_screen_pos([action_keys_offset, ui.cursor_screen_pos()[1]]);
 
                     // action keys menu
                     let action_keys_menu_edited = ui.group(|| {

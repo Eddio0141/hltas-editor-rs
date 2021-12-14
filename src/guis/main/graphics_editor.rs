@@ -757,7 +757,34 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         before_collision_changed || inc_ceiling_changed || before_ground_changed
                     });
 
-                    yaw_pitch_edited || strafe_menu_edited || jump_menu_edited || duck_menu_edited
+                    ui.same_line();
+                    ui.set_cursor_screen_pos([
+                        line_count_offset + ui.window_content_region_width() * 0.75,
+                        ui.cursor_screen_pos()[1],
+                    ]);
+
+                    // action keys menu
+                    let action_keys_menu_edited = ui.group(|| {
+                        let action_keys = &mut framebulk.action_keys;
+
+                        ui.text("action keys");
+
+                        let use_changed = ui.checkbox(format!("use##{}", i), &mut action_keys.use_);
+                        let attack1_changed =
+                            ui.checkbox(format!("attack 1##{}", i), &mut action_keys.attack_1);
+                        let attack2_changed =
+                            ui.checkbox(format!("attack 2##{}", i), &mut action_keys.attack_2);
+                        let reload_changed =
+                            ui.checkbox(format!("reload##{}", i), &mut action_keys.reload);
+
+                        use_changed || attack1_changed || attack2_changed || reload_changed
+                    });
+
+                    yaw_pitch_edited
+                        || strafe_menu_edited
+                        || jump_menu_edited
+                        || duck_menu_edited
+                        || action_keys_menu_edited
                 })
             }
             Line::Save(save) => {

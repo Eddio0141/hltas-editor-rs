@@ -528,6 +528,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             };
 
                         let jump_before = framebulk.action_keys.jump;
+                        let duck_before = framebulk.action_keys.duck;
 
                         let jumpbug_before = match &framebulk.auto_actions.jump_bug {
                             Some(_) => true,
@@ -568,6 +569,18 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             !autojump_before,
                         );
 
+                        ui.same_line();
+
+                        let duck_changed = disabled_text_selectable(
+                            &|ui| {
+                                Selectable::new(format!("duck##jump_menu{}", i))
+                                    .selected(duck_before)
+                                    .size([jump_ducktap_menu_width, 0.0])
+                                    .build(ui)
+                            },
+                            !duck_before,
+                        );
+
                         let jumpbug_changed = disabled_text_selectable(
                             &|ui| {
                                 Selectable::new(format!("jumpbug##jump_menu{}", i))
@@ -580,7 +593,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                         ui.dummy([0.0, 15.0]);
 
-                        // lgagst selectables and state checks
+                        // lgagst, jumpbug selectables and state checks
                         let mut lgagst_changed = false;
                         ui.disabled(!ducktap_before && !autojump_before, || {
                             let width = ui.window_content_region_width() * 0.13;
@@ -618,7 +631,10 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                 if jumpbug_before {
                                     framebulk.auto_actions.jump_bug = None;
                                 } else {
+                                    // we need both of those keys so
                                     framebulk.action_keys.jump = false;
+                                    framebulk.action_keys.duck = false;
+
                                     framebulk.auto_actions.leave_ground_action = None;
                                     framebulk.auto_actions.jump_bug = Some(JumpBug {
                                         times: Times::UnlimitedWithinFrameBulk,
@@ -702,7 +718,26 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             framebulk.action_keys.jump = !jump_before;
                         }
 
-                        duck_tap_changed || autojump_changed || jump_changed
+                        // for that single "duck" selectable
+                        if duck_changed {
+                            if !duck_before {
+                                // disable all other unused stuff
+                                framebulk.auto_actions.jump_bug = None;
+                                // TODO figure out if ducktapping is useless when perma duck
+                                // if let Some(leave_ground_action) =
+                                //     &framebulk.auto_actions.leave_ground_action
+                                // {
+                                //     if let LeaveGroundActionType::DuckTap { .. } =
+                                //         &leave_ground_action.type_
+                                //     {
+                                //         framebulk.auto_actions.leave_ground_action = None;
+                                //     }
+                                // }
+                            }
+                            framebulk.action_keys.duck = !duck_before;
+                        }
+
+                        duck_tap_changed || autojump_changed || jump_changed || duck_changed
                     });
 
                     ui.same_line();

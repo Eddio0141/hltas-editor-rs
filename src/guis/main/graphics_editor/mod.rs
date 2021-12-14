@@ -6,10 +6,7 @@ mod yaw_pitch_menu;
 
 use std::num::NonZeroU32;
 
-use hltas::types::{
-    Button, Buttons, ChangeTarget, DuckBeforeCollision, DuckBeforeGround, DuckWhenJump, Line,
-    Seeds, Times, VectorialStrafingConstraints,
-};
+use hltas::types::{Button, Buttons, ChangeTarget, Line, Seeds, VectorialStrafingConstraints};
 use imgui::{CollapsingHeader, ComboBox, Drag, InputFloat, InputText, Selectable, StyleColor, Ui};
 
 use crate::{

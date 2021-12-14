@@ -1,9 +1,9 @@
 use std::num::NonZeroU32;
 
 use hltas::types::{
-    AutoMovement, Button, Buttons, ChangeTarget, JumpBug, LeaveGroundAction,
-    LeaveGroundActionSpeed, LeaveGroundActionType, Line, Seeds, StrafeDir, StrafeSettings,
-    StrafeType, Times, VectorialStrafingConstraints,
+    AutoMovement, Button, Buttons, ChangeTarget, DuckBeforeCollision, DuckBeforeGround,
+    DuckWhenJump, JumpBug, LeaveGroundAction, LeaveGroundActionSpeed, LeaveGroundActionType, Line,
+    Seeds, StrafeDir, StrafeSettings, StrafeType, Times, VectorialStrafingConstraints,
 };
 use imgui::{
     CollapsingHeader, ComboBox, Drag, InputFloat, InputText, Selectable, Slider, StyleColor, Ui,
@@ -661,7 +661,103 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         duck_tap_selected || jump_selected
                     });
 
-                    yaw_pitch_edited || strafe_menu_edited || jump_menu_edited
+                    ui.same_line();
+                    ui.set_cursor_screen_pos([
+                        line_count_offset + ui.window_content_region_width() * 0.6,
+                        ui.cursor_screen_pos()[1],
+                    ]);
+
+                    // duck menu
+                    let duck_menu_edited = ui.group(|| {
+                        let auto_actions = &mut framebulk.auto_actions;
+
+                        let (mut duck_before_collision, mut duck_before_collision_inc_ceiling) =
+                            if let Some(dbc) = &auto_actions.duck_before_collision {
+                                (true, dbc.including_ceilings)
+                            } else {
+                                (false, false)
+                            };
+
+                        let mut duck_before_ground =
+                            if let Some(_) = &auto_actions.duck_before_ground {
+                                true
+                            } else {
+                                false
+                            };
+
+                        let mut duck_when_jump = if let Some(_) = &auto_actions.duck_when_jump {
+                            true
+                        } else {
+                            false
+                        };
+
+                        ui.text("auto duck");
+
+                        let before_collision_changed = ui.checkbox(
+                            format!("before collision##{}", i),
+                            &mut duck_before_collision,
+                        );
+
+                        ui.indent();
+
+                        // HACK lazy way to set this
+                        let mut inc_ceiling_changed = false;
+                        ui.disabled(!duck_before_collision, || {
+                            inc_ceiling_changed = ui.checkbox(
+                                format!("+ ceiling##{}", i),
+                                &mut duck_before_collision_inc_ceiling,
+                            );
+                        });
+
+                        ui.unindent();
+
+                        let before_ground_changed =
+                            ui.checkbox(format!("before ground##{}", i), &mut duck_before_ground);
+
+                        let when_jump_changed =
+                            ui.checkbox(format!("when jump##{}", i), &mut duck_when_jump);
+
+                        if before_collision_changed {
+                            if duck_before_collision {
+                                auto_actions.duck_before_collision = Some(DuckBeforeCollision {
+                                    times: Times::UnlimitedWithinFrameBulk,
+                                    including_ceilings: duck_before_collision_inc_ceiling,
+                                });
+                            } else {
+                                auto_actions.duck_before_collision = None;
+                            }
+                        }
+
+                        if duck_before_collision && inc_ceiling_changed {
+                            if let Some(dbc) = &mut auto_actions.duck_before_collision {
+                                dbc.including_ceilings = duck_before_collision_inc_ceiling;
+                            }
+                        }
+
+                        if before_ground_changed {
+                            if duck_before_ground {
+                                auto_actions.duck_before_ground = Some(DuckBeforeGround {
+                                    times: Times::UnlimitedWithinFrameBulk,
+                                });
+                            } else {
+                                auto_actions.duck_before_ground = None;
+                            }
+                        }
+
+                        if when_jump_changed {
+                            if duck_when_jump {
+                                auto_actions.duck_when_jump = Some(DuckWhenJump {
+                                    times: Times::UnlimitedWithinFrameBulk,
+                                });
+                            } else {
+                                auto_actions.duck_when_jump = None;
+                            }
+                        }
+
+                        before_collision_changed || inc_ceiling_changed || before_ground_changed
+                    });
+
+                    yaw_pitch_edited || strafe_menu_edited || jump_menu_edited || duck_menu_edited
                 })
             }
             Line::Save(save) => {

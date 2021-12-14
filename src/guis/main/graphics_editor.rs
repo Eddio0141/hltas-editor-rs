@@ -213,8 +213,8 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         let window_width = ui.window_content_region_width();
 
                         let yaw_pitch_menu_width = window_width * 0.2 + 15.0;
-                        let strafe_menu_width = 150.0;
-                        let jump_menu_width = window_width * 0.13 + 20.0;
+                        let strafe_menu_width = 158.0;
+                        let jump_menu_width = window_width * 0.13 + 17.0;
                         let duck_menu_width = 150.0;
 
                         let yaw_pitch_menu_offset = line_count_offset + 18.0;
@@ -518,7 +518,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                 selectable_changed
                             };
 
-                        let (jump_enabled, ducktap_enabled) =
+                        let (autojump_before, ducktap_before) =
                             match &framebulk.auto_actions.leave_ground_action {
                                 Some(leave_ground_action) => match leave_ground_action.type_ {
                                     LeaveGroundActionType::Jump => (true, false),
@@ -527,47 +527,62 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                 None => (false, false),
                             };
 
-                        let jumpbug_enabled = match &framebulk.auto_actions.jump_bug {
+                        let jump_before = framebulk.action_keys.jump;
+
+                        let jumpbug_before = match &framebulk.auto_actions.jump_bug {
                             Some(_) => true,
                             None => false,
                         };
 
                         ui.text("jump / ducktaps");
 
-                        let duck_tap_selected = disabled_text_selectable(
+                        let duck_tap_changed = disabled_text_selectable(
                             &|ui| {
                                 Selectable::new(format!("ducktap##jump_menu{}", i))
-                                    .selected(ducktap_enabled)
+                                    .selected(ducktap_before)
                                     .size([jump_ducktap_menu_width, 0.0])
                                     .build(ui)
                             },
-                            !ducktap_enabled,
+                            !ducktap_before,
                         );
 
-                        let jump_selected = disabled_text_selectable(
+                        ui.same_line();
+
+                        let jump_changed = disabled_text_selectable(
+                            &|ui| {
+                                Selectable::new(format!("jump##jump_menu{}", i))
+                                    .selected(jump_before)
+                                    .size([jump_ducktap_menu_width, 0.0])
+                                    .build(ui)
+                            },
+                            !jump_before,
+                        );
+
+                        let autojump_changed = disabled_text_selectable(
                             &|ui| {
                                 Selectable::new(format!("autojump##jump_menu{}", i))
-                                    .selected(jump_enabled)
+                                    .selected(autojump_before)
                                     .size([jump_ducktap_menu_width, 0.0])
                                     .build(ui)
                             },
-                            !jump_enabled,
+                            !autojump_before,
                         );
 
-                        let jumpbug_selected = disabled_text_selectable(
+                        let jumpbug_changed = disabled_text_selectable(
                             &|ui| {
                                 Selectable::new(format!("jumpbug##jump_menu{}", i))
-                                    .selected(jumpbug_enabled)
+                                    .selected(jumpbug_before)
                                     .size([jump_ducktap_menu_width, 0.0])
                                     .build(ui)
                             },
-                            !jumpbug_enabled,
+                            !jumpbug_before,
                         );
 
                         ui.dummy([0.0, 15.0]);
 
+                        // lgagst selectables and state checks
                         let mut lgagst_changed = false;
-                        ui.disabled(!ducktap_enabled && !jump_enabled, || {
+                        ui.disabled(!ducktap_before && !autojump_before, || {
                             let width = ui.window_content_region_width() * 0.13;
 
                             let lgagst_state = match &mut framebulk.auto_actions.leave_ground_action
@@ -598,10 +613,12 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                     .size([width, 0.0])
                                     .build(ui);
 
-                            if jumpbug_selected {
-                                if jumpbug_enabled {
+                            if jumpbug_changed {
+                                // toggle jumpbug stuff
+                                if jumpbug_before {
                                     framebulk.auto_actions.jump_bug = None;
                                 } else {
+                                    framebulk.action_keys.jump = false;
                                     framebulk.auto_actions.leave_ground_action = None;
                                     framebulk.auto_actions.jump_bug = Some(JumpBug {
                                         times: Times::UnlimitedWithinFrameBulk,
@@ -631,14 +648,15 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             }
 
                             lgagst_changed =
-                                lgagst_selected || lgagst_max_spd_selected || jumpbug_selected;
+                                lgagst_selected || lgagst_max_spd_selected || jumpbug_changed;
                         });
 
                         // this toggles the ducktap state
-                        if duck_tap_selected {
-                            if ducktap_enabled {
+                        if duck_tap_changed {
+                            if ducktap_before {
                                 framebulk.auto_actions.leave_ground_action = None;
                             } else {
+                                framebulk.action_keys.jump = false;
                                 // TODO 0ms detector or option to have 0ms by default
                                 // TODO option for lgagst on by default
                                 // TODO ask about "times" field
@@ -655,12 +673,13 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         }
 
                         // this toggles the jump state
-                        if jump_selected {
-                            if jump_enabled {
+                        if autojump_changed {
+                            if autojump_before {
                                 framebulk.auto_actions.leave_ground_action = None;
                             } else {
+                                framebulk.action_keys.jump = false;
                                 // TODO option for lgagst on by default
-                                // TODO ask about "times" field
+                                // TODO ask about "times" field??
                                 framebulk.auto_actions.leave_ground_action =
                                     Some(LeaveGroundAction {
                                         speed: match framebulk.auto_actions.leave_ground_action {
@@ -673,7 +692,17 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             }
                         }
 
-                        duck_tap_selected || jump_selected
+                        // for that single "jump" selectable
+                        if jump_changed {
+                            if !jump_before {
+                                // disable all other jump / ducktap stuff
+                                framebulk.auto_actions.leave_ground_action = None;
+                                framebulk.auto_actions.jump_bug = None;
+                            }
+                            framebulk.action_keys.jump = !jump_before;
+                        }
+
+                        duck_tap_changed || autojump_changed || jump_changed
                     });
 
                     ui.same_line();

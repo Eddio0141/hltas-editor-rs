@@ -1,31 +1,32 @@
+mod action_keys_menu;
+mod duck_menu;
+mod jump_menu;
+mod strafe_menu;
 mod yaw_pitch_menu;
 
 use std::num::NonZeroU32;
 
 use hltas::types::{
-    AutoMovement, Button, Buttons, ChangeTarget, DuckBeforeCollision, DuckBeforeGround,
-    DuckWhenJump, JumpBug, LeaveGroundAction, LeaveGroundActionSpeed, LeaveGroundActionType, Line,
-    Seeds, StrafeDir, StrafeSettings, StrafeType, Times, VectorialStrafingConstraints,
+    Button, Buttons, ChangeTarget, DuckBeforeCollision, DuckBeforeGround, DuckWhenJump, Line,
+    Seeds, Times, VectorialStrafingConstraints,
 };
-use imgui::{
-    CollapsingHeader, ComboBox, Drag, InputFloat, InputText, Selectable, StyleColor, Ui,
-};
+use imgui::{CollapsingHeader, ComboBox, Drag, InputFloat, InputText, Selectable, StyleColor, Ui};
 
 use crate::{
-    guis::{
-        list_box_enum::show_list_box_enum, radio_button_enum::show_radio_button_enum,
-        x_button::show_x_button,
-    },
+    guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button},
     helpers::hltas::button_to_str,
 };
 
-use self::yaw_pitch_menu::show_yaw_pitch_menu;
+use self::{
+    action_keys_menu::show_action_keys_menu, duck_menu::show_duck_menu, jump_menu::show_jump_menu,
+    strafe_menu::show_strafe_menu, yaw_pitch_menu::show_yaw_pitch_menu,
+};
 
 use super::{
     cmd_editor::cmd_editor_ui,
     property_some_none_field::{property_some_none_field_ui, PropertyFieldResult},
     property_string_field::property_string_field_ui,
-    tab::{HLTASFileTab, StrafeMenuSelection},
+    tab::HLTASFileTab,
 };
 
 // TODO drag speed variables stored somewhere in the function for convinience
@@ -248,497 +249,29 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                     // strafe menu
                     let strafe_menu_edited = ui.group(|| {
-                        if ui.button(format!("Strafe tab##{}", i)) {
-                            *strafe_menu_selection = Some(StrafeMenuSelection::Strafe);
-                        }
-
-                        ui.same_line();
-
-                        let key_tab_pos = ui.cursor_screen_pos();
-                        if ui.button(format!("Key tab##{}", i)) {
-                            *strafe_menu_selection = Some(StrafeMenuSelection::Keys);
-                        }
-
-                        match strafe_menu_selection {
-                            Some(menu_selection) => match menu_selection {
-                                StrafeMenuSelection::Strafe => {
-                                    // using Some with auto_movement to show the strafetype options with an extra "None" option
-                                    let mut strafe_type_selection =
-                                        match &framebulk.auto_actions.movement {
-                                            Some(auto_movement) => match auto_movement {
-                                                AutoMovement::SetYaw(_) => None,
-                                                AutoMovement::Strafe(strafe_settings) => {
-                                                    Some(strafe_settings.type_)
-                                                }
-                                            },
-                                            None => None,
-                                        };
-
-                                    let strafe_list_box_width_token = ui.push_item_width(140.0);
-
-                                    let list_box_changed = show_list_box_enum(
-                                        ui,
-                                        &mut strafe_type_selection,
-                                        vec![
-                                            Some(StrafeType::MaxAccel),
-                                            Some(StrafeType::MaxAngle),
-                                            Some(StrafeType::MaxDeccel),
-                                            Some(StrafeType::ConstSpeed),
-                                            None,
-                                        ],
-                                        vec![
-                                            "Max accel",
-                                            "Max angle",
-                                            "Max deccel",
-                                            "Const speed",
-                                            "None",
-                                        ],
-                                        format!("strafe_selector_list_box{}", i.to_string()),
-                                    );
-
-                                    if list_box_changed {
-                                        let prev_yaw = match &framebulk.auto_actions.movement {
-                                            Some(auto_movement) => match auto_movement {
-                                                AutoMovement::SetYaw(yaw) => Some(*yaw),
-                                                AutoMovement::Strafe(strafe_settings) => {
-                                                    match strafe_settings.dir {
-                                                        StrafeDir::Yaw(yaw) => Some(yaw),
-                                                        StrafeDir::Line { yaw } => Some(yaw),
-                                                        _ => None,
-                                                    }
-                                                }
-                                            },
-                                            None => None,
-                                        };
-
-                                        match strafe_type_selection {
-                                            Some(strafe_type) => {
-                                                framebulk.auto_actions.movement =
-                                                    Some(AutoMovement::Strafe(StrafeSettings {
-                                                        type_: strafe_type,
-                                                        // TODO make this an option to auto select direction for each strafe type
-                                                        dir: match strafe_type {
-                                                            StrafeType::MaxDeccel => {
-                                                                StrafeDir::Best
-                                                            }
-                                                            _ => {
-                                                                StrafeDir::Yaw(match prev_yaw {
-                                                                    Some(yaw) => yaw,
-                                                                    // TODO store "default" yaw value somewhere
-                                                                    None => 0.0,
-                                                                })
-                                                            }
-                                                        },
-                                                    }));
-                                            }
-                                            None => {
-                                                framebulk.auto_actions.movement = match prev_yaw {
-                                                    Some(yaw) => Some(AutoMovement::SetYaw(yaw)),
-                                                    None => None,
-                                                };
-                                            }
-                                        }
-                                    }
-
-                                    strafe_list_box_width_token.pop(ui);
-
-                                    list_box_changed
-                                }
-                                StrafeMenuSelection::Keys => {
-                                    // TODO key layout
-                                    let keys = &mut framebulk.movement_keys;
-                                    let forward_edited = ui.checkbox("Forward", &mut keys.forward);
-                                    ui.same_line();
-                                    let y_pos_next = ui.cursor_screen_pos()[1];
-                                    ui.set_cursor_screen_pos([key_tab_pos[0], y_pos_next]);
-                                    let up_edited = ui.checkbox("Up", &mut keys.up);
-                                    let left_edited = ui.checkbox("Left", &mut keys.left);
-                                    ui.same_line();
-                                    let y_pos_next = ui.cursor_screen_pos()[1];
-                                    ui.set_cursor_screen_pos([key_tab_pos[0], y_pos_next]);
-                                    let down_edited = ui.checkbox("Down", &mut keys.down);
-                                    let right_edited = ui.checkbox("Right", &mut keys.right);
-                                    let back_edited = ui.checkbox("Back", &mut keys.back);
-
-                                    forward_edited
-                                        || up_edited
-                                        || left_edited
-                                        || down_edited
-                                        || right_edited
-                                        || back_edited
-                                }
-                            },
-                            None => unreachable!(),
-                        }
-                        // TabBar::new(format!("strafe_menu##{}", i)).build(ui, || {
-                        //     TabItem::new(format!("strafe tab##{}", i)).build(ui, || {
-
-                        //     });
-                        //     TabItem::new(format!("key tab##{}", i)).build(ui, || {
-                        //     });
-                        // });
+                        show_strafe_menu(&ui, strafe_menu_selection, framebulk, &i.to_string())
                     });
 
                     ui.same_line();
                     ui.set_cursor_screen_pos([jump_menu_offset, ui.cursor_screen_pos()[1]]);
 
                     // jump menu
-                    let jump_menu_edited = ui.group(|| {
-                        let jump_ducktap_menu_width = ui.window_content_region_width() * 0.06;
-                        let disabled_text_selectable =
-                            |selectable: &dyn Fn(&Ui) -> bool, grey_condition: bool| {
-                                let color_token = if !grey_condition {
-                                    None
-                                } else {
-                                    Some(ui.push_style_color(
-                                        StyleColor::Text,
-                                        ui.style_color(StyleColor::TextDisabled),
-                                    ))
-                                };
-
-                                let selectable_changed = selectable(ui);
-
-                                if let Some(color_token) = color_token {
-                                    color_token.pop();
-                                }
-
-                                selectable_changed
-                            };
-
-                        let (autojump_before, ducktap_before) =
-                            match &framebulk.auto_actions.leave_ground_action {
-                                Some(leave_ground_action) => match leave_ground_action.type_ {
-                                    LeaveGroundActionType::Jump => (true, false),
-                                    LeaveGroundActionType::DuckTap { .. } => (false, true),
-                                },
-                                None => (false, false),
-                            };
-
-                        let jump_before = framebulk.action_keys.jump;
-                        let duck_before = framebulk.action_keys.duck;
-
-                        let jumpbug_before = match &framebulk.auto_actions.jump_bug {
-                            Some(_) => true,
-                            None => false,
-                        };
-
-                        ui.text("jump / ducktaps");
-
-                        let duck_tap_changed = disabled_text_selectable(
-                            &|ui| {
-                                Selectable::new(format!("ducktap##jump_menu{}", i))
-                                    .selected(ducktap_before)
-                                    .size([jump_ducktap_menu_width, 0.0])
-                                    .build(ui)
-                            },
-                            !ducktap_before,
-                        );
-
-                        ui.same_line();
-
-                        let jump_changed = disabled_text_selectable(
-                            &|ui| {
-                                Selectable::new(format!("jump##jump_menu{}", i))
-                                    .selected(jump_before)
-                                    .size([jump_ducktap_menu_width, 0.0])
-                                    .build(ui)
-                            },
-                            !jump_before,
-                        );
-
-                        let autojump_changed = disabled_text_selectable(
-                            &|ui| {
-                                Selectable::new(format!("autojump##jump_menu{}", i))
-                                    .selected(autojump_before)
-                                    .size([jump_ducktap_menu_width, 0.0])
-                                    .build(ui)
-                            },
-                            !autojump_before,
-                        );
-
-                        ui.same_line();
-
-                        let duck_changed = disabled_text_selectable(
-                            &|ui| {
-                                Selectable::new(format!("duck##jump_menu{}", i))
-                                    .selected(duck_before)
-                                    .size([jump_ducktap_menu_width, 0.0])
-                                    .build(ui)
-                            },
-                            !duck_before,
-                        );
-
-                        let jumpbug_changed = disabled_text_selectable(
-                            &|ui| {
-                                Selectable::new(format!("jumpbug##jump_menu{}", i))
-                                    .selected(jumpbug_before)
-                                    .size([jump_ducktap_menu_width, 0.0])
-                                    .build(ui)
-                            },
-                            !jumpbug_before,
-                        );
-
-                        ui.dummy([0.0, 15.0]);
-
-                        // lgagst, jumpbug selectables and state checks
-                        let mut lgagst_changed = false;
-                        ui.disabled(!ducktap_before && !autojump_before, || {
-                            let width = ui.window_content_region_width() * 0.13;
-
-                            let lgagst_state = match &mut framebulk.auto_actions.leave_ground_action
-                            {
-                                Some(leave_ground_action) => Some(&mut leave_ground_action.speed),
-                                None => None,
-                            };
-                            let (lgagst_enabled, lgagst_max_spd_enabled) = match &lgagst_state {
-                                Some(leave_ground_action_speed) => match &leave_ground_action_speed
-                                {
-                                    LeaveGroundActionSpeed::Any => (false, false),
-                                    LeaveGroundActionSpeed::Optimal => (true, false),
-                                    LeaveGroundActionSpeed::OptimalWithFullMaxspeed => {
-                                        (false, true)
-                                    }
-                                },
-                                None => (false, false),
-                            };
-
-                            let lgagst_selected =
-                                Selectable::new(format!("lgagst##jump_menu{}", i))
-                                    .selected(lgagst_enabled)
-                                    .size([width, 0.0])
-                                    .build(ui);
-                            let lgagst_max_spd_selected =
-                                Selectable::new(format!("lgagst with max spd##jump_menu{}", i))
-                                    .selected(lgagst_max_spd_enabled)
-                                    .size([width, 0.0])
-                                    .build(ui);
-
-                            if jumpbug_changed {
-                                // toggle jumpbug stuff
-                                if jumpbug_before {
-                                    framebulk.auto_actions.jump_bug = None;
-                                } else {
-                                    // we need both of those keys so
-                                    framebulk.action_keys.jump = false;
-                                    framebulk.action_keys.duck = false;
-
-                                    framebulk.auto_actions.leave_ground_action = None;
-                                    framebulk.auto_actions.jump_bug = Some(JumpBug {
-                                        times: Times::UnlimitedWithinFrameBulk,
-                                    });
-                                }
-                            } else if let Some(lgagst_state) = lgagst_state {
-                                framebulk.auto_actions.jump_bug = None;
-
-                                // toggle lgagst
-                                if lgagst_selected {
-                                    if lgagst_enabled {
-                                        *lgagst_state = LeaveGroundActionSpeed::Any;
-                                    } else {
-                                        *lgagst_state = LeaveGroundActionSpeed::Optimal;
-                                    }
-                                }
-
-                                // toggle lgagst max spd
-                                if lgagst_max_spd_selected {
-                                    if lgagst_max_spd_enabled {
-                                        *lgagst_state = LeaveGroundActionSpeed::Any;
-                                    } else {
-                                        *lgagst_state =
-                                            LeaveGroundActionSpeed::OptimalWithFullMaxspeed;
-                                    }
-                                }
-                            }
-
-                            lgagst_changed =
-                                lgagst_selected || lgagst_max_spd_selected || jumpbug_changed;
-                        });
-
-                        // this toggles the ducktap state
-                        if duck_tap_changed {
-                            if ducktap_before {
-                                framebulk.auto_actions.leave_ground_action = None;
-                            } else {
-                                framebulk.action_keys.jump = false;
-                                // TODO 0ms detector or option to have 0ms by default
-                                // TODO option for lgagst on by default
-                                // TODO ask about "times" field
-                                framebulk.auto_actions.leave_ground_action =
-                                    Some(LeaveGroundAction {
-                                        speed: match framebulk.auto_actions.leave_ground_action {
-                                            Some(leave_ground_action) => leave_ground_action.speed,
-                                            None => LeaveGroundActionSpeed::Optimal,
-                                        },
-                                        times: Times::UnlimitedWithinFrameBulk,
-                                        type_: LeaveGroundActionType::DuckTap { zero_ms: true },
-                                    })
-                            }
-                        }
-
-                        // this toggles the jump state
-                        if autojump_changed {
-                            if autojump_before {
-                                framebulk.auto_actions.leave_ground_action = None;
-                            } else {
-                                framebulk.action_keys.jump = false;
-                                // TODO option for lgagst on by default
-                                // TODO ask about "times" field??
-                                framebulk.auto_actions.leave_ground_action =
-                                    Some(LeaveGroundAction {
-                                        speed: match framebulk.auto_actions.leave_ground_action {
-                                            Some(leave_ground_action) => leave_ground_action.speed,
-                                            None => LeaveGroundActionSpeed::Optimal,
-                                        },
-                                        times: Times::UnlimitedWithinFrameBulk,
-                                        type_: LeaveGroundActionType::Jump,
-                                    })
-                            }
-                        }
-
-                        // for that single "jump" selectable
-                        if jump_changed {
-                            if !jump_before {
-                                // disable all other jump / ducktap stuff
-                                framebulk.auto_actions.leave_ground_action = None;
-                                framebulk.auto_actions.jump_bug = None;
-                            }
-                            framebulk.action_keys.jump = !jump_before;
-                        }
-
-                        // for that single "duck" selectable
-                        if duck_changed {
-                            if !duck_before {
-                                // disable all other unused stuff
-                                framebulk.auto_actions.jump_bug = None;
-                                // TODO figure out if ducktapping is useless when perma duck
-                                // if let Some(leave_ground_action) =
-                                //     &framebulk.auto_actions.leave_ground_action
-                                // {
-                                //     if let LeaveGroundActionType::DuckTap { .. } =
-                                //         &leave_ground_action.type_
-                                //     {
-                                //         framebulk.auto_actions.leave_ground_action = None;
-                                //     }
-                                // }
-                            }
-                            framebulk.action_keys.duck = !duck_before;
-                        }
-
-                        duck_tap_changed || autojump_changed || jump_changed || duck_changed
-                    });
+                    let jump_menu_edited =
+                        ui.group(|| show_jump_menu(ui, framebulk, &i.to_string()));
 
                     ui.same_line();
                     ui.set_cursor_screen_pos([duck_menu_offset, ui.cursor_screen_pos()[1]]);
 
                     // duck menu
-                    let duck_menu_edited = ui.group(|| {
-                        let auto_actions = &mut framebulk.auto_actions;
-
-                        let (mut duck_before_collision, mut duck_before_collision_inc_ceiling) =
-                            if let Some(dbc) = &auto_actions.duck_before_collision {
-                                (true, dbc.including_ceilings)
-                            } else {
-                                (false, false)
-                            };
-
-                        let mut duck_before_ground =
-                            if let Some(_) = &auto_actions.duck_before_ground {
-                                true
-                            } else {
-                                false
-                            };
-
-                        let mut duck_when_jump = if let Some(_) = &auto_actions.duck_when_jump {
-                            true
-                        } else {
-                            false
-                        };
-
-                        ui.text("auto duck");
-
-                        let before_collision_changed = ui.checkbox(
-                            format!("before collision##{}", i),
-                            &mut duck_before_collision,
-                        );
-
-                        ui.indent();
-
-                        // HACK lazy way to set this
-                        let mut inc_ceiling_changed = false;
-                        ui.disabled(!duck_before_collision, || {
-                            inc_ceiling_changed = ui.checkbox(
-                                format!("+ ceiling##{}", i),
-                                &mut duck_before_collision_inc_ceiling,
-                            );
-                        });
-
-                        ui.unindent();
-
-                        let before_ground_changed =
-                            ui.checkbox(format!("before ground##{}", i), &mut duck_before_ground);
-
-                        let when_jump_changed =
-                            ui.checkbox(format!("when jump##{}", i), &mut duck_when_jump);
-
-                        if before_collision_changed {
-                            if duck_before_collision {
-                                auto_actions.duck_before_collision = Some(DuckBeforeCollision {
-                                    times: Times::UnlimitedWithinFrameBulk,
-                                    including_ceilings: duck_before_collision_inc_ceiling,
-                                });
-                            } else {
-                                auto_actions.duck_before_collision = None;
-                            }
-                        }
-
-                        if duck_before_collision && inc_ceiling_changed {
-                            if let Some(dbc) = &mut auto_actions.duck_before_collision {
-                                dbc.including_ceilings = duck_before_collision_inc_ceiling;
-                            }
-                        }
-
-                        if before_ground_changed {
-                            if duck_before_ground {
-                                auto_actions.duck_before_ground = Some(DuckBeforeGround {
-                                    times: Times::UnlimitedWithinFrameBulk,
-                                });
-                            } else {
-                                auto_actions.duck_before_ground = None;
-                            }
-                        }
-
-                        if when_jump_changed {
-                            if duck_when_jump {
-                                auto_actions.duck_when_jump = Some(DuckWhenJump {
-                                    times: Times::UnlimitedWithinFrameBulk,
-                                });
-                            } else {
-                                auto_actions.duck_when_jump = None;
-                            }
-                        }
-
-                        before_collision_changed || inc_ceiling_changed || before_ground_changed
-                    });
+                    let duck_menu_edited =
+                        ui.group(|| show_duck_menu(ui, framebulk, &i.to_string()));
 
                     ui.same_line();
                     ui.set_cursor_screen_pos([action_keys_offset, ui.cursor_screen_pos()[1]]);
 
                     // action keys menu
-                    let action_keys_menu_edited = ui.group(|| {
-                        let action_keys = &mut framebulk.action_keys;
-
-                        ui.text("action keys");
-
-                        let use_changed = ui.checkbox(format!("use##{}", i), &mut action_keys.use_);
-                        let attack1_changed =
-                            ui.checkbox(format!("attack 1##{}", i), &mut action_keys.attack_1);
-                        let attack2_changed =
-                            ui.checkbox(format!("attack 2##{}", i), &mut action_keys.attack_2);
-                        let reload_changed =
-                            ui.checkbox(format!("reload##{}", i), &mut action_keys.reload);
-
-                        use_changed || attack1_changed || attack2_changed || reload_changed
-                    });
+                    let action_keys_menu_edited =
+                        ui.group(|| show_action_keys_menu(ui, framebulk, &i.to_string()));
 
                     yaw_pitch_menu_edited
                         || strafe_menu_edited

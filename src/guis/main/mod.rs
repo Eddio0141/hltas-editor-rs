@@ -13,7 +13,7 @@ use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 
 use hltas_cleaner::cleaners;
-use imgui::{Condition, MenuItem, TabBar, TabItem, TabItemFlags, Ui, Window};
+use imgui::{Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
 use self::graphics_editor::show_graphics_editor;
@@ -235,6 +235,9 @@ impl Default for MainGUI {
 
 impl MainGUI {
     pub fn show(&mut self, _run: &mut bool, ui: &mut Ui) {
+        let window_border_size_token = ui.push_style_var(StyleVar::WindowBorderSize(0.0));
+        let window_min_size_token = ui.push_style_var(StyleVar::WindowMinSize([1.0, 1.0]));
+
         ui.main_menu_bar(|| {
             ui.menu(self.locale_lang.get_str_from_id("file-menu"), || {
                 // TODO shortcut keys
@@ -288,19 +291,28 @@ impl MainGUI {
             });
         });
 
-        let window_size = {
-            let mut size = ui.io().display_size;
-            size[1] -= ui.frame_height();
-            size
+        let tab_window_size = {
+            // let style = ui.clone_style();
+            [
+                ui.io().display_size[0],
+                20.0
+                // style.window_padding[1] + style.frame_padding[1] + 18.0,
+                // style.window_min_size[1],
+            ]
         };
 
-        Window::new("main_window")
+        let window_padding_size_token = {
+            let style = ui.clone_style();
+            ui.push_style_var(StyleVar::WindowPadding([style.window_padding[0], 0.0]))
+        };
+
+        Window::new("tab_window")
             .position([0.0, ui.frame_height()], Condition::Always)
-            .size(window_size, Condition::Always)
+            .size(tab_window_size, Condition::Always)
             .collapsible(false)
             .resizable(false)
             .title_bar(false)
-            .horizontal_scrollbar(true)
+            .scrollable(false)
             .build(ui, || {
                 TabBar::new("file_tabs").reorderable(true).build(ui, || {
                     // TODO make this better?
@@ -340,12 +352,6 @@ impl MainGUI {
                                         new_tab = Some(Rc::clone(tab));
                                     }
                                 }
-
-                                if self.graphics_editor {
-                                    show_graphics_editor(ui, &mut tab.borrow_mut());
-                                } else {
-                                    // show_text_editor(ui);
-                                }
                             });
 
                         if !opened {
@@ -363,7 +369,40 @@ impl MainGUI {
                 });
             });
 
+        let main_window_size = {
+            let display_size = ui.io().display_size;
+            [
+                display_size[0],
+                display_size[1] - (ui.frame_height() + tab_window_size[1]),
+            ]
+        };
+
+        Window::new("main_window")
+            .position(
+                [0.0, ui.frame_height() + tab_window_size[1]],
+                Condition::Always,
+            )
+            .size(main_window_size, Condition::Always)
+            .collapsible(false)
+            .resizable(false)
+            .title_bar(false)
+            .horizontal_scrollbar(true)
+            .build(ui, || {
+                if self.graphics_editor {
+                    if let Some(tab) = &self.current_tab {
+                        show_graphics_editor(ui, &mut tab.borrow_mut());
+                    }
+                } else {
+                    // show_text_editor(ui);
+                }
+            });
+
+        window_padding_size_token.pop();
+
         #[cfg(debug_assertions)]
         ui.show_demo_window(&mut true);
+
+        window_border_size_token.pop();
+        window_min_size_token.pop();
     }
 }

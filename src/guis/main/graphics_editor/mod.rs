@@ -215,7 +215,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
         };
 
         if is_rendering_line {
-            ui.text(format!("{}", i));
+            ui.text(format!("{}", i + 1));
             ui.same_line();
             let line_count_offset = ui.cursor_screen_pos()[0];
 

@@ -147,11 +147,9 @@ impl MainGUI {
             fs::write(path, hltas_to_str(&tab.hltas))?;
         } else {
             // no file, save as new file
-            if let Ok(path) = Self::ask_hltas_save_location() {
-                if let Some(path) = path {
-                    fs::write(&path, hltas_to_str(&tab.hltas))?;
-                    tab.title = HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
-                }
+            if let Ok(Some(path)) = Self::ask_hltas_save_location() {
+                fs::write(&path, hltas_to_str(&tab.hltas))?;
+                tab.title = HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
             }
         }
 
@@ -160,13 +158,15 @@ impl MainGUI {
 
     pub fn close_current_tab(&mut self) {
         let remove_index = if let Some(tab) = &self.current_tab {
-            if tab.borrow().got_modified {
-                if let Err(_) = self.save_current_tab(Some(String::from(
-                    // TODO translation
-                    "Would you like to save the modified file?",
-                ))) {
-                    return;
-                }
+            if tab.borrow().got_modified
+                && self
+                    .save_current_tab(Some(String::from(
+                        // TODO translation
+                        "Would you like to save the modified file?",
+                    )))
+                    .is_err()
+            {
+                return;
             }
 
             self.tabs.iter().position(|t| t.as_ptr() == tab.as_ptr())
@@ -188,16 +188,18 @@ impl MainGUI {
         {
             let mut tab = self.tabs[index].borrow_mut();
 
-            if tab.got_modified {
-                if let Err(_) = self.save_tab(
-                    Some(String::from(
-                        // TODO translation
-                        "Would you like to save the modified file?",
-                    )),
-                    &mut tab,
-                ) {
-                    return;
-                }
+            if tab.got_modified
+                && self
+                    .save_tab(
+                        Some(String::from(
+                            // TODO translation
+                            "Would you like to save the modified file?",
+                        )),
+                        &mut tab,
+                    )
+                    .is_err()
+            {
+                return;
             }
         }
 

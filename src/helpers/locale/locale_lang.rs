@@ -28,6 +28,6 @@ impl LocaleLang {
     }
 
     pub fn get_str_from_id(&self, text_id: &str) -> String {
-        crate::LOCALES.lookup(&self.get_lang(), &text_id)
+        crate::LOCALES.lookup(&self.get_lang(), text_id)
     }
 }

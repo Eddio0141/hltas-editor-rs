@@ -267,7 +267,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             // yaw pitch menu
                             let yaw_pitch_menu_edited = ui.group(|| {
                                 show_yaw_pitch_menu(
-                                    &ui,
+                                    ui,
                                     yaw_pitch_menu_offset,
                                     framebulk,
                                     &i.to_string(),
@@ -283,7 +283,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             // strafe menu
                             let strafe_menu_edited = ui.group(|| {
                                 show_strafe_menu(
-                                    &ui,
+                                    ui,
                                     strafe_menu_selection,
                                     framebulk,
                                     &i.to_string(),
@@ -445,10 +445,8 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                             selected_button
                                         });
 
-                                if let Some(button_new) = button_editor_result {
-                                    if let Some(button_new) = button_new {
-                                        *button = button_new;
-                                    }
+                                if let Some(Some(button_new)) = button_editor_result {
+                                    *button = button_new;
                                 }
 
                                 false

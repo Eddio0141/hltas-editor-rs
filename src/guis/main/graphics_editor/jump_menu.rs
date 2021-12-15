@@ -32,10 +32,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
     let jump_before = framebulk.action_keys.jump;
     let duck_before = framebulk.action_keys.duck;
 
-    let jumpbug_before = match &framebulk.auto_actions.jump_bug {
-        Some(_) => true,
-        None => false,
-    };
+    let jumpbug_before = framebulk.auto_actions.jump_bug.is_some();
 
     ui.text("jump / ducktaps");
 

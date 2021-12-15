@@ -76,20 +76,14 @@ pub fn show_strafe_menu(
                                     dir: match strafe_type {
                                         StrafeType::MaxDeccel => StrafeDir::Best,
                                         _ => {
-                                            StrafeDir::Yaw(match prev_yaw {
-                                                Some(yaw) => yaw,
-                                                // TODO store "default" yaw value somewhere
-                                                None => 0.0,
-                                            })
+                                            // TODO store "default" yaw value somewhere
+                                            StrafeDir::Yaw(prev_yaw.unwrap_or(0.0))
                                         }
                                     },
                                 }));
                         }
                         None => {
-                            framebulk.auto_actions.movement = match prev_yaw {
-                                Some(yaw) => Some(AutoMovement::SetYaw(yaw)),
-                                None => None,
-                            };
+                            framebulk.auto_actions.movement = prev_yaw.map(AutoMovement::SetYaw);
                         }
                     }
                 }

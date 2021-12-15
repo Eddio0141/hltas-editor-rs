@@ -11,17 +11,9 @@ pub fn show_duck_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
             (false, false)
         };
 
-    let mut duck_before_ground = if let Some(_) = &auto_actions.duck_before_ground {
-        true
-    } else {
-        false
-    };
+    let mut duck_before_ground = auto_actions.duck_before_ground.is_some();
 
-    let mut duck_when_jump = if let Some(_) = &auto_actions.duck_when_jump {
-        true
-    } else {
-        false
-    };
+    let mut duck_when_jump = auto_actions.duck_when_jump.is_some();
 
     ui.text("auto duck");
 

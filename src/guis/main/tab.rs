@@ -18,7 +18,7 @@ pub struct HLTASFileTab {
 // TODO think if pathbuf can be a generic type
 impl<'a> HLTASFileTab {
     pub fn open_path(path: &Path, file_content: &'a str) -> Result<Self, hltas::read::Error<'a>> {
-        let hltas = match HLTAS::from_str(&file_content) {
+        let hltas = match HLTAS::from_str(file_content) {
             Ok(hltas) => hltas,
             Err(err) => return Err(err),
         };
@@ -42,26 +42,26 @@ impl<'a> HLTASFileTab {
         })
     }
 
-    pub fn title_from_path<'b>(path: &'b PathBuf, lang: &'b LanguageIdentifier) -> String {
+    pub fn title_from_path(path: &Path, lang: &LanguageIdentifier) -> String {
         if let Some(os_str) = path.file_name() {
             if let Some(str) = os_str.to_str() {
                 // TODO replace this?
                 return str.to_owned();
             }
         }
-        HLTASFileTab::default_title(&lang)
+        HLTASFileTab::default_title(lang)
     }
 
     // BUG fix language change for title (opt out serialization for the titles?)
     fn default_title(lang: &LanguageIdentifier) -> String {
-        crate::LOCALES.lookup(&lang, "new-file-title")
+        crate::LOCALES.lookup(lang, "new-file-title")
     }
 
     pub fn new_file(lang: &LanguageIdentifier /*, file_value: usize*/) -> Self {
         // TODO maybe make the language global?
         Self {
             // title: format!("{} {}", Self::default_title(lang), file_value),
-            title: Self::default_title(lang).to_string(),
+            title: Self::default_title(lang),
             path: None,
             got_modified: false,
             hltas: HLTAS::default(),
@@ -83,7 +83,7 @@ impl HLTASMenuState {
             .iter()
             .map(|framebulk| {
                 if let Line::FrameBulk(framebulk) = framebulk {
-                    if let Some(_) = &framebulk.auto_actions.movement {
+                    if framebulk.auto_actions.movement.is_some() {
                         Some(StrafeMenuSelection::Strafe)
                     } else {
                         let movement_keys = &framebulk.movement_keys;

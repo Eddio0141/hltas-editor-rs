@@ -200,6 +200,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
     let window_y = ui.window_size()[1];
 
     let mut lines_edited = false;
+    let mut stale_line = None;
 
     for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
         let strafe_menu_selection = &mut tab_menu_data.strafe_menu_selections[i];
@@ -687,13 +688,33 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                 }
             });
 
+            let group_rect_min = ui.item_rect_min();
+            let group_rect_max = ui.item_rect_max();
+
+            // display line manip tools on selected line
+            if ui.is_mouse_hovering_rect([0.0, group_rect_min[1]], [f32::MAX, group_rect_max[1]]) {
+                let cursor_pos = ui.cursor_screen_pos();
+                let button_color =
+                    ui.push_style_color(StyleColor::Button, [0.172549, 0.30196, 0.458823, 1.0]);
+
+                let button_pos = {
+                    let min_rect = group_rect_min;
+                    [min_rect[0] - 20.0, min_rect[1]]
+                };
+
+                ui.set_cursor_screen_pos(button_pos);
+                if show_x_button(ui, &format!("remove_line_button{}", i)) {
+                    line_edited = true;
+                    stale_line = Some(i);
+                }
+
+                button_color.pop();
+                ui.set_cursor_screen_pos(cursor_pos);
+            }
+
             let draw_list = ui.get_window_draw_list();
             draw_list
-                .add_rect(
-                    ui.item_rect_min(),
-                    ui.item_rect_max(),
-                    [0.501, 0.501, 0.501, 0.25],
-                )
+                .add_rect(group_rect_min, group_rect_max, [0.501, 0.501, 0.501, 0.25])
                 .build();
 
             if !lines_edited && line_edited {
@@ -721,6 +742,12 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                 },
             ]);
         }
+    }
+
+    if let Some(stale_line) = stale_line {
+        tab.hltas.lines.remove(stale_line);
+        // TODO a better design for tab_menu_data
+        tab.tab_menu_data.strafe_menu_selections.remove(stale_line);
     }
 
     if properties_edited || lines_edited {

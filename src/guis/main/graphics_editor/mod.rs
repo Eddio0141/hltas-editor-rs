@@ -221,7 +221,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                         let yaw_pitch_menu_width = window_width * 0.2 + 15.0;
                         let strafe_menu_width = 158.0;
-                        let jump_menu_width = window_width * 0.13 + 17.0;
+                        let jump_menu_width = 65.0 * 2.0 + 16.0;
                         let duck_menu_width = 150.0;
                         let action_keys_menu_width = 100.0;
 

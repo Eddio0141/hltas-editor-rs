@@ -4,7 +4,7 @@ use hltas::types::{
 use imgui::{Selectable, StyleColor, Ui};
 
 pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
-    let jump_ducktap_menu_width = ui.window_content_region_width() * 0.06;
+    let jump_ducktap_selectable_width = 65.0;
     let disabled_text_selectable = |selectable: &dyn Fn(&Ui) -> bool, grey_condition: bool| {
         let color_token = if !grey_condition {
             None
@@ -43,7 +43,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
         &|ui| {
             Selectable::new(format!("ducktap##jump_menu{}", id))
                 .selected(ducktap_before)
-                .size([jump_ducktap_menu_width, 0.0])
+                .size([jump_ducktap_selectable_width, 0.0])
                 .build(ui)
         },
         !ducktap_before,
@@ -55,7 +55,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
         &|ui| {
             Selectable::new(format!("jump##jump_menu{}", id))
                 .selected(jump_before)
-                .size([jump_ducktap_menu_width, 0.0])
+                .size([jump_ducktap_selectable_width, 0.0])
                 .build(ui)
         },
         !jump_before,
@@ -65,7 +65,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
         &|ui| {
             Selectable::new(format!("autojump##jump_menu{}", id))
                 .selected(autojump_before)
-                .size([jump_ducktap_menu_width, 0.0])
+                .size([jump_ducktap_selectable_width, 0.0])
                 .build(ui)
         },
         !autojump_before,
@@ -77,7 +77,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
         &|ui| {
             Selectable::new(format!("duck##jump_menu{}", id))
                 .selected(duck_before)
-                .size([jump_ducktap_menu_width, 0.0])
+                .size([jump_ducktap_selectable_width, 0.0])
                 .build(ui)
         },
         !duck_before,
@@ -87,7 +87,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
         &|ui| {
             Selectable::new(format!("jumpbug##jump_menu{}", id))
                 .selected(jumpbug_before)
-                .size([jump_ducktap_menu_width, 0.0])
+                .size([jump_ducktap_selectable_width, 0.0])
                 .build(ui)
         },
         !jumpbug_before,
@@ -98,7 +98,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
     // lgagst, jumpbug selectables and state checks
     let mut lgagst_changed = false;
     ui.disabled(!ducktap_before && !autojump_before, || {
-        let width = ui.window_content_region_width() * 0.13;
+        let width = jump_ducktap_selectable_width * 2.0 + 8.0;
 
         let lgagst_state = match &mut framebulk.auto_actions.leave_ground_action {
             Some(leave_ground_action) => Some(&mut leave_ground_action.speed),

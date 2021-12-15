@@ -300,6 +300,7 @@ impl MainGUI {
             .collapsible(false)
             .resizable(false)
             .title_bar(false)
+            .horizontal_scrollbar(true)
             .build(ui, || {
                 TabBar::new("file_tabs").reorderable(true).build(ui, || {
                     // TODO make this better?

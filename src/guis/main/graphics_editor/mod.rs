@@ -4,6 +4,7 @@ mod frames_menu;
 mod jump_menu;
 mod strafe_menu;
 mod yaw_pitch_menu;
+mod command_menu;
 
 use std::num::NonZeroU32;
 
@@ -18,11 +19,11 @@ use crate::{
 use self::{
     action_keys_menu::show_action_keys_menu, duck_menu::show_duck_menu,
     frames_menu::show_frames_menu, jump_menu::show_jump_menu, strafe_menu::show_strafe_menu,
-    yaw_pitch_menu::show_yaw_pitch_menu,
+    yaw_pitch_menu::show_yaw_pitch_menu, command_menu::show_command_menu,
 };
 
 use super::{
-    cmd_editor::cmd_editor_ui,
+    cmd_editor::show_cmd_editor,
     property_some_none_field::{property_some_none_field_ui, PropertyFieldResult},
     property_string_field::property_string_field_ui,
     tab::HLTASFileTab,
@@ -172,7 +173,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 ui.same_line();
 
-                let command_edited = cmd_editor_ui(ui, cmds, "load commands");
+                let command_edited = show_cmd_editor(ui, cmds, "load commands");
 
                 PropertyFieldResult {
                     field_enabled: x_button_clicked,
@@ -216,6 +217,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         duck_menu_offset,
                         action_keys_menu_offset,
                         frames_menu_offset,
+                        command_menu_offset,
                     ) = {
                         let window_width = ui.window_content_region_width();
 
@@ -224,6 +226,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         let jump_menu_width = 65.0 * 2.0 + 16.0;
                         let duck_menu_width = 150.0;
                         let action_keys_menu_width = 100.0;
+                        let frames_menu_width = 157.0;
 
                         let yaw_pitch_menu_offset = line_count_offset + 18.0;
                         let strafe_menu_offset = yaw_pitch_menu_offset + yaw_pitch_menu_width;
@@ -231,6 +234,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                         let duck_menu_offset = jump_menu_offset + jump_menu_width;
                         let action_keys_menu_offset = duck_menu_offset + duck_menu_width;
                         let frames_menu_offset = action_keys_menu_offset + action_keys_menu_width;
+                        let command_menu_offset = frames_menu_offset + frames_menu_width;
 
                         (
                             yaw_pitch_menu_offset,
@@ -239,6 +243,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                             duck_menu_offset,
                             action_keys_menu_offset,
                             frames_menu_offset,
+                            command_menu_offset,
                         )
                     };
 
@@ -283,12 +288,20 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     let frames_menu_edited =
                         ui.group(|| show_frames_menu(ui, framebulk, &i.to_string()));
 
+                    ui.same_line();
+                    ui.set_cursor_screen_pos([command_menu_offset, ui.cursor_screen_pos()[1]]);
+
+                    // command menu
+                    let command_menu_edited =
+                        ui.group(|| show_command_menu(ui, framebulk, &i.to_string()));
+
                     yaw_pitch_menu_edited
                         || strafe_menu_edited
                         || jump_menu_edited
                         || duck_menu_edited
                         || action_keys_menu_edited
                         || frames_menu_edited
+                        || command_menu_edited
                 })
             }
             Line::Save(save) => {

@@ -186,7 +186,6 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
         } else {
             framebulk.action_keys.jump = false;
             // TODO option for lgagst on by default
-            // TODO ask about "times" field??
             framebulk.auto_actions.leave_ground_action = Some(LeaveGroundAction {
                 speed: match framebulk.auto_actions.leave_ground_action {
                     Some(leave_ground_action) => leave_ground_action.speed,

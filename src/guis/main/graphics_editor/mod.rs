@@ -334,6 +334,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
     let mut lines_edited = false;
     let mut stale_line = None;
+    let mut new_line_menu_opened = false;
 
     for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
         let strafe_menu_selection = &mut tab.tab_menu_data.strafe_menu_selections[i];
@@ -843,9 +844,17 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                 ui.set_cursor_screen_pos(cursor_pos);
 
                 // check if right click for new line menu
-                if ui.is_mouse_clicked(MouseButton::Right) {
-                    ui.open_popup(new_line_menu_id);
+                if !new_line_menu_opened && ui.is_mouse_clicked(MouseButton::Right) {
                     tab.tab_menu_data.right_click_popup_index = Some(i);
+                    new_line_menu_opened = true;
+                    ui.open_popup(new_line_menu_id);
+                }
+            } else {
+                // TODO check if right click is in lines area
+                if !new_line_menu_opened && ui.is_mouse_clicked(MouseButton::Right) {
+                    tab.tab_menu_data.right_click_popup_index = None;
+                    new_line_menu_opened = true;
+                    ui.open_popup(new_line_menu_id);
                 }
             }
 

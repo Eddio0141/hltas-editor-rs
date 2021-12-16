@@ -94,20 +94,26 @@ pub fn show_strafe_menu(
             }
             StrafeMenuSelection::Keys => {
                 // TODO key layout
-                // TODO fix this to work with id so no conflicts
                 let keys = &mut framebulk.movement_keys;
-                let forward_edited = ui.checkbox("Forward", &mut keys.forward);
+                let forward_edited = ui.checkbox(
+                    format!("Forward##strafe_menu_editor{}", id),
+                    &mut keys.forward,
+                );
                 ui.same_line();
                 let y_pos_next = ui.cursor_screen_pos()[1];
                 ui.set_cursor_screen_pos([key_tab_pos[0], y_pos_next]);
-                let up_edited = ui.checkbox("Up", &mut keys.up);
-                let left_edited = ui.checkbox("Left", &mut keys.left);
+                let up_edited = ui.checkbox(format!("Up##strafe_menu_editor{}", id), &mut keys.up);
+                let left_edited =
+                    ui.checkbox(format!("Left##strafe_menu_editor{}", id), &mut keys.left);
                 ui.same_line();
                 let y_pos_next = ui.cursor_screen_pos()[1];
                 ui.set_cursor_screen_pos([key_tab_pos[0], y_pos_next]);
-                let down_edited = ui.checkbox("Down", &mut keys.down);
-                let right_edited = ui.checkbox("Right", &mut keys.right);
-                let back_edited = ui.checkbox("Back", &mut keys.back);
+                let down_edited =
+                    ui.checkbox(format!("Down##strafe_menu_editor{}", id), &mut keys.down);
+                let right_edited =
+                    ui.checkbox(format!("Right##strafe_menu_editor{}", id), &mut keys.right);
+                let back_edited =
+                    ui.checkbox(format!("Back##strafe_menu_editor{}", id), &mut keys.back);
 
                 forward_edited
                     || up_edited

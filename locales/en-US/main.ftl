@@ -15,6 +15,7 @@ hltas-cleaner = HLTAS cleaner
 options-menu = Options
 
 toggle-graphics-editor = Toggle graphics editor
+open-options-menu = Options menu
 
 
 new-file-title = New file

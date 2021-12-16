@@ -31,13 +31,13 @@ use super::{
     cmd_editor::show_cmd_editor,
     property_some_none_field::{property_some_none_field_ui, PropertyFieldResult},
     property_string_field::property_string_field_ui,
-    tab::{HLTASFileTab, StrafeMenuSelection},
+    tab::{HLTASFileTab, StrafeMenuSelection}, option_menu::AppOptions,
 };
 
 // TODO drag speed variables stored somewhere in the function for convinience
 // TODO am I suppose to have translation for those? maybe for some, not all
 // TODO minimal view to limit each line to be easier to read with shortcut
-pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
+pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOptions) {
     let properties_edited = if CollapsingHeader::new("Properties")
         .default_open(true)
         .build(ui)
@@ -419,7 +419,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                         // jump menu
                         let jump_menu_edited =
-                            ui.group(|| show_jump_menu(ui, framebulk, &i.to_string()));
+                            ui.group(|| show_jump_menu(ui, framebulk, &i.to_string(), options));
 
                         ui.same_line();
                         ui.set_cursor_screen_pos([duck_menu_offset, ui.cursor_screen_pos()[1]]);

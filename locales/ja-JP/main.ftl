@@ -15,6 +15,7 @@ hltas-cleaner = HLTASのクリーンアップ
 options-menu = オプション
 
 toggle-graphics-editor = グラフィックエディタの切り替え
+open-options-menu = オプションメニュー
 
 
 new-file-title = 新規

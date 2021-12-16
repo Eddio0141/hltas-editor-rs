@@ -1,5 +1,6 @@
 mod cmd_editor;
 mod graphics_editor;
+mod option_menu;
 mod property_some_none_field;
 mod property_string_field;
 mod tab;
@@ -12,11 +13,13 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 
+use hltas::types::LeaveGroundActionSpeed;
 use hltas_cleaner::cleaners;
 use imgui::{Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
 use self::graphics_editor::show_graphics_editor;
+use self::option_menu::{show_option_menu, AppOptions, LgagstOption, OptionMenuStatus};
 use self::tab::HLTASFileTab;
 
 pub struct MainGUI {
@@ -28,6 +31,9 @@ pub struct MainGUI {
     recent_paths: VecDeque<PathBuf>,
     graphics_editor: bool,
     locale_lang: LocaleLang,
+    options_menu_opened: bool,
+    options: AppOptions,
+    option_menu_status: OptionMenuStatus,
 }
 
 impl MainGUI {
@@ -237,6 +243,18 @@ impl Default for MainGUI {
             recent_paths: VecDeque::new(),
             graphics_editor: true,
             locale_lang,
+            options_menu_opened: false,
+            options: AppOptions {
+                jump_lgagst_option: LgagstOption {
+                    default_selection: LeaveGroundActionSpeed::Optimal,
+                    copy_previous_framebulk: true,
+                },
+                ducktap_lgagst_option: LgagstOption {
+                    default_selection: LeaveGroundActionSpeed::Optimal,
+                    copy_previous_framebulk: true,
+                },
+            },
+            option_menu_status: OptionMenuStatus::default(),
         }
     }
 }
@@ -295,6 +313,9 @@ impl MainGUI {
                     .build(ui)
                 {
                     self.graphics_editor = !self.graphics_editor;
+                }
+                if MenuItem::new(self.locale_lang.get_str_from_id("open-options-menu")).build(ui) {
+                    self.options_menu_opened = !self.options_menu_opened;
                 }
             });
         });
@@ -399,7 +420,7 @@ impl MainGUI {
             .build(ui, || {
                 if self.graphics_editor {
                     if let Some(tab) = &self.current_tab {
-                        show_graphics_editor(ui, &mut tab.borrow_mut());
+                        show_graphics_editor(ui, &mut tab.borrow_mut(), &self.options);
                     }
                 } else {
                     // show_text_editor(ui);
@@ -407,6 +428,29 @@ impl MainGUI {
             });
 
         window_padding_size_token.pop();
+
+        let mut options_menu_opened = self.options_menu_opened;
+
+        if self.options_menu_opened {
+            Window::new("options")
+                .focused(true)
+                .opened(&mut options_menu_opened)
+                .position(
+                    {
+                        let display_size = ui.io().display_size;
+                        [display_size[0] * 0.5, display_size[1] * 0.5]
+                    },
+                    Condition::Appearing,
+                )
+                .position_pivot([0.5, 0.5])
+                .size([500.0, 300.0], Condition::Always)
+                .resizable(false)
+                .build(ui, || {
+                    show_option_menu(ui, &mut self.options, &mut self.option_menu_status)
+                });
+        }
+
+        self.options_menu_opened = options_menu_opened;
 
         #[cfg(debug_assertions)]
         ui.show_demo_window(&mut true);

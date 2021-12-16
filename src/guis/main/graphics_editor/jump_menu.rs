@@ -3,7 +3,9 @@ use hltas::types::{
 };
 use imgui::{Selectable, StyleColor, Ui};
 
-pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
+use crate::guis::main::option_menu::AppOptions;
+
+pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &AppOptions) -> bool {
     let jump_ducktap_selectable_width = 65.0;
     let disabled_text_selectable = |selectable: &dyn Fn(&Ui) -> bool, grey_condition: bool| {
         let color_token = if !grey_condition {
@@ -166,12 +168,14 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
         } else {
             framebulk.action_keys.jump = false;
             // TODO 0ms detector or option to have 0ms by default
-            // TODO option for lgagst on by default
             // TODO ask about "times" field
             framebulk.auto_actions.leave_ground_action = Some(LeaveGroundAction {
                 speed: match framebulk.auto_actions.leave_ground_action {
                     Some(leave_ground_action) => leave_ground_action.speed,
-                    None => LeaveGroundActionSpeed::Optimal,
+                    None => {
+                        // TODO copy framebulk option thing
+                        options.ducktap_lgagst_option.default_selection
+                    }
                 },
                 times: Times::UnlimitedWithinFrameBulk,
                 type_: LeaveGroundActionType::DuckTap { zero_ms: true },
@@ -185,11 +189,13 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
             framebulk.auto_actions.leave_ground_action = None;
         } else {
             framebulk.action_keys.jump = false;
-            // TODO option for lgagst on by default
             framebulk.auto_actions.leave_ground_action = Some(LeaveGroundAction {
                 speed: match framebulk.auto_actions.leave_ground_action {
                     Some(leave_ground_action) => leave_ground_action.speed,
-                    None => LeaveGroundActionSpeed::Optimal,
+                    None => {
+                        // TODO copy framebulk option thing
+                        options.jump_lgagst_option.default_selection
+                    }
                 },
                 times: Times::UnlimitedWithinFrameBulk,
                 type_: LeaveGroundActionType::Jump,

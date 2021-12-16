@@ -5,7 +5,7 @@ pub fn show_list_box_enum<T: Copy + PartialEq>(
     value: &mut T,
     enums: Vec<T>,
     labels: Vec<&str>,
-    id: String,
+    id: &str,
 ) -> bool {
     assert_eq!(enums.len(), labels.len());
 

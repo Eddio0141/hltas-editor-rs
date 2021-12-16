@@ -51,7 +51,7 @@ pub fn show_strafe_menu(
                         "Const speed",
                         "None",
                     ],
-                    format!("strafe_selector_list_box{}", id.to_string()),
+                    &format!("strafe_selector_list_box{}", id),
                 );
 
                 if list_box_changed {

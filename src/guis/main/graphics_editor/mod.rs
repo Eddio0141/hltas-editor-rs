@@ -200,15 +200,6 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
     ui.separator();
     ui.text("Lines");
 
-    if tab.hltas.lines.is_empty() {
-        return;
-    }
-
-    let window_y = ui.window_size()[1];
-
-    let mut lines_edited = false;
-    let mut stale_line = None;
-
     let new_line_menu_id = "new_line_menu";
     ui.popup(new_line_menu_id, || {
         let button_names = vec![
@@ -295,19 +286,28 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             if ui.button(button_name) {
                 let _type = &button_type[i];
 
-                if let Some(mut index) = tab.tab_menu_data.right_click_popup_index {
-                    index += 1;
+                let line_type_to_strafe_menu_selection = || match _type {
+                    Line::FrameBulk(framebulk) => Some(StrafeMenuSelection::new(framebulk)),
+                    _ => None,
+                };
 
-                    tab.hltas.lines.insert(index, _type.to_owned());
+                match tab.tab_menu_data.right_click_popup_index {
+                    Some(mut index) => {
+                        index += 1;
 
-                    // insert menu data
-                    tab.tab_menu_data.strafe_menu_selections.insert(
-                        index,
-                        match _type {
-                            Line::FrameBulk(framebulk) => Some(StrafeMenuSelection::new(framebulk)),
-                            _ => None,
-                        },
-                    );
+                        tab.hltas.lines.insert(index, _type.to_owned());
+
+                        // insert menu data
+                        tab.tab_menu_data
+                            .strafe_menu_selections
+                            .insert(index, line_type_to_strafe_menu_selection());
+                    }
+                    None => {
+                        tab.hltas.lines.push(_type.to_owned());
+                        tab.tab_menu_data
+                            .strafe_menu_selections
+                            .push(line_type_to_strafe_menu_selection());
+                    }
                 }
 
                 tab.got_modified = true;
@@ -320,6 +320,20 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             }
         }
     });
+
+    if tab.hltas.lines.is_empty() {
+        if ui.is_mouse_clicked(MouseButton::Right) {
+            tab.tab_menu_data.right_click_popup_index = None;
+            ui.open_popup(new_line_menu_id);
+        }
+
+        return;
+    }
+
+    let window_y = ui.window_size()[1];
+
+    let mut lines_edited = false;
+    let mut stale_line = None;
 
     for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
         let strafe_menu_selection = &mut tab.tab_menu_data.strafe_menu_selections[i];

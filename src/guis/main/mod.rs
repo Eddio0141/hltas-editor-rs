@@ -145,6 +145,7 @@ impl MainGUI {
         if let Some(path) = &tab.path {
             // save_path = Some(path.to_owned());
             fs::write(path, hltas_to_str(&tab.hltas))?;
+            tab.got_modified = false;
         } else {
             // no file, save as new file
             if let Ok(Some(path)) = Self::ask_hltas_save_location() {

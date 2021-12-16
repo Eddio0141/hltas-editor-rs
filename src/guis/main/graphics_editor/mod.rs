@@ -310,6 +310,8 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                     );
                 }
 
+                tab.got_modified = true;
+
                 ui.close_current_popup();
             }
 

@@ -2,8 +2,6 @@ mod cmd_editor;
 mod graphics_editor;
 mod property_some_none_field;
 mod property_string_field;
-mod selectable_hltas_button;
-mod strafe_key_selector;
 mod tab;
 
 use std::cell::RefCell;
@@ -15,7 +13,7 @@ use crate::helpers::hltas::hltas_to_str;
 use crate::helpers::locale::locale_lang::LocaleLang;
 
 use hltas_cleaner::cleaners;
-use imgui::{Condition, MenuItem, TabBar, TabItem, TabItemFlags, Ui, Window};
+use imgui::{Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
 use self::graphics_editor::show_graphics_editor;
@@ -147,13 +145,12 @@ impl MainGUI {
         if let Some(path) = &tab.path {
             // save_path = Some(path.to_owned());
             fs::write(path, hltas_to_str(&tab.hltas))?;
+            tab.got_modified = false;
         } else {
             // no file, save as new file
-            if let Ok(path) = Self::ask_hltas_save_location() {
-                if let Some(path) = path {
-                    fs::write(&path, hltas_to_str(&tab.hltas))?;
-                    tab.title = HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
-                }
+            if let Ok(Some(path)) = Self::ask_hltas_save_location() {
+                fs::write(&path, hltas_to_str(&tab.hltas))?;
+                tab.title = HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
             }
         }
 
@@ -162,13 +159,15 @@ impl MainGUI {
 
     pub fn close_current_tab(&mut self) {
         let remove_index = if let Some(tab) = &self.current_tab {
-            if tab.borrow().got_modified {
-                if let Err(_) = self.save_current_tab(Some(String::from(
-                    // TODO translation
-                    "Would you like to save the modified file?",
-                ))) {
-                    return;
-                }
+            if tab.borrow().got_modified
+                && self
+                    .save_current_tab(Some(String::from(
+                        // TODO translation
+                        "Would you like to save the modified file?",
+                    )))
+                    .is_err()
+            {
+                return;
             }
 
             self.tabs.iter().position(|t| t.as_ptr() == tab.as_ptr())
@@ -190,20 +189,27 @@ impl MainGUI {
         {
             let mut tab = self.tabs[index].borrow_mut();
 
-            if tab.got_modified {
-                if let Err(_) = self.save_tab(
-                    Some(String::from(
-                        // TODO translation
-                        "Would you like to save the modified file?",
-                    )),
-                    &mut tab,
-                ) {
-                    return;
-                }
+            if tab.got_modified
+                && self
+                    .save_tab(
+                        Some(String::from(
+                            // TODO translation
+                            "Would you like to save the modified file?",
+                        )),
+                        &mut tab,
+                    )
+                    .is_err()
+            {
+                return;
             }
         }
 
         self.tabs.remove(index);
+
+        // HACK
+        if self.tabs.is_empty() {
+            self.current_tab = None;
+        }
     }
 
     // pub fn set_current_tab_title(&mut self)
@@ -237,6 +243,9 @@ impl Default for MainGUI {
 
 impl MainGUI {
     pub fn show(&mut self, _run: &mut bool, ui: &mut Ui) {
+        let window_border_size_token = ui.push_style_var(StyleVar::WindowBorderSize(0.0));
+        let window_min_size_token = ui.push_style_var(StyleVar::WindowMinSize([1.0, 1.0]));
+
         ui.main_menu_bar(|| {
             ui.menu(self.locale_lang.get_str_from_id("file-menu"), || {
                 // TODO shortcut keys
@@ -290,18 +299,28 @@ impl MainGUI {
             });
         });
 
-        let window_size = {
-            let mut size = ui.io().display_size;
-            size[1] -= ui.frame_height();
-            size
+        let tab_window_size = {
+            // let style = ui.clone_style();
+            [
+                ui.io().display_size[0],
+                20.0
+                // style.window_padding[1] + style.frame_padding[1] + 18.0,
+                // style.window_min_size[1],
+            ]
         };
 
-        Window::new("main_window")
+        let window_padding_size_token = {
+            let style = ui.clone_style();
+            ui.push_style_var(StyleVar::WindowPadding([style.window_padding[0], 0.0]))
+        };
+
+        Window::new("tab_window")
             .position([0.0, ui.frame_height()], Condition::Always)
-            .size(window_size, Condition::Always)
+            .size(tab_window_size, Condition::Always)
             .collapsible(false)
             .resizable(false)
             .title_bar(false)
+            .scrollable(false)
             .build(ui, || {
                 TabBar::new("file_tabs").reorderable(true).build(ui, || {
                     // TODO make this better?
@@ -321,6 +340,11 @@ impl MainGUI {
                                 flags = flags.union(TabItemFlags::SET_SELECTED);
 
                                 self.tab_switch_index = None;
+                                self.current_tab = Some(Rc::clone(tab));
+                            }
+
+                            if tab.borrow().got_modified {
+                                flags = flags.union(TabItemFlags::UNSAVED_DOCUMENT);
                             }
 
                             flags
@@ -336,12 +360,6 @@ impl MainGUI {
                                     if current_tab.as_ptr() != tab.as_ptr() {
                                         new_tab = Some(Rc::clone(tab));
                                     }
-                                }
-
-                                if self.graphics_editor {
-                                    show_graphics_editor(ui, &mut tab.borrow_mut());
-                                } else {
-                                    // show_text_editor(ui);
                                 }
                             });
 
@@ -359,5 +377,41 @@ impl MainGUI {
                     }
                 });
             });
+
+        let main_window_size = {
+            let display_size = ui.io().display_size;
+            [
+                display_size[0],
+                display_size[1] - (ui.frame_height() + tab_window_size[1]),
+            ]
+        };
+
+        Window::new("main_window")
+            .position(
+                [0.0, ui.frame_height() + tab_window_size[1]],
+                Condition::Always,
+            )
+            .size(main_window_size, Condition::Always)
+            .collapsible(false)
+            .resizable(false)
+            .title_bar(false)
+            .horizontal_scrollbar(true)
+            .build(ui, || {
+                if self.graphics_editor {
+                    if let Some(tab) = &self.current_tab {
+                        show_graphics_editor(ui, &mut tab.borrow_mut());
+                    }
+                } else {
+                    // show_text_editor(ui);
+                }
+            });
+
+        window_padding_size_token.pop();
+
+        #[cfg(debug_assertions)]
+        ui.show_demo_window(&mut true);
+
+        window_border_size_token.pop();
+        window_min_size_token.pop();
     }
 }

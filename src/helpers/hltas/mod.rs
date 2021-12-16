@@ -1,12 +1,7 @@
 pub mod fps;
 pub mod frametime;
 
-use hltas::{
-    types::{Button, StrafeType},
-    HLTAS,
-};
-
-// TODO put to_str into its own thing?
+use hltas::{types::Button, HLTAS};
 
 pub fn hltas_to_str(hltas: &HLTAS) -> String {
     let mut file_u8: Vec<u8> = Vec::new();
@@ -29,14 +24,5 @@ pub fn button_to_str(button: &Button) -> &str {
         Button::BackRight => "back right",
         Button::Right => "right",
         Button::ForwardRight => "forward right",
-    }
-}
-
-pub fn strafe_type_to_str(strafe_type: &StrafeType) -> &str {
-    match strafe_type {
-        StrafeType::MaxAccel => "max accel",
-        StrafeType::MaxAngle => "max angle",
-        StrafeType::MaxDeccel => "max deccel",
-        StrafeType::ConstSpeed => "const spd",
     }
 }

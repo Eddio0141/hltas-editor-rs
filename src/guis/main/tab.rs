@@ -15,7 +15,6 @@ pub struct HLTASFileTab {
     pub tab_menu_data: HLTASMenuState,
 }
 
-// TODO think if pathbuf can be a generic type
 impl<'a> HLTASFileTab {
     pub fn open_path(path: &Path, file_content: &'a str) -> Result<Self, hltas::read::Error<'a>> {
         let hltas = match HLTAS::from_str(file_content) {
@@ -45,7 +44,6 @@ impl<'a> HLTASFileTab {
     pub fn title_from_path(path: &Path, lang: &LanguageIdentifier) -> String {
         if let Some(os_str) = path.file_name() {
             if let Some(str) = os_str.to_str() {
-                // TODO replace this?
                 return str.to_owned();
             }
         }

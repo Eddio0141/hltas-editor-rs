@@ -3,8 +3,6 @@ pub mod frametime;
 
 use hltas::{types::Button, HLTAS};
 
-// TODO put to_str into its own thing?
-
 pub fn hltas_to_str(hltas: &HLTAS) -> String {
     let mut file_u8: Vec<u8> = Vec::new();
     hltas.to_writer(&mut file_u8).unwrap();

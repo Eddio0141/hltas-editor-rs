@@ -213,16 +213,6 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
         if !duck_before {
             // disable all other unused stuff
             framebulk.auto_actions.jump_bug = None;
-            // TODO figure out if ducktapping is useless when perma duck
-            // if let Some(leave_ground_action) =
-            //     &framebulk.auto_actions.leave_ground_action
-            // {
-            //     if let LeaveGroundActionType::DuckTap { .. } =
-            //         &leave_ground_action.type_
-            //     {
-            //         framebulk.auto_actions.leave_ground_action = None;
-            //     }
-            // }
         }
         framebulk.action_keys.duck = !duck_before;
     }

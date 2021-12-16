@@ -37,11 +37,6 @@ pub struct MainGUI {
 }
 
 impl MainGUI {
-    // TODO make it a field?
-    pub const fn recent_path_max_size() -> usize {
-        20
-    }
-
     pub fn new_file(&mut self) {
         let new_tab = HLTASFileTab::new_file(&self.locale_lang.get_lang());
         self.tabs.push(Rc::new(RefCell::new(new_tab)));
@@ -76,7 +71,7 @@ impl MainGUI {
 
         self.recent_paths.push_back(path.to_owned());
 
-        if self.recent_paths.len() > Self::recent_path_max_size() {
+        if self.recent_paths.len() > self.options.recent_path_size {
             self.recent_paths.pop_front();
         }
     }
@@ -253,6 +248,7 @@ impl Default for MainGUI {
                     default_selection: LeaveGroundActionSpeed::Optimal,
                     copy_previous_framebulk: true,
                 },
+                recent_path_size: 20,
             },
             option_menu_status: OptionMenuStatus::default(),
         }

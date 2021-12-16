@@ -94,6 +94,7 @@ pub fn show_strafe_menu(
             }
             StrafeMenuSelection::Keys => {
                 // TODO key layout
+                // TODO fix this to work with id so no conflicts
                 let keys = &mut framebulk.movement_keys;
                 let forward_edited = ui.checkbox("Forward", &mut keys.forward);
                 ui.same_line();

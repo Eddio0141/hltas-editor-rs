@@ -8,8 +8,13 @@ mod yaw_pitch_menu;
 
 use std::num::NonZeroU32;
 
-use hltas::types::{Button, Buttons, ChangeTarget, Line, Seeds, VectorialStrafingConstraints};
-use imgui::{CollapsingHeader, ComboBox, Drag, InputFloat, InputText, Selectable, StyleColor, Ui};
+use hltas::types::{
+    Button, Buttons, Change, ChangeTarget, FrameBulk, Line, Seeds, VectorialStrafingConstraints,
+};
+use imgui::{
+    CollapsingHeader, ComboBox, Drag, InputFloat, InputText, MouseButton, Selectable, StyleColor,
+    Ui,
+};
 
 use crate::{
     guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button},
@@ -26,7 +31,7 @@ use super::{
     cmd_editor::show_cmd_editor,
     property_some_none_field::{property_some_none_field_ui, PropertyFieldResult},
     property_string_field::property_string_field_ui,
-    tab::HLTASFileTab,
+    tab::{HLTASFileTab, StrafeMenuSelection},
 };
 
 // TODO drag speed variables stored somewhere in the function for convinience
@@ -195,15 +200,127 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
     ui.separator();
     ui.text("Lines");
 
-    let tab_menu_data = &mut tab.tab_menu_data;
+    if tab.hltas.lines.is_empty() {
+        return;
+    }
 
     let window_y = ui.window_size()[1];
 
     let mut lines_edited = false;
     let mut stale_line = None;
 
+    let new_line_menu_id = "new_line_menu";
+    ui.popup(new_line_menu_id, || {
+        let button_names = vec![
+            "framebulk",
+            "save",
+            "shared seed",
+            "buttons",
+            "lgagst min spd",
+            "non-shared seed",
+            "comment",
+            "vectorial strafing",
+            "vectorial strafing constraints",
+            "change",
+            "target yaw override",
+        ];
+
+        let button_type = vec![
+            // TODO option for what to choose here
+            Line::FrameBulk(FrameBulk {
+                auto_actions: hltas::types::AutoActions {
+                    movement: None,
+                    leave_ground_action: None,
+                    jump_bug: None,
+                    duck_before_collision: None,
+                    duck_before_ground: None,
+                    duck_when_jump: None,
+                },
+                movement_keys: hltas::types::MovementKeys {
+                    forward: false,
+                    left: false,
+                    right: false,
+                    back: false,
+                    up: false,
+                    down: false,
+                },
+                action_keys: hltas::types::ActionKeys {
+                    jump: false,
+                    duck: false,
+                    use_: false,
+                    attack_1: false,
+                    attack_2: false,
+                    reload: false,
+                },
+                frame_time: "0.001".to_string(),
+                pitch: None,
+                frame_count: NonZeroU32::new(1).unwrap(),
+                console_command: None,
+            }),
+            // TODO custom save name
+            Line::Save("buffer".to_string()),
+            // TODO default seed
+            Line::SharedSeed(0),
+            Line::Buttons(Buttons::Set {
+                air_left: Button::Left,
+                air_right: Button::Right,
+                ground_left: Button::Left,
+                ground_right: Button::Right,
+            }),
+            // TODO default lgagstminspd
+            // TODO maybe grab from previous
+            Line::LGAGSTMinSpeed(30.0),
+            // TODO default seed
+            Line::Reset { non_shared_seed: 0 },
+            // TODO default comment
+            Line::Comment("".to_string()),
+            // TODO maybe check previous vectorial strafing and toggle
+            Line::VectorialStrafing(false),
+            Line::VectorialStrafingConstraints(VectorialStrafingConstraints::VelocityYawLocking {
+                tolerance: 0.0,
+            }),
+            // TODO think about this one
+            Line::Change(Change {
+                target: ChangeTarget::Yaw,
+                final_value: 0.0,
+                over: 0.4,
+            }),
+            Line::TargetYawOverride(vec![0.0]),
+        ];
+
+        ui.text("new line menu");
+
+        let half_way_index = button_names.len() / 2;
+        for (i, button_name) in button_names.iter().enumerate() {
+            if ui.button(button_name) {
+                let _type = &button_type[i];
+
+                if let Some(mut index) = tab.tab_menu_data.right_click_popup_index {
+                    index += 1;
+
+                    tab.hltas.lines.insert(index, _type.to_owned());
+
+                    // insert menu data
+                    tab.tab_menu_data.strafe_menu_selections.insert(
+                        index,
+                        match _type {
+                            Line::FrameBulk(framebulk) => Some(StrafeMenuSelection::new(framebulk)),
+                            _ => None,
+                        },
+                    );
+                }
+
+                ui.close_current_popup();
+            }
+
+            if i != half_way_index {
+                ui.same_line();
+            }
+        }
+    });
+
     for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
-        let strafe_menu_selection = &mut tab_menu_data.strafe_menu_selections[i];
+        let strafe_menu_selection = &mut tab.tab_menu_data.strafe_menu_selections[i];
 
         let is_rendering_line = {
             let scroll_y = ui.scroll_y();
@@ -708,6 +825,12 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
 
                 button_color.pop();
                 ui.set_cursor_screen_pos(cursor_pos);
+
+                // check if right click for new line menu
+                if ui.is_mouse_clicked(MouseButton::Right) {
+                    ui.open_popup(new_line_menu_id);
+                    tab.tab_menu_data.right_click_popup_index = Some(i);
+                }
             }
 
             let draw_list = ui.get_window_draw_list();

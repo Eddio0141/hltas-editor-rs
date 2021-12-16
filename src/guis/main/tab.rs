@@ -4,7 +4,10 @@ use std::{
 };
 
 use fluent_templates::{LanguageIdentifier, Loader};
-use hltas::{types::Line, HLTAS};
+use hltas::{
+    types::{AutoMovement, FrameBulk, Line},
+    HLTAS,
+};
 
 use crate::locale::LOCALES;
 
@@ -74,6 +77,7 @@ impl<'a> HLTASFileTab {
 /// Struct to keep track of some menu states for the hltas object in the tab
 pub struct HLTASMenuState {
     pub strafe_menu_selections: Vec<Option<StrafeMenuSelection>>,
+    pub right_click_popup_index: Option<usize>,
 }
 
 impl HLTASMenuState {
@@ -83,22 +87,7 @@ impl HLTASMenuState {
             .iter()
             .map(|framebulk| {
                 if let Line::FrameBulk(framebulk) = framebulk {
-                    if framebulk.auto_actions.movement.is_some() {
-                        Some(StrafeMenuSelection::Strafe)
-                    } else {
-                        let movement_keys = &framebulk.movement_keys;
-                        if movement_keys.down
-                            || movement_keys.up
-                            || movement_keys.forward
-                            || movement_keys.left
-                            || movement_keys.right
-                            || movement_keys.back
-                        {
-                            Some(StrafeMenuSelection::Keys)
-                        } else {
-                            Some(StrafeMenuSelection::Strafe)
-                        }
-                    }
+                    Some(StrafeMenuSelection::new(framebulk))
                 } else {
                     None
                 }
@@ -107,6 +96,7 @@ impl HLTASMenuState {
 
         Self {
             strafe_menu_selections,
+            right_click_popup_index: None,
         }
     }
 }
@@ -114,4 +104,25 @@ impl HLTASMenuState {
 pub enum StrafeMenuSelection {
     Strafe,
     Keys,
+}
+
+impl StrafeMenuSelection {
+    pub fn new(framebulk: &FrameBulk) -> Self {
+        if let Some(AutoMovement::Strafe(_)) = framebulk.auto_actions.movement {
+            StrafeMenuSelection::Strafe
+        } else {
+            let movement_keys = &framebulk.movement_keys;
+            if movement_keys.down
+                || movement_keys.up
+                || movement_keys.forward
+                || movement_keys.left
+                || movement_keys.right
+                || movement_keys.back
+            {
+                StrafeMenuSelection::Keys
+            } else {
+                StrafeMenuSelection::Strafe
+            }
+        }
+    }
 }

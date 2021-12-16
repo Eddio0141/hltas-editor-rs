@@ -204,6 +204,11 @@ impl MainGUI {
         }
 
         self.tabs.remove(index);
+
+        // HACK
+        if self.tabs.is_empty() {
+            self.current_tab = None;
+        }
     }
 
     // pub fn set_current_tab_title(&mut self)
@@ -334,6 +339,7 @@ impl MainGUI {
                                 flags = flags.union(TabItemFlags::SET_SELECTED);
 
                                 self.tab_switch_index = None;
+                                self.current_tab = Some(Rc::clone(tab));
                             }
 
                             if tab.borrow().got_modified {

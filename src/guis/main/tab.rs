@@ -6,6 +6,8 @@ use std::{
 use fluent_templates::{LanguageIdentifier, Loader};
 use hltas::{types::Line, HLTAS};
 
+use crate::locale::LOCALES;
+
 pub struct HLTASFileTab {
     pub title: String,
     pub path: Option<PathBuf>,
@@ -52,7 +54,7 @@ impl<'a> HLTASFileTab {
 
     // BUG fix language change for title (opt out serialization for the titles?)
     fn default_title(lang: &LanguageIdentifier) -> String {
-        crate::LOCALES.lookup(lang, "new-file-title")
+        LOCALES.lookup(lang, "new-file-title")
     }
 
     pub fn new_file(lang: &LanguageIdentifier /*, file_value: usize*/) -> Self {

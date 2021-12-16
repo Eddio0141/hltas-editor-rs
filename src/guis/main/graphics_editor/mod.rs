@@ -358,8 +358,34 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
             ui.group(|| {
                 line_edited = match line {
                     Line::FrameBulk(framebulk) => {
-                        ui.group(|| {
-                            let (
+                        let (
+                            yaw_pitch_menu_offset,
+                            strafe_menu_offset,
+                            jump_menu_offset,
+                            duck_menu_offset,
+                            action_keys_menu_offset,
+                            frames_menu_offset,
+                            command_menu_offset,
+                        ) = {
+                            let window_width = ui.window_content_region_width();
+
+                            let yaw_pitch_menu_width = window_width * 0.2 + 15.0;
+                            let strafe_menu_width = 158.0;
+                            let jump_menu_width = 65.0 * 2.0 + 16.0;
+                            let duck_menu_width = 150.0;
+                            let action_keys_menu_width = 100.0;
+                            let frames_menu_width = 157.0;
+
+                            let yaw_pitch_menu_offset = line_count_offset + 18.0;
+                            let strafe_menu_offset = yaw_pitch_menu_offset + yaw_pitch_menu_width;
+                            let jump_menu_offset = strafe_menu_offset + strafe_menu_width;
+                            let duck_menu_offset = jump_menu_offset + jump_menu_width;
+                            let action_keys_menu_offset = duck_menu_offset + duck_menu_width;
+                            let frames_menu_offset =
+                                action_keys_menu_offset + action_keys_menu_width;
+                            let command_menu_offset = frames_menu_offset + frames_menu_width;
+
+                            (
                                 yaw_pitch_menu_offset,
                                 strafe_menu_offset,
                                 jump_menu_offset,
@@ -367,115 +393,72 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab) {
                                 action_keys_menu_offset,
                                 frames_menu_offset,
                                 command_menu_offset,
-                            ) = {
-                                let window_width = ui.window_content_region_width();
+                            )
+                        };
 
-                                let yaw_pitch_menu_width = window_width * 0.2 + 15.0;
-                                let strafe_menu_width = 158.0;
-                                let jump_menu_width = 65.0 * 2.0 + 16.0;
-                                let duck_menu_width = 150.0;
-                                let action_keys_menu_width = 100.0;
-                                let frames_menu_width = 157.0;
+                        // yaw pitch menu
+                        let yaw_pitch_menu_edited = ui.group(|| {
+                            show_yaw_pitch_menu(
+                                ui,
+                                yaw_pitch_menu_offset,
+                                framebulk,
+                                &i.to_string(),
+                            )
+                        });
 
-                                let yaw_pitch_menu_offset = line_count_offset + 18.0;
-                                let strafe_menu_offset =
-                                    yaw_pitch_menu_offset + yaw_pitch_menu_width;
-                                let jump_menu_offset = strafe_menu_offset + strafe_menu_width;
-                                let duck_menu_offset = jump_menu_offset + jump_menu_width;
-                                let action_keys_menu_offset = duck_menu_offset + duck_menu_width;
-                                let frames_menu_offset =
-                                    action_keys_menu_offset + action_keys_menu_width;
-                                let command_menu_offset = frames_menu_offset + frames_menu_width;
+                        ui.same_line();
+                        ui.set_cursor_screen_pos([strafe_menu_offset, ui.cursor_screen_pos()[1]]);
 
-                                (
-                                    yaw_pitch_menu_offset,
-                                    strafe_menu_offset,
-                                    jump_menu_offset,
-                                    duck_menu_offset,
-                                    action_keys_menu_offset,
-                                    frames_menu_offset,
-                                    command_menu_offset,
-                                )
-                            };
+                        // strafe menu
+                        let strafe_menu_edited = ui.group(|| {
+                            show_strafe_menu(ui, strafe_menu_selection, framebulk, &i.to_string())
+                        });
 
-                            // yaw pitch menu
-                            let yaw_pitch_menu_edited = ui.group(|| {
-                                show_yaw_pitch_menu(
-                                    ui,
-                                    yaw_pitch_menu_offset,
-                                    framebulk,
-                                    &i.to_string(),
-                                )
-                            });
+                        ui.same_line();
+                        ui.set_cursor_screen_pos([jump_menu_offset, ui.cursor_screen_pos()[1]]);
 
-                            ui.same_line();
-                            ui.set_cursor_screen_pos([
-                                strafe_menu_offset,
-                                ui.cursor_screen_pos()[1],
-                            ]);
+                        // jump menu
+                        let jump_menu_edited =
+                            ui.group(|| show_jump_menu(ui, framebulk, &i.to_string()));
 
-                            // strafe menu
-                            let strafe_menu_edited = ui.group(|| {
-                                show_strafe_menu(
-                                    ui,
-                                    strafe_menu_selection,
-                                    framebulk,
-                                    &i.to_string(),
-                                )
-                            });
+                        ui.same_line();
+                        ui.set_cursor_screen_pos([duck_menu_offset, ui.cursor_screen_pos()[1]]);
 
-                            ui.same_line();
-                            ui.set_cursor_screen_pos([jump_menu_offset, ui.cursor_screen_pos()[1]]);
+                        // duck menu
+                        let duck_menu_edited =
+                            ui.group(|| show_duck_menu(ui, framebulk, &i.to_string()));
 
-                            // jump menu
-                            let jump_menu_edited =
-                                ui.group(|| show_jump_menu(ui, framebulk, &i.to_string()));
+                        ui.same_line();
+                        ui.set_cursor_screen_pos([
+                            action_keys_menu_offset,
+                            ui.cursor_screen_pos()[1],
+                        ]);
 
-                            ui.same_line();
-                            ui.set_cursor_screen_pos([duck_menu_offset, ui.cursor_screen_pos()[1]]);
+                        // action keys menu
+                        let action_keys_menu_edited =
+                            ui.group(|| show_action_keys_menu(ui, framebulk, &i.to_string()));
 
-                            // duck menu
-                            let duck_menu_edited =
-                                ui.group(|| show_duck_menu(ui, framebulk, &i.to_string()));
+                        ui.same_line();
+                        ui.set_cursor_screen_pos([frames_menu_offset, ui.cursor_screen_pos()[1]]);
 
-                            ui.same_line();
-                            ui.set_cursor_screen_pos([
-                                action_keys_menu_offset,
-                                ui.cursor_screen_pos()[1],
-                            ]);
+                        // frames menu
+                        let frames_menu_edited =
+                            ui.group(|| show_frames_menu(ui, framebulk, &i.to_string()));
 
-                            // action keys menu
-                            let action_keys_menu_edited =
-                                ui.group(|| show_action_keys_menu(ui, framebulk, &i.to_string()));
+                        ui.same_line();
+                        ui.set_cursor_screen_pos([command_menu_offset, ui.cursor_screen_pos()[1]]);
 
-                            ui.same_line();
-                            ui.set_cursor_screen_pos([
-                                frames_menu_offset,
-                                ui.cursor_screen_pos()[1],
-                            ]);
+                        // command menu
+                        let command_menu_edited =
+                            ui.group(|| show_command_menu(ui, framebulk, &i.to_string()));
 
-                            // frames menu
-                            let frames_menu_edited =
-                                ui.group(|| show_frames_menu(ui, framebulk, &i.to_string()));
-
-                            ui.same_line();
-                            ui.set_cursor_screen_pos([
-                                command_menu_offset,
-                                ui.cursor_screen_pos()[1],
-                            ]);
-
-                            // command menu
-                            let command_menu_edited =
-                                ui.group(|| show_command_menu(ui, framebulk, &i.to_string()));
-
-                            yaw_pitch_menu_edited
-                                || strafe_menu_edited
-                                || jump_menu_edited
-                                || duck_menu_edited
-                                || action_keys_menu_edited
-                                || frames_menu_edited
-                                || command_menu_edited
-                        })
+                        yaw_pitch_menu_edited
+                            || strafe_menu_edited
+                            || jump_menu_edited
+                            || duck_menu_edited
+                            || action_keys_menu_edited
+                            || frames_menu_edited
+                            || command_menu_edited
                     }
                     Line::Save(save) => {
                         ui.text("save");

@@ -304,7 +304,12 @@ impl MainGUI {
                     );
                 },
             );
-
+            ui.menu(
+                self.options.locale_lang().get_str_from_id("edit-menu"),
+                || {
+                    
+                },
+            );
             ui.menu(
                 self.options.locale_lang().get_str_from_id("tools-menu"),
                 || {

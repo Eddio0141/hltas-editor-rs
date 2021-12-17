@@ -2,7 +2,7 @@ use std::num::{IntErrorKind, ParseIntError};
 
 use fluent_templates::Loader;
 use hltas::types::LeaveGroundActionSpeed;
-use imgui::{ComboBox, InputText, Selectable, Ui};
+use imgui::{ComboBox, InputText, Selectable, StyleColor, Ui};
 
 use crate::{
     guis::list_box_enum::show_list_box_enum, helpers::locale::locale_lang::LocaleLang,
@@ -118,6 +118,7 @@ impl OptionMenuStatus {
     }
 }
 
+#[derive(PartialEq, Clone, Copy)]
 pub enum CategoryStatus {
     MenuOption,
     LineOption,
@@ -134,16 +135,30 @@ pub fn show_option_menu(
         option_menu_status.option_menu_before = Some(app_settings.clone());
     }
 
-    if ui.button("menu options") {
-        option_menu_status.category_selection = CategoryStatus::MenuOption;
-    }
-    ui.same_line();
-    if ui.button("line options") {
-        option_menu_status.category_selection = CategoryStatus::LineOption;
-    }
-    ui.same_line();
-    if ui.button("language") {
-        option_menu_status.category_selection = CategoryStatus::Language;
+    let button_label_pairs = vec![
+        ("menu options", CategoryStatus::MenuOption),
+        ("line options", CategoryStatus::LineOption),
+        ("language", CategoryStatus::Language),
+    ];
+
+    for (i, (label, button_enum)) in button_label_pairs.iter().enumerate() {
+        let menu_tab_inactive_color = if *button_enum != option_menu_status.category_selection {
+            Some(ui.push_style_color(StyleColor::Button, ui.style_color(StyleColor::TabUnfocused)))
+        } else {
+            None
+        };
+
+        if ui.button(label) {
+            option_menu_status.category_selection = *button_enum;
+        }
+
+        if let Some(menu_tab_inactive_color) = menu_tab_inactive_color {
+            menu_tab_inactive_color.pop();
+        }
+
+        if i != button_label_pairs.len() - 1 {
+            ui.same_line();
+        }
     }
 
     let modified = match option_menu_status.category_selection {

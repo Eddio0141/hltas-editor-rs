@@ -11,9 +11,6 @@ use std::rc::Rc;
 use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::hltas::hltas_to_str;
-use crate::helpers::locale::locale_lang::LocaleLang;
-
-use hltas::types::LeaveGroundActionSpeed;
 use hltas_cleaner::cleaners;
 use imgui::{
     Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window, WindowFlags,
@@ -21,7 +18,7 @@ use imgui::{
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
 use self::graphics_editor::show_graphics_editor;
-use self::option_menu::{show_option_menu, AppOptions, LgagstOption, OptionMenuStatus};
+use self::option_menu::{show_option_menu, AppOptions, OptionMenuStatus};
 use self::tab::HLTASFileTab;
 
 pub struct MainGUI {
@@ -32,7 +29,6 @@ pub struct MainGUI {
     // TODO option to change size
     recent_paths: VecDeque<PathBuf>,
     graphics_editor: bool,
-    locale_lang: LocaleLang,
     options_menu_opened: bool,
     options: AppOptions,
     option_menu_status: OptionMenuStatus,
@@ -40,7 +36,7 @@ pub struct MainGUI {
 
 impl MainGUI {
     pub fn new_file(&mut self) {
-        let new_tab = HLTASFileTab::new_file(&self.locale_lang.get_lang());
+        let new_tab = HLTASFileTab::new_file(&self.options.locale_lang().get_lang());
         self.tabs.push(Rc::new(RefCell::new(new_tab)));
         // TODO make it an option to auto select new tab?
         self.tab_switch_index = Some(self.tabs.len() - 1);
@@ -73,7 +69,7 @@ impl MainGUI {
 
         self.recent_paths.push_back(path.to_owned());
 
-        if self.recent_paths.len() > self.options.recent_path_size {
+        if self.recent_paths.len() > self.options.recent_path_size() {
             self.recent_paths.pop_front();
         }
     }
@@ -153,7 +149,8 @@ impl MainGUI {
             // no file, save as new file
             if let Ok(Some(path)) = Self::ask_hltas_save_location() {
                 fs::write(&path, hltas_to_str(&tab.hltas))?;
-                tab.title = HLTASFileTab::title_from_path(&path, &self.locale_lang.get_lang());
+                tab.title =
+                    HLTASFileTab::title_from_path(&path, &self.options.locale_lang().get_lang());
             }
         }
 
@@ -226,9 +223,9 @@ impl MainGUI {
 impl Default for MainGUI {
     // first time opened will always show a new tab
     fn default() -> Self {
-        let locale_lang = LocaleLang::new(None);
+        let options = AppOptions::default();
         let tabs = vec![Rc::new(RefCell::new(HLTASFileTab::new_file(
-            &locale_lang.get_lang(),
+            &options.locale_lang().get_lang(),
         )))];
         let current_tab = Some(Rc::clone(&tabs[0]));
 
@@ -236,22 +233,10 @@ impl Default for MainGUI {
             tabs,
             current_tab,
             tab_switch_index: None,
-            // title: Self::default_title().to_string(),
             recent_paths: VecDeque::new(),
             graphics_editor: true,
-            locale_lang,
             options_menu_opened: false,
-            options: AppOptions {
-                jump_lgagst_option: LgagstOption {
-                    default_selection: LeaveGroundActionSpeed::Optimal,
-                    copy_previous_framebulk: true,
-                },
-                ducktap_lgagst_option: LgagstOption {
-                    default_selection: LeaveGroundActionSpeed::Optimal,
-                    copy_previous_framebulk: true,
-                },
-                recent_path_size: 20,
-            },
+            options,
             option_menu_status: OptionMenuStatus::default(),
         }
     }
@@ -263,59 +248,92 @@ impl MainGUI {
         let window_min_size_token = ui.push_style_var(StyleVar::WindowMinSize([1.0, 1.0]));
 
         ui.main_menu_bar(|| {
-            ui.menu(self.locale_lang.get_str_from_id("file-menu"), || {
-                // TODO shortcut keys
-                // if MenuItem::new("New").shortcut("Ctrl+O").build(ui) || (ui.io().keys_down[VirtualKeyCode::O as usize] && ui.io().key_ctrl ){
-                if MenuItem::new(self.locale_lang.get_str_from_id("new-file")).build(ui) {
-                    self.new_file();
-                }
-                if MenuItem::new(self.locale_lang.get_str_from_id("open-file")).build(ui) {
-                    self.open_file_by_dialog();
-                }
-                if MenuItem::new(self.locale_lang.get_str_from_id("save-file")).build(ui) {
-                    // TODO error handle
-                    self.save_current_tab(None).ok();
-                }
-                if MenuItem::new(self.locale_lang.get_str_from_id("close-file")).build(ui) {
-                    self.close_current_tab();
-                }
+            ui.menu(
+                self.options.locale_lang().get_str_from_id("file-menu"),
+                || {
+                    // TODO shortcut keys
+                    // if MenuItem::new("New").shortcut("Ctrl+O").build(ui) || (ui.io().keys_down[VirtualKeyCode::O as usize] && ui.io().key_ctrl ){
+                    if MenuItem::new(self.options.locale_lang().get_str_from_id("new-file"))
+                        .build(ui)
+                    {
+                        self.new_file();
+                    }
+                    if MenuItem::new(self.options.locale_lang().get_str_from_id("open-file"))
+                        .build(ui)
+                    {
+                        self.open_file_by_dialog();
+                    }
+                    if MenuItem::new(self.options.locale_lang().get_str_from_id("save-file"))
+                        .build(ui)
+                    {
+                        // TODO error handle
+                        self.save_current_tab(None).ok();
+                    }
+                    if MenuItem::new(self.options.locale_lang().get_str_from_id("close-file"))
+                        .build(ui)
+                    {
+                        self.close_current_tab();
+                    }
 
-                ui.menu(self.locale_lang.get_str_from_id("recent-files"), || {
-                    // I need to loop through the whole list to render them anyway
-                    let mut opened_file = None;
-                    for recent_path in &self.recent_paths {
-                        if MenuItem::new(format!("{:?}", recent_path.as_os_str())).build(ui) {
-                            // TODO can I make this better
-                            opened_file = Some(recent_path.clone());
+                    ui.menu(
+                        self.options.locale_lang().get_str_from_id("recent-files"),
+                        || {
+                            // I need to loop through the whole list to render them anyway
+                            let mut opened_file = None;
+                            for recent_path in &self.recent_paths {
+                                if MenuItem::new(format!("{:?}", recent_path.as_os_str())).build(ui)
+                                {
+                                    // TODO can I make this better
+                                    opened_file = Some(recent_path.clone());
+                                }
+                            }
+
+                            if let Some(opened_file) = opened_file {
+                                self.open_file(&opened_file);
+                            }
+                        },
+                    );
+                },
+            );
+
+            ui.menu(
+                self.options.locale_lang().get_str_from_id("tools-menu"),
+                || {
+                    if MenuItem::new(self.options.locale_lang().get_str_from_id("hltas-cleaner"))
+                        .build(ui)
+                    {
+                        // TODO show options
+                        if let Some(current_tab) = &self.current_tab {
+                            cleaners::no_dupe_framebulks(&mut current_tab.borrow_mut().hltas);
+                            current_tab.borrow_mut().got_modified = true;
                         }
                     }
+                },
+            );
 
-                    if let Some(opened_file) = opened_file {
-                        self.open_file(&opened_file);
-                    }
-                });
-            });
-
-            ui.menu(self.locale_lang.get_str_from_id("tools-menu"), || {
-                if MenuItem::new(self.locale_lang.get_str_from_id("hltas-cleaner")).build(ui) {
-                    // TODO show options
-                    if let Some(current_tab) = &self.current_tab {
-                        cleaners::no_dupe_framebulks(&mut current_tab.borrow_mut().hltas);
-                        current_tab.borrow_mut().got_modified = true;
-                    }
-                }
-            });
-
-            ui.menu(self.locale_lang.get_str_from_id("options-menu"), || {
-                if MenuItem::new(self.locale_lang.get_str_from_id("toggle-graphics-editor"))
+            ui.menu(
+                self.options.locale_lang().get_str_from_id("options-menu"),
+                || {
+                    if MenuItem::new(
+                        self.options
+                            .locale_lang()
+                            .get_str_from_id("toggle-graphics-editor"),
+                    )
                     .build(ui)
-                {
-                    self.graphics_editor = !self.graphics_editor;
-                }
-                if MenuItem::new(self.locale_lang.get_str_from_id("open-options-menu")).build(ui) {
-                    self.options_menu_opened = !self.options_menu_opened;
-                }
-            });
+                    {
+                        self.graphics_editor = !self.graphics_editor;
+                    }
+                    if MenuItem::new(
+                        self.options
+                            .locale_lang()
+                            .get_str_from_id("open-options-menu"),
+                    )
+                    .build(ui)
+                    {
+                        self.options_menu_opened = !self.options_menu_opened;
+                    }
+                },
+            );
         });
 
         let tab_window_size = {
@@ -427,49 +445,45 @@ impl MainGUI {
 
         window_padding_size_token.pop();
 
-        let mut options_menu_opened = self.options_menu_opened;
+        window_border_size_token.pop();
+        window_min_size_token.pop();
 
-        if self.options_menu_opened {
-            Window::new("options")
-                .flags(if self.option_menu_status.modified() {
-                    WindowFlags::UNSAVED_DOCUMENT
-                } else {
-                    WindowFlags::empty()
-                })
-                // TODO force focus in a less hacky way
-                .focused(true)
-                .opened(&mut options_menu_opened)
-                .position(
-                    {
-                        let display_size = ui.io().display_size;
-                        [display_size[0] * 0.5, display_size[1] * 0.5]
-                    },
-                    Condition::Appearing,
-                )
-                .resizable(false)
-                .scrollable(false)
-                .scroll_bar(false)
-                .position_pivot([0.5, 0.5])
-                .size([500.0, 300.0], Condition::Always)
-                .build(ui, || {
-                    show_option_menu(ui, &mut self.options, &mut self.option_menu_status);
-                });
-        }
+        {
+            let options_menu_opened = &mut self.options_menu_opened;
+            let options = &mut self.options;
+            let option_menu_status = &mut self.option_menu_status;
 
-        if !options_menu_opened {
-            // undo unsaved stuff
-            if let Some(option_menu_before) = self.option_menu_status.option_menu_before() {
-                self.options = option_menu_before.clone();
+            if *options_menu_opened {
+                Window::new("options##options_menu")
+                    .flags(if option_menu_status.modified() {
+                        WindowFlags::UNSAVED_DOCUMENT
+                    } else {
+                        WindowFlags::empty()
+                    })
+                    .opened(options_menu_opened)
+                    .position(
+                        {
+                            let display_size = ui.io().display_size;
+                            [display_size[0] * 0.5, display_size[1] * 0.5]
+                        },
+                        Condition::Appearing,
+                    )
+                    .resizable(false)
+                    .scrollable(false)
+                    .scroll_bar(false)
+                    .position_pivot([0.5, 0.5])
+                    .size([500.0, 300.0], Condition::Always)
+                    .build(ui, || {
+                        show_option_menu(ui, options, option_menu_status);
+                    });
             }
-            self.option_menu_status = OptionMenuStatus::default();
-        }
 
-        self.options_menu_opened = options_menu_opened;
+            if !self.options_menu_opened {
+                option_menu_status.revert(options);
+            }
+        }
 
         #[cfg(debug_assertions)]
         ui.show_demo_window(&mut true);
-
-        window_border_size_token.pop();
-        window_min_size_token.pop();
     }
 }

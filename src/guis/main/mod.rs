@@ -15,7 +15,9 @@ use crate::helpers::locale::locale_lang::LocaleLang;
 
 use hltas::types::LeaveGroundActionSpeed;
 use hltas_cleaner::cleaners;
-use imgui::{Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window};
+use imgui::{
+    Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window, WindowFlags,
+};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
 use self::graphics_editor::show_graphics_editor;
@@ -370,8 +372,8 @@ impl MainGUI {
                         let mut opened = true;
 
                         TabItem::new(format!("{}##tab_{}", &tab.borrow().title, i))
-                            .opened(&mut opened)
                             .flags(flags)
+                            .opened(&mut opened)
                             .build(ui, || {
                                 if let Some(current_tab) = &self.current_tab {
                                     if current_tab.as_ptr() != tab.as_ptr() {
@@ -429,6 +431,12 @@ impl MainGUI {
 
         if self.options_menu_opened {
             Window::new("options")
+                .flags(if self.option_menu_status.modified() {
+                    WindowFlags::UNSAVED_DOCUMENT
+                } else {
+                    WindowFlags::empty()
+                })
+                // TODO force focus in a less hacky way
                 .focused(true)
                 .opened(&mut options_menu_opened)
                 .position(
@@ -438,12 +446,18 @@ impl MainGUI {
                     },
                     Condition::Appearing,
                 )
+                .resizable(false)
+                .scrollable(false)
+                .scroll_bar(false)
                 .position_pivot([0.5, 0.5])
                 .size([500.0, 300.0], Condition::Always)
-                .resizable(false)
                 .build(ui, || {
-                    show_option_menu(ui, &mut self.options, &mut self.option_menu_status)
+                    show_option_menu(ui, &mut self.options, &mut self.option_menu_status);
                 });
+        }
+
+        if !options_menu_opened {
+            self.option_menu_status = OptionMenuStatus::default();
         }
 
         self.options_menu_opened = options_menu_opened;

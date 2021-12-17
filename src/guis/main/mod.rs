@@ -131,7 +131,7 @@ impl MainGUI {
         if let Some(warning_msg) = warn_user {
             // pop up warning!
             let warning_user_selection = native_dialog::MessageDialog::new()
-                .set_title("Warning!")
+                .set_title(&self.options.locale_lang().get_str_from_id("warning"))
                 .set_type(native_dialog::MessageType::Warning)
                 .set_text(&warning_msg)
                 .show_confirm();
@@ -163,10 +163,11 @@ impl MainGUI {
         let remove_index = if let Some(tab) = &self.current_tab {
             if tab.borrow().got_modified
                 && self
-                    .save_current_tab(Some(String::from(
-                        // TODO translation
-                        "Would you like to save the modified file?",
-                    )))
+                    .save_current_tab(Some(
+                        self.options
+                            .locale_lang()
+                            .get_str_from_id("save-file-question"),
+                    ))
                     .is_err()
             {
                 return;
@@ -194,10 +195,11 @@ impl MainGUI {
             if tab.got_modified
                 && self
                     .save_tab(
-                        Some(String::from(
-                            // TODO translation
-                            "Would you like to save the modified file?",
-                        )),
+                        Some(
+                            self.options
+                                .locale_lang()
+                                .get_str_from_id("save-file-question"),
+                        ),
                         &mut tab,
                     )
                     .is_err()
@@ -306,9 +308,7 @@ impl MainGUI {
             );
             ui.menu(
                 self.options.locale_lang().get_str_from_id("edit-menu"),
-                || {
-                    
-                },
+                || {},
             );
             ui.menu(
                 self.options.locale_lang().get_str_from_id("tools-menu"),

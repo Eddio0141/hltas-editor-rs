@@ -15,3 +15,6 @@ open-options-menu = オプションメニュー
 toggle-graphics-editor = グラフィックエディタの切り替え
 
 new-file-title = 新規
+
+save-file-question = 編集したファイルを保存したいですか？
+warning = 警告

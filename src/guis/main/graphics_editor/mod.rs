@@ -29,9 +29,10 @@ use self::{
 
 use super::{
     cmd_editor::show_cmd_editor,
+    option_menu::AppOptions,
     property_some_none_field::{property_some_none_field_ui, PropertyFieldResult},
     property_string_field::property_string_field_ui,
-    tab::{HLTASFileTab, StrafeMenuSelection}, option_menu::AppOptions,
+    tab::{HLTASFileTab, StrafeMenuSelection},
 };
 
 // TODO drag speed variables stored somewhere in the function for convinience
@@ -742,11 +743,10 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
                             ui,
                             &mut change.target,
                             vec![
-                                ChangeTarget::Yaw,
-                                ChangeTarget::Pitch,
-                                ChangeTarget::VectorialStrafingYaw,
+                                ("Yaw", ChangeTarget::Yaw),
+                                ("Pitch", ChangeTarget::Pitch),
+                                ("Target Yaw", ChangeTarget::VectorialStrafingYaw),
                             ],
-                            vec!["Yaw", "Pitch", "Target Yaw"],
                             format!("change_radio_buttons{}", i),
                             true,
                         );

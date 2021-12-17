@@ -3,12 +3,11 @@ use imgui::Ui;
 pub fn show_radio_button_enum<T: Copy + PartialEq>(
     ui: &Ui,
     value: &mut T,
-    enums: Vec<T>,
-    labels: Vec<&str>,
+    label_enum_pairs: Vec<(&str, T)>,
     id: String,
     same_line: bool,
 ) -> bool {
-    assert_eq!(enums.len(), labels.len());
+    let (labels, enums): (Vec<_>, Vec<_>) = label_enum_pairs.iter().cloned().unzip();
 
     let mut radio_button_clicked = false;
     let loop_end = enums.len();

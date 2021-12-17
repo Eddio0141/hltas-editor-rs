@@ -168,7 +168,6 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
         } else {
             framebulk.action_keys.jump = false;
             // TODO 0ms detector or option to have 0ms by default
-            // TODO ask about "times" field
             framebulk.auto_actions.leave_ground_action = Some(LeaveGroundAction {
                 speed: match framebulk.auto_actions.leave_ground_action {
                     Some(leave_ground_action) => leave_ground_action.speed,

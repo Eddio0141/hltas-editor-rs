@@ -32,6 +32,8 @@ pub struct MainGUI {
     options_menu_opened: bool,
     options: AppOptions,
     option_menu_status: OptionMenuStatus,
+    #[cfg(debug_assertions)]
+    debug_menu_opened: bool,
 }
 
 impl MainGUI {
@@ -238,6 +240,8 @@ impl Default for MainGUI {
             options_menu_opened: false,
             options,
             option_menu_status: OptionMenuStatus::default(),
+            #[cfg(debug_assertions)]
+            debug_menu_opened: false,
         }
     }
 }
@@ -251,6 +255,11 @@ impl MainGUI {
             ui.menu(
                 self.options.locale_lang().get_str_from_id("file-menu"),
                 || {
+                    #[cfg(debug_assertions)]
+                    if MenuItem::new("debug menu").build(ui) {
+                        self.debug_menu_opened = !self.debug_menu_opened;
+                    }
+
                     // TODO shortcut keys
                     // if MenuItem::new("New").shortcut("Ctrl+O").build(ui) || (ui.io().keys_down[VirtualKeyCode::O as usize] && ui.io().key_ctrl ){
                     if MenuItem::new(self.options.locale_lang().get_str_from_id("new-file"))
@@ -444,7 +453,6 @@ impl MainGUI {
             });
 
         window_padding_size_token.pop();
-
         window_border_size_token.pop();
         window_min_size_token.pop();
 
@@ -484,6 +492,8 @@ impl MainGUI {
         }
 
         #[cfg(debug_assertions)]
-        ui.show_demo_window(&mut true);
+        if self.debug_menu_opened {
+            ui.show_demo_window(&mut self.debug_menu_opened);
+        }
     }
 }

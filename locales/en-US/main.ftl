@@ -17,4 +17,6 @@ toggle-graphics-editor = Toggle graphics editor
 new-file-title = New file
 
 save-file-question = Would you like to save the modified file?
+
 warning = Warning!
+error = Error

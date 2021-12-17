@@ -41,7 +41,7 @@ impl LocaleLang {
         self.lang.is_none()
     }
 
-    pub fn get_str_from_id(&self, text_id: &str) -> String {
+    pub fn get_string_from_id(&self, text_id: &str) -> String {
         LOCALES.lookup(&self.get_lang(), text_id)
     }
 }

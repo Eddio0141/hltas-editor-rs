@@ -131,7 +131,7 @@ impl MainGUI {
         if let Some(warning_msg) = warn_user {
             // pop up warning!
             let warning_user_selection = native_dialog::MessageDialog::new()
-                .set_title(&self.options.locale_lang().get_str_from_id("warning"))
+                .set_title(&self.options.locale_lang().get_string_from_id("warning"))
                 .set_type(native_dialog::MessageType::Warning)
                 .set_text(&warning_msg)
                 .show_confirm();
@@ -167,7 +167,7 @@ impl MainGUI {
                     .save_current_tab(Some(
                         self.options
                             .locale_lang()
-                            .get_str_from_id("save-file-question"),
+                            .get_string_from_id("save-file-question"),
                     ))
                     .is_err()
             {
@@ -199,7 +199,7 @@ impl MainGUI {
                         Some(
                             self.options
                                 .locale_lang()
-                                .get_str_from_id("save-file-question"),
+                                .get_string_from_id("save-file-question"),
                         ),
                         &mut tab,
                     )
@@ -256,7 +256,7 @@ impl MainGUI {
 
         ui.main_menu_bar(|| {
             ui.menu(
-                self.options.locale_lang().get_str_from_id("file-menu"),
+                self.options.locale_lang().get_string_from_id("file-menu"),
                 || {
                     #[cfg(debug_assertions)]
                     if MenuItem::new("debug menu").build(ui) {
@@ -265,37 +265,44 @@ impl MainGUI {
 
                     // TODO shortcut keys
                     // if MenuItem::new("New").shortcut("Ctrl+O").build(ui) || (ui.io().keys_down[VirtualKeyCode::O as usize] && ui.io().key_ctrl ){
-                    if MenuItem::new(self.options.locale_lang().get_str_from_id("new-file"))
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("new-file"))
                         .build(ui)
                     {
                         self.new_file();
                     }
-                    if MenuItem::new(self.options.locale_lang().get_str_from_id("open-file"))
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("open-file"))
                         .build(ui)
                     {
                         self.open_file_by_dialog();
                     }
-                    if MenuItem::new(self.options.locale_lang().get_str_from_id("save-file"))
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("save-file"))
                         .build(ui)
                     {
-                        // TODO error handle
-                        self.save_current_tab(None).ok();
+                        self.save_current_tab(None).unwrap_or_else(|err| {
+                            MessageDialog::new()
+                                .set_title(&self.options.locale_lang().get_string_from_id("error"))
+                                .set_type(MessageType::Error)
+                                .set_text(&err.to_string())
+                                .show_alert()
+                                .ok();
+                        });
                     }
-                    if MenuItem::new(self.options.locale_lang().get_str_from_id("close-file"))
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("close-file"))
                         .build(ui)
                     {
                         self.close_current_tab();
                     }
 
                     ui.menu(
-                        self.options.locale_lang().get_str_from_id("recent-files"),
+                        self.options
+                            .locale_lang()
+                            .get_string_from_id("recent-files"),
                         || {
                             // I need to loop through the whole list to render them anyway
                             let mut opened_file = None;
                             for recent_path in &self.recent_paths {
                                 if MenuItem::new(format!("{:?}", recent_path.as_os_str())).build(ui)
                                 {
-                                    // TODO can I make this better
                                     opened_file = Some(recent_path.clone());
                                 }
                             }
@@ -308,14 +315,18 @@ impl MainGUI {
                 },
             );
             ui.menu(
-                self.options.locale_lang().get_str_from_id("edit-menu"),
+                self.options.locale_lang().get_string_from_id("edit-menu"),
                 || {},
             );
             ui.menu(
-                self.options.locale_lang().get_str_from_id("tools-menu"),
+                self.options.locale_lang().get_string_from_id("tools-menu"),
                 || {
-                    if MenuItem::new(self.options.locale_lang().get_str_from_id("hltas-cleaner"))
-                        .build(ui)
+                    if MenuItem::new(
+                        self.options
+                            .locale_lang()
+                            .get_string_from_id("hltas-cleaner"),
+                    )
+                    .build(ui)
                     {
                         // TODO show options
                         if let Some(current_tab) = &self.current_tab {
@@ -327,12 +338,14 @@ impl MainGUI {
             );
 
             ui.menu(
-                self.options.locale_lang().get_str_from_id("options-menu"),
+                self.options
+                    .locale_lang()
+                    .get_string_from_id("options-menu"),
                 || {
                     if MenuItem::new(
                         self.options
                             .locale_lang()
-                            .get_str_from_id("toggle-graphics-editor"),
+                            .get_string_from_id("toggle-graphics-editor"),
                     )
                     .build(ui)
                     {
@@ -341,7 +354,7 @@ impl MainGUI {
                     if MenuItem::new(
                         self.options
                             .locale_lang()
-                            .get_str_from_id("open-options-menu"),
+                            .get_string_from_id("open-options-menu"),
                     )
                     .build(ui)
                     {
@@ -375,7 +388,6 @@ impl MainGUI {
             .scrollable(false)
             .build(ui, || {
                 TabBar::new("file_tabs").reorderable(true).build(ui, || {
-                    // TODO make this better?
                     let mut new_tab = None;
                     let mut stale_tab = None;
 

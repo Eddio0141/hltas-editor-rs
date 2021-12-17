@@ -15,6 +15,7 @@ pub struct AppOptions {
     ducktap_lgagst_option: LgagstOption,
     recent_path_size: usize,
     locale_lang: LocaleLang,
+    auto_switch_new_tab: bool,
 }
 
 impl AppOptions {
@@ -37,6 +38,11 @@ impl AppOptions {
     pub fn locale_lang(&self) -> &LocaleLang {
         &self.locale_lang
     }
+
+    /// Get a reference to the app options's auto switch new tab.
+    pub fn auto_switch_new_tab(&self) -> bool {
+        self.auto_switch_new_tab
+    }
 }
 
 impl Default for AppOptions {
@@ -46,6 +52,7 @@ impl Default for AppOptions {
             ducktap_lgagst_option: Default::default(),
             recent_path_size: 20,
             locale_lang: LocaleLang::new(None),
+            auto_switch_new_tab: true,
         }
     }
 }
@@ -220,7 +227,12 @@ pub fn show_option_menu(
                         });
             }
 
-            recent_path_size_edited
+            let auto_switch_new_tab_edited = ui.checkbox(
+                "auto switch to new tab",
+                &mut app_settings.auto_switch_new_tab,
+            );
+
+            recent_path_size_edited || auto_switch_new_tab_edited
         }
         CategoryStatus::LineOption => {
             ui.text("jump lgagst default option");

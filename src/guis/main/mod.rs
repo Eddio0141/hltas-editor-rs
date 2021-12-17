@@ -25,8 +25,6 @@ pub struct MainGUI {
     tabs: Vec<Rc<RefCell<HLTASFileTab>>>,
     current_tab: Option<Rc<RefCell<HLTASFileTab>>>,
     tab_switch_index: Option<usize>,
-    // title: String,
-    // TODO option to change size
     recent_paths: VecDeque<PathBuf>,
     graphics_editor: bool,
     options_menu_opened: bool,
@@ -40,8 +38,10 @@ impl MainGUI {
     pub fn new_file(&mut self) {
         let new_tab = HLTASFileTab::new_file(&self.options.locale_lang().get_lang());
         self.tabs.push(Rc::new(RefCell::new(new_tab)));
-        // TODO make it an option to auto select new tab?
-        self.tab_switch_index = Some(self.tabs.len() - 1);
+
+        if self.options.auto_switch_new_tab() {
+            self.tab_switch_index = Some(self.tabs.len() - 1);
+        }
     }
 
     pub fn open_file_by_dialog(&mut self) {
@@ -82,7 +82,10 @@ impl MainGUI {
             if let Some(tab_path) = &tab.borrow().path {
                 if tab_path == path {
                     // dupe found
-                    self.tab_switch_index = Some(i);
+                    if self.options.auto_switch_new_tab() {
+                        self.tab_switch_index = Some(i);
+                    }
+
                     return;
                 }
             }
@@ -93,7 +96,9 @@ impl MainGUI {
                 Ok(tab) => {
                     self.tabs.push(Rc::new(RefCell::new(tab)));
 
-                    self.tab_switch_index = Some(self.tabs.len() - 1);
+                    if self.options.auto_switch_new_tab() {
+                        self.tab_switch_index = Some(self.tabs.len() - 1);
+                    }
 
                     self.add_recent_path(path);
                 }
@@ -211,18 +216,10 @@ impl MainGUI {
 
         self.tabs.remove(index);
 
-        // HACK
         if self.tabs.is_empty() {
             self.current_tab = None;
         }
     }
-
-    // pub fn set_current_tab_title(&mut self)
-
-    // fn default_title() -> &'static str {
-    //      TODO translation
-    //     "HLTAS Editor"
-    // }
 }
 
 impl Default for MainGUI {

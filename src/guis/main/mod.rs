@@ -161,7 +161,8 @@ impl MainGUI {
 
     pub fn close_current_tab(&mut self) {
         let remove_index = if let Some(tab) = &self.current_tab {
-            if tab.borrow().got_modified
+            let got_modified = tab.borrow().got_modified;
+            if got_modified
                 && self
                     .save_current_tab(Some(
                         self.options

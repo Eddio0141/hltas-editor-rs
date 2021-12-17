@@ -457,6 +457,10 @@ impl MainGUI {
         }
 
         if !options_menu_opened {
+            // undo unsaved stuff
+            if let Some(option_menu_before) = self.option_menu_status.option_menu_before() {
+                self.options = option_menu_before.clone();
+            }
             self.option_menu_status = OptionMenuStatus::default();
         }
 

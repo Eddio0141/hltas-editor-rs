@@ -43,8 +43,8 @@ impl LgagstOption {
 
 pub struct OptionMenuStatus {
     pub category_selection: CategoryStatus,
-    modified: bool,
     option_menu_before: Option<AppOptions>,
+    modified: bool,
 }
 
 impl Default for OptionMenuStatus {
@@ -60,6 +60,11 @@ impl Default for OptionMenuStatus {
 impl OptionMenuStatus {
     pub fn modified(&self) -> bool {
         self.modified
+    }
+
+    /// Get a reference to the option menu status's option menu before.
+    pub fn option_menu_before(&self) -> Option<&AppOptions> {
+        self.option_menu_before.as_ref()
     }
 }
 

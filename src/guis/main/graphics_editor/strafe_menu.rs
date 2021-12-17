@@ -38,18 +38,11 @@ pub fn show_strafe_menu(
                     ui,
                     &mut strafe_type_selection,
                     vec![
-                        Some(StrafeType::MaxAccel),
-                        Some(StrafeType::MaxAngle),
-                        Some(StrafeType::MaxDeccel),
-                        Some(StrafeType::ConstSpeed),
-                        None,
-                    ],
-                    vec![
-                        "Max accel",
-                        "Max angle",
-                        "Max deccel",
-                        "Const speed",
-                        "None",
+                        ("Max accel", Some(StrafeType::MaxAccel)),
+                        ("Max angle", Some(StrafeType::MaxAngle)),
+                        ("Max deccel", Some(StrafeType::MaxDeccel)),
+                        ("Const speed", Some(StrafeType::ConstSpeed)),
+                        ("None", None),
                     ],
                     &format!("strafe_selector_list_box{}", id),
                 );

@@ -3,11 +3,10 @@ use imgui::Ui;
 pub fn show_list_box_enum<T: Copy + PartialEq>(
     ui: &Ui,
     value: &mut T,
-    enums: Vec<T>,
-    labels: Vec<&str>,
+    label_enum_pairs: Vec<(&str, T)>,
     id: &str,
 ) -> bool {
-    assert_eq!(enums.len(), labels.len());
+    let (labels, enums): (Vec<_>, Vec<_>) = label_enum_pairs.iter().cloned().unzip();
 
     let mut current_item = enums
         .iter()
@@ -18,7 +17,7 @@ pub fn show_list_box_enum<T: Copy + PartialEq>(
         format!("##{}", id),
         &mut current_item,
         &labels,
-        enums.len() as i32,
+        label_enum_pairs.len() as i32,
     );
 
     if list_box_changed {

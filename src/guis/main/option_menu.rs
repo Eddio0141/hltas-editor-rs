@@ -71,11 +71,13 @@ impl LgagstOption {
             ui,
             &mut self.default_selection,
             vec![
-                LeaveGroundActionSpeed::Any,
-                LeaveGroundActionSpeed::Optimal,
-                LeaveGroundActionSpeed::OptimalWithFullMaxspeed,
+                ("no lgagst", LeaveGroundActionSpeed::Any),
+                ("lgagst", LeaveGroundActionSpeed::Optimal),
+                (
+                    "lgagst with max spd",
+                    LeaveGroundActionSpeed::OptimalWithFullMaxspeed,
+                ),
             ],
-            vec!["no lgagst", "lgagst", "lgagst with max spd"],
             &format!("lgagst_option_lgagst_selection{}", id),
         );
 

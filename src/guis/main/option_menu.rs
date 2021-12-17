@@ -195,10 +195,7 @@ pub fn show_option_menu(
                     combo_box_changed
                 });
 
-            let option_menu_changed = match option_menu_changed {
-                Some(option_menu_changed) => option_menu_changed,
-                None => false,
-            };
+            let option_menu_changed = option_menu_changed.unwrap_or(false);
 
             changed_using_system_lang || option_menu_changed
         }

@@ -834,7 +834,6 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
                     ui.open_popup(new_line_menu_id);
                 }
             } else {
-                // TODO check if right click is in lines area
                 if !new_line_menu_clicked_on_line && ui.is_mouse_clicked(MouseButton::Right) {
                     tab.tab_menu_data.right_click_popup_index = None;
                     ui.open_popup(new_line_menu_id);

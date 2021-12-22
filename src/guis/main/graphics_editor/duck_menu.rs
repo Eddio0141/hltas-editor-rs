@@ -24,7 +24,6 @@ pub fn show_duck_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str) -> bool {
 
     ui.indent();
 
-    // HACK lazy way to set this
     let mut inc_ceiling_changed = false;
     ui.disabled(!duck_before_collision, || {
         inc_ceiling_changed = ui.checkbox(

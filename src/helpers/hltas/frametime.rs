@@ -1,6 +1,5 @@
 pub const MIN: f32 = 0.25;
-// TODO look into this a bit more
-// pub const MAX: f32 = 0.0000000000001;
+// pub const MAX: f32 = f32::MIN_POSITIVE;
 pub const MAX_STRAFE: f32 = 0.001;
 
 // pub fn is_0ms(frametime: &str) -> bool {

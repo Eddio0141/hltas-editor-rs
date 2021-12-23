@@ -1,5 +1,6 @@
 use fluent_templates::{LanguageIdentifier, Loader};
 use locale_config::Locale;
+use serde::Serialize;
 
 use crate::locale::LOCALES;
 
@@ -43,5 +44,23 @@ impl LocaleLang {
 
     pub fn get_string_from_id(&self, text_id: &str) -> String {
         LOCALES.lookup(&self.get_lang(), text_id)
+    }
+}
+
+impl Default for LocaleLang {
+    fn default() -> Self {
+        Self { lang: None }
+    }
+}
+
+impl Serialize for LocaleLang {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match &self.lang {
+            Some(lang) => serializer.serialize_str(&lang.to_string()),
+            None => serializer.serialize_none(),
+        }
     }
 }

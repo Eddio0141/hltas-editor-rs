@@ -3,17 +3,19 @@ use std::num::{IntErrorKind, ParseIntError};
 use fluent_templates::Loader;
 use hltas::types::LeaveGroundActionSpeed;
 use imgui::{ComboBox, InputText, Selectable, StyleColor, Ui};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     guis::list_box_enum::show_list_box_enum, helpers::locale::locale_lang::LocaleLang,
     locale::LOCALES,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct AppOptions {
     jump_lgagst_option: LgagstOption,
     ducktap_lgagst_option: LgagstOption,
     recent_path_size: usize,
+    #[serde(skip_serializing, skip_deserializing)]
     locale_lang: LocaleLang,
     auto_switch_new_tab: bool,
 }
@@ -57,8 +59,17 @@ impl Default for AppOptions {
     }
 }
 
-#[derive(Clone)]
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "LeaveGroundActionSpeed")]
+enum LeaveGroundActionSpeedDef {
+    Any,
+    Optimal,
+    OptimalWithFullMaxspeed,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct LgagstOption {
+    #[serde(with = "LeaveGroundActionSpeedDef")]
     pub default_selection: LeaveGroundActionSpeed,
     pub copy_previous_framebulk: bool,
 }
@@ -101,6 +112,7 @@ pub struct OptionMenuStatus {
     pub category_selection: CategoryStatus,
     option_menu_before: Option<AppOptions>,
     modified: bool,
+    requires_save: bool,
 }
 
 impl Default for OptionMenuStatus {
@@ -109,6 +121,7 @@ impl Default for OptionMenuStatus {
             category_selection: CategoryStatus::MenuOption,
             option_menu_before: None,
             modified: false,
+            requires_save: false,
         }
     }
 }
@@ -124,6 +137,15 @@ impl OptionMenuStatus {
         }
         self.modified = false;
         self.option_menu_before = None;
+    }
+
+    /// Get a reference to the option menu status's requires save.
+    pub fn requires_save(&self) -> bool {
+        self.requires_save
+    }
+
+    pub fn saved(&mut self) {
+        self.requires_save = false;
     }
 }
 
@@ -266,6 +288,7 @@ pub fn show_option_menu(
     if ui.button("Save") {
         option_menu_status.option_menu_before = None;
         option_menu_status.modified = false;
+        option_menu_status.requires_save = true;
     }
     ui.same_line();
     if ui.button("Cancel") {

@@ -38,6 +38,37 @@ pub struct MainGUI {
 }
 
 impl MainGUI {
+    pub fn get_save_dir() -> Result<PathBuf, Box<dyn Error>> {
+        let mut save_dir = match home_dir() {
+            Some(home_dir) => home_dir,
+            None => env::current_dir()?,
+        };
+
+        save_dir.push("hltas-editor");
+
+        if !save_dir.exists() {
+            fs::create_dir(&save_dir)?;
+        }
+
+        Ok(save_dir)
+    }
+
+    pub fn option_path() -> Result<PathBuf, Box<dyn Error>> {
+        Ok(Self::get_save_dir()?.join("options.json"))
+    }
+
+    pub fn save_options(&self) -> Result<(), Box<dyn Error>> {
+        let option_data = serde_json::to_string(&self.options).unwrap();
+        fs::write(Self::option_path()?, &option_data)?;
+        Ok(())
+    }
+
+    pub fn load_options(&mut self) -> Result<(), Box<dyn Error>> {
+        let option_data = fs::read_to_string(Self::option_path()?)?;
+        self.options = serde_json::from_str(&option_data)?;
+        Ok(())
+    }
+
     pub fn new_file(&mut self) {
         let new_tab = HLTASFileTab::new_file(&self.options.locale_lang().get_lang());
         self.tabs.push(Rc::new(RefCell::new(new_tab)));
@@ -222,43 +253,6 @@ impl MainGUI {
         if self.tabs.is_empty() {
             self.current_tab = None;
         }
-    }
-}
-
-impl Default for MainGUI {
-    // first time opened will always show a new tab
-    fn default() -> Self {
-        let options = AppOptions::default();
-        let tabs = vec![Rc::new(RefCell::new(HLTASFileTab::new_file(
-            &options.locale_lang().get_lang(),
-        )))];
-        let current_tab = Some(Rc::clone(&tabs[0]));
-
-        Self {
-            tabs,
-            current_tab,
-            tab_switch_index: None,
-            recent_paths: VecDeque::new(),
-            graphics_editor: true,
-            options_menu_opened: false,
-            options,
-            option_menu_status: OptionMenuStatus::default(),
-            #[cfg(debug_assertions)]
-            debug_menu_opened: false,
-        }
-    }
-}
-
-impl MainGUI {
-    pub fn save_dir() -> Result<PathBuf, Box<dyn Error>> {
-        let mut home_dir = match home_dir() {
-            Some(home_dir) => home_dir,
-            None => env::current_dir()?,
-        };
-
-        home_dir.push("hltas-editor");
-
-        Ok(home_dir)
     }
 
     pub fn show(&mut self, _run: &mut bool, ui: &mut Ui) {
@@ -486,6 +480,7 @@ impl MainGUI {
         window_min_size_token.pop();
 
         {
+            // TODO merge option menu status with options menu opened so it flushes status when re-opened
             let options_menu_opened = &mut self.options_menu_opened;
             let options = &mut self.options;
             let option_menu_status = &mut self.option_menu_status;
@@ -520,9 +515,61 @@ impl MainGUI {
             }
         }
 
+        if self.option_menu_status.requires_save() {
+            if let Err(err) = self.save_options() {
+                native_dialog::MessageDialog::new()
+                    .set_title(&self.options.locale_lang().get_string_from_id("error"))
+                    .set_type(native_dialog::MessageType::Error)
+                    .set_text(&err.to_string())
+                    .show_alert()
+                    .ok();
+            }
+
+            self.option_menu_status.saved();
+        }
+
         #[cfg(debug_assertions)]
         if self.debug_menu_opened {
             ui.show_demo_window(&mut self.debug_menu_opened);
+        }
+    }
+
+    pub fn init() -> Self {
+        let mut main_gui = Self::default();
+        
+        if let Err(err) = main_gui.load_options() {
+            MessageDialog::new()
+                .set_title(&main_gui.options.locale_lang().get_string_from_id("error"))
+                .set_type(MessageType::Error)
+                .set_text(&err.to_string())
+                .show_alert()
+                .ok();
+        }
+
+        main_gui
+    }
+}
+
+impl Default for MainGUI {
+    // first time opened will always show a new tab
+    fn default() -> Self {
+        let options = AppOptions::default();
+        let tabs = vec![Rc::new(RefCell::new(HLTASFileTab::new_file(
+            &options.locale_lang().get_lang(),
+        )))];
+        let current_tab = Some(Rc::clone(&tabs[0]));
+
+        Self {
+            tabs,
+            current_tab,
+            tab_switch_index: None,
+            recent_paths: VecDeque::new(),
+            graphics_editor: true,
+            options_menu_opened: false,
+            options,
+            option_menu_status: OptionMenuStatus::default(),
+            #[cfg(debug_assertions)]
+            debug_menu_opened: false,
         }
     }
 }

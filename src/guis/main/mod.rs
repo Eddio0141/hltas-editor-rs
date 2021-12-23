@@ -6,12 +6,15 @@ mod property_string_field;
 mod tab;
 
 use std::cell::RefCell;
+use std::env;
+use std::error::Error;
 use std::path::Path;
 use std::rc::Rc;
 use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::hltas::hltas_to_str;
 use hltas_cleaner::cleaners;
+use home::home_dir;
 use imgui::{
     Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window, WindowFlags,
 };
@@ -247,6 +250,17 @@ impl Default for MainGUI {
 }
 
 impl MainGUI {
+    pub fn save_dir() -> Result<PathBuf, Box<dyn Error>> {
+        let mut home_dir = match home_dir() {
+            Some(home_dir) => home_dir,
+            None => env::current_dir()?,
+        };
+
+        home_dir.push("hltas-editor");
+
+        Ok(home_dir)
+    }
+
     pub fn show(&mut self, _run: &mut bool, ui: &mut Ui) {
         let window_border_size_token = ui.push_style_var(StyleVar::WindowBorderSize(0.0));
         let window_min_size_token = ui.push_style_var(StyleVar::WindowMinSize([1.0, 1.0]));

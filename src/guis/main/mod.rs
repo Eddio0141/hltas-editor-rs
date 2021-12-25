@@ -391,6 +391,7 @@ impl MainGUI {
             .resizable(false)
             .title_bar(false)
             .scrollable(false)
+            .bring_to_front_on_focus(!self.options_menu_opened)
             .build(ui, || {
                 TabBar::new("file_tabs").reorderable(true).build(ui, || {
                     let mut new_tab = None;
@@ -465,6 +466,7 @@ impl MainGUI {
             .resizable(false)
             .title_bar(false)
             .horizontal_scrollbar(true)
+            .bring_to_front_on_focus(!self.options_menu_opened)
             .build(ui, || {
                 if self.graphics_editor {
                     if let Some(tab) = &self.current_tab {
@@ -536,7 +538,7 @@ impl MainGUI {
 
     pub fn init() -> Self {
         let mut main_gui = Self::default();
-        
+
         if let Err(err) = main_gui.load_options() {
             MessageDialog::new()
                 .set_title(&main_gui.options.locale_lang().get_string_from_id("error"))

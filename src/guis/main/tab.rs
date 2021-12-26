@@ -78,6 +78,7 @@ impl<'a> HLTASFileTab {
 pub struct HLTASMenuState {
     pub strafe_menu_selections: Vec<Option<StrafeMenuSelection>>,
     pub right_click_popup_index: Option<usize>,
+    selected_indexes: Vec<Option<()>>,
 }
 
 impl HLTASMenuState {
@@ -97,7 +98,21 @@ impl HLTASMenuState {
         Self {
             strafe_menu_selections,
             right_click_popup_index: None,
+            selected_indexes: vec![None; hltas.lines.len()],
         }
+    }
+
+    /// Get a reference to the hltasmenu state's selected indexes.
+    pub fn selected_indexes(&self) -> &[Option<()>] {
+        self.selected_indexes.as_ref()
+    }
+
+    pub fn reset_selected_indexes(&mut self) {
+        self.selected_indexes = vec![None; self.selected_indexes.len()];
+    }
+
+    pub fn select_all_indexes(&mut self) {
+        self.selected_indexes = vec![Some(()); self.selected_indexes.len()];
     }
 }
 

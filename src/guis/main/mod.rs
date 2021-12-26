@@ -13,6 +13,7 @@ use std::rc::Rc;
 use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::helpers::hltas::hltas_to_str;
+use fluent_templates::Loader;
 use hltas_cleaner::cleaners;
 use home::home_dir;
 use imgui::{
@@ -321,7 +322,15 @@ impl MainGUI {
             );
             ui.menu(
                 self.options.locale_lang().get_string_from_id("edit-menu"),
-                || {},
+                || {
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("select-all"))
+                        .build(ui)
+                    {
+                        if let Some(current_tab) = &self.current_tab {
+                            current_tab.borrow_mut().tab_menu_data.select_all_indexes();
+                        }
+                    }
+                },
             );
             ui.menu(
                 self.options.locale_lang().get_string_from_id("tools-menu"),

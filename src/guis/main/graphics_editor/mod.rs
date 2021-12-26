@@ -841,7 +841,14 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
 
             let draw_list = ui.get_window_draw_list();
             draw_list
-                .add_rect(group_rect_min, group_rect_max, [0.501, 0.501, 0.501, 0.25])
+                .add_rect(
+                    group_rect_min,
+                    group_rect_max,
+                    match tab.tab_menu_data.selected_indexes()[i] {
+                        Some(_) => [0.0, 0.0, 1.0, 0.5],
+                        None => [0.501, 0.501, 0.501, 0.25],
+                    },
+                )
                 .build();
 
             if !lines_edited && line_edited {

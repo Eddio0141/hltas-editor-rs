@@ -9,6 +9,8 @@ save-file = Save
 close-file = Close
 recent-files = Recent files
 
+select-all = Select all
+
 hltas-cleaner = HLTAS cleaner
 
 open-options-menu = Options menu

@@ -9,6 +9,8 @@ save-file = 保存
 close-file = 閉じる
 recent-files = 最近使用したファイル
 
+select-all = すべて選択
+
 hltas-cleaner = HLTASのクリーンアップ
 
 open-options-menu = オプションメニュー

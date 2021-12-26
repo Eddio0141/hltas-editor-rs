@@ -297,16 +297,20 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
 
                         tab.hltas.lines.insert(index, _type.to_owned());
 
+                        // TODO make this better
                         // insert menu data
                         tab.tab_menu_data
                             .strafe_menu_selections
                             .insert(index, line_type_to_strafe_menu_selection());
+                        tab.tab_menu_data.selected_indexes.insert(index, None);
                     }
                     None => {
+                        // TODO make this better
                         tab.hltas.lines.push(_type.to_owned());
                         tab.tab_menu_data
                             .strafe_menu_selections
                             .push(line_type_to_strafe_menu_selection());
+                        tab.tab_menu_data.selected_indexes.push(None);
                     }
                 }
 

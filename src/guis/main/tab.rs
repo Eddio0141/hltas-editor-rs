@@ -78,7 +78,7 @@ impl<'a> HLTASFileTab {
 pub struct HLTASMenuState {
     pub strafe_menu_selections: Vec<Option<StrafeMenuSelection>>,
     pub right_click_popup_index: Option<usize>,
-    selected_indexes: Vec<Option<()>>,
+    pub selected_indexes: Vec<Option<()>>,
 }
 
 impl HLTASMenuState {

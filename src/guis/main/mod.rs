@@ -38,7 +38,7 @@ pub struct MainGUI {
 }
 
 impl MainGUI {
-    pub fn get_save_dir() -> Result<PathBuf, Box<dyn Error>> {
+    pub fn get_save_dir() -> Result<PathBuf, std::io::Error> {
         let mut save_dir = match home_dir() {
             Some(home_dir) => home_dir,
             None => env::current_dir()?,
@@ -53,11 +53,11 @@ impl MainGUI {
         Ok(save_dir)
     }
 
-    pub fn option_path() -> Result<PathBuf, Box<dyn Error>> {
+    pub fn option_path() -> Result<PathBuf, std::io::Error> {
         Ok(Self::get_save_dir()?.join("options.json"))
     }
 
-    pub fn save_options(&self) -> Result<(), Box<dyn Error>> {
+    pub fn save_options(&self) -> Result<(), std::io::Error> {
         let option_data = serde_json::to_string(&self.options).unwrap();
         fs::write(Self::option_path()?, &option_data)?;
         Ok(())

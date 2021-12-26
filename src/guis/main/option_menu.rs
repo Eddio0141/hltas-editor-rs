@@ -18,6 +18,7 @@ pub struct AppOptions {
     #[serde(skip_serializing, skip_deserializing)]
     locale_lang: LocaleLang,
     auto_switch_new_tab: bool,
+    default_comment: String,
 }
 
 impl AppOptions {
@@ -45,6 +46,11 @@ impl AppOptions {
     pub fn auto_switch_new_tab(&self) -> bool {
         self.auto_switch_new_tab
     }
+
+    /// Get a reference to the app options's default comment.
+    pub fn default_comment(&self) -> &str {
+        &self.default_comment
+    }
 }
 
 impl Default for AppOptions {
@@ -55,6 +61,7 @@ impl Default for AppOptions {
             recent_path_size: 20,
             locale_lang: LocaleLang::new(None),
             auto_switch_new_tab: true,
+            default_comment: "".to_string(),
         }
     }
 }
@@ -109,7 +116,7 @@ impl LgagstOption {
 }
 
 pub struct OptionMenuStatus {
-    pub category_selection: CategoryStatus,
+    pub category_selection: Category,
     option_menu_before: Option<AppOptions>,
     modified: bool,
     requires_save: bool,
@@ -118,7 +125,7 @@ pub struct OptionMenuStatus {
 impl Default for OptionMenuStatus {
     fn default() -> Self {
         Self {
-            category_selection: CategoryStatus::MenuOption,
+            category_selection: Category::MenuOption,
             option_menu_before: None,
             modified: false,
             requires_save: false,
@@ -150,7 +157,7 @@ impl OptionMenuStatus {
 }
 
 #[derive(PartialEq, Clone, Copy)]
-pub enum CategoryStatus {
+pub enum Category {
     MenuOption,
     LineOption,
     Language,
@@ -167,9 +174,9 @@ pub fn show_option_menu(
     }
 
     let button_label_pairs = vec![
-        ("menu options", CategoryStatus::MenuOption),
-        ("line options", CategoryStatus::LineOption),
-        ("language", CategoryStatus::Language),
+        ("menu options", Category::MenuOption),
+        ("line options", Category::LineOption),
+        ("language", Category::Language),
     ];
 
     for (i, (label, button_enum)) in button_label_pairs.iter().enumerate() {
@@ -193,7 +200,7 @@ pub fn show_option_menu(
     }
 
     let modified = match option_menu_status.category_selection {
-        CategoryStatus::Language => {
+        Category::Language => {
             let mut use_system_lang = app_settings.locale_lang.is_using_system_lang();
             let changed_using_system_lang =
                 ui.checkbox("use system language", &mut use_system_lang);
@@ -230,7 +237,7 @@ pub fn show_option_menu(
 
             changed_using_system_lang || option_menu_changed
         }
-        CategoryStatus::MenuOption => {
+        Category::MenuOption => {
             let mut recent_path_size = app_settings.recent_path_size.to_string();
             let recent_path_size_edited =
                 InputText::new(ui, "recent path size", &mut recent_path_size)
@@ -256,7 +263,7 @@ pub fn show_option_menu(
 
             recent_path_size_edited || auto_switch_new_tab_edited
         }
-        CategoryStatus::LineOption => {
+        Category::LineOption => {
             ui.text("jump lgagst default option");
             ui.indent();
             let jump_lgagst_option_changed =
@@ -268,8 +275,16 @@ pub fn show_option_menu(
                 .ducktap_lgagst_option
                 .show_ui(ui, "ducktap_lgagst");
             ui.unindent();
+            ui.text("default comment");
+            ui.indent();
+            let default_comment_changed = InputText::new(
+                ui,
+                "##default_comment_option",
+                &mut app_settings.default_comment,
+            )
+            .build();
 
-            jump_lgagst_option_changed || ducktap_lgagst_option_changed
+            jump_lgagst_option_changed || ducktap_lgagst_option_changed || default_comment_changed
         }
     };
 

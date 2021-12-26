@@ -264,8 +264,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
             Line::LGAGSTMinSpeed(30.0),
             // TODO default seed
             Line::Reset { non_shared_seed: 0 },
-            // TODO default comment
-            Line::Comment("".to_string()),
+            Line::Comment(options.default_comment().to_string()),
             // TODO maybe check previous vectorial strafing and toggle
             Line::VectorialStrafing(false),
             Line::VectorialStrafingConstraints(VectorialStrafingConstraints::VelocityYawLocking {

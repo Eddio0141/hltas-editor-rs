@@ -506,7 +506,7 @@ impl MainGUI {
                     .scrollable(false)
                     .scroll_bar(false)
                     .position_pivot([0.5, 0.5])
-                    .size([500.0, 300.0], Condition::Always)
+                    .size([500.0, 350.0], Condition::Always)
                     .build(ui, || {
                         show_option_menu(ui, options, option_menu_status);
                     });

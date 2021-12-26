@@ -849,10 +849,11 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
                     group_rect_min,
                     group_rect_max,
                     match tab.tab_menu_data.selected_indexes()[i] {
-                        Some(_) => [0.0, 0.0, 1.0, 0.5],
+                        Some(_) => [0.678, 0.847, 0.901, 0.2],
                         None => [0.501, 0.501, 0.501, 0.25],
                     },
                 )
+                .filled(tab.tab_menu_data.selected_indexes()[i].is_some())
                 .build();
 
             if !lines_edited && line_edited {

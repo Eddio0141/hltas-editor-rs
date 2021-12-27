@@ -6,7 +6,7 @@ mod jump_menu;
 mod strafe_menu;
 mod yaw_pitch_menu;
 
-use std::num::NonZeroU32;
+use std::{collections::HashMap, num::NonZeroU32};
 
 use hltas::types::{
     Button, Buttons, Change, ChangeTarget, FrameBulk, Line, Seeds, VectorialStrafingConstraints,
@@ -203,88 +203,90 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
 
     let new_line_menu_id = "new_line_menu";
     ui.popup(new_line_menu_id, || {
-        let button_names = vec![
-            "framebulk",
-            "save",
-            "shared seed",
-            "buttons",
-            "lgagst min spd",
-            "non-shared seed",
-            "comment",
-            "vectorial strafing",
-            "vectorial strafing constraints",
-            "change",
-            "target yaw override",
-        ];
-
-        let button_type = vec![
-            // TODO option for what to choose here
-            Line::FrameBulk(FrameBulk {
-                auto_actions: hltas::types::AutoActions {
-                    movement: None,
-                    leave_ground_action: None,
-                    jump_bug: None,
-                    duck_before_collision: None,
-                    duck_before_ground: None,
-                    duck_when_jump: None,
-                },
-                movement_keys: hltas::types::MovementKeys {
-                    forward: false,
-                    left: false,
-                    right: false,
-                    back: false,
-                    up: false,
-                    down: false,
-                },
-                action_keys: hltas::types::ActionKeys {
-                    jump: false,
-                    duck: false,
-                    use_: false,
-                    attack_1: false,
-                    attack_2: false,
-                    reload: false,
-                },
-                frame_time: "0.001".to_string(),
-                pitch: None,
-                frame_count: NonZeroU32::new(1).unwrap(),
-                console_command: None,
-            }),
+        // TODO option for what to choose here
+        let name_and_types = vec![
+            (
+                "framebulk",
+                Line::FrameBulk(FrameBulk {
+                    auto_actions: hltas::types::AutoActions {
+                        movement: None,
+                        leave_ground_action: None,
+                        jump_bug: None,
+                        duck_before_collision: None,
+                        duck_before_ground: None,
+                        duck_when_jump: None,
+                    },
+                    movement_keys: hltas::types::MovementKeys {
+                        forward: false,
+                        left: false,
+                        right: false,
+                        back: false,
+                        up: false,
+                        down: false,
+                    },
+                    action_keys: hltas::types::ActionKeys {
+                        jump: false,
+                        duck: false,
+                        use_: false,
+                        attack_1: false,
+                        attack_2: false,
+                        reload: false,
+                    },
+                    frame_time: "0.001".to_string(),
+                    pitch: None,
+                    frame_count: NonZeroU32::new(1).unwrap(),
+                    console_command: None,
+                }),
+            ),
             // TODO custom save name
-            Line::Save("buffer".to_string()),
+            ("save", Line::Save("buffer".to_string())),
             // TODO default seed
-            Line::SharedSeed(0),
-            Line::Buttons(Buttons::Set {
-                air_left: Button::Left,
-                air_right: Button::Right,
-                ground_left: Button::Left,
-                ground_right: Button::Right,
-            }),
+            ("shared seed", Line::SharedSeed(0)),
+            (
+                "buttons",
+                Line::Buttons(Buttons::Set {
+                    air_left: Button::Left,
+                    air_right: Button::Right,
+                    ground_left: Button::Left,
+                    ground_right: Button::Right,
+                }),
+            ),
             // TODO grab previous frame
-            Line::LGAGSTMinSpeed(options.lgagst_min_speed()),
-            Line::Reset { non_shared_seed: 0 },
-            Line::Comment(options.default_comment().to_string()),
-            // TODO maybe check previous vectorial strafing and toggle
-            Line::VectorialStrafing(false),
-            Line::VectorialStrafingConstraints(VectorialStrafingConstraints::VelocityYawLocking {
-                tolerance: 0.0,
-            }),
+            (
+                "lgagst min spd",
+                Line::LGAGSTMinSpeed(options.lgagst_min_speed()),
+            ),
+            ("non-shared seed", Line::Reset { non_shared_seed: 0 }),
+            (
+                "comment",
+                Line::Comment(options.default_comment().to_string()),
+            ),
+            // TODO check previous vectorial strafing and toggle
+            ("vectorial strafing", Line::VectorialStrafing(false)),
+            (
+                "vectorial strafing constraints",
+                Line::VectorialStrafingConstraints(
+                    VectorialStrafingConstraints::VelocityYawLocking { tolerance: 0.0 },
+                ),
+            ),
             // TODO think about this one
-            Line::Change(Change {
-                target: ChangeTarget::Yaw,
-                final_value: 0.0,
-                over: 0.4,
-            }),
-            Line::TargetYawOverride(vec![0.0]),
+            (
+                "change",
+                Line::Change(Change {
+                    target: ChangeTarget::Yaw,
+                    final_value: 0.0,
+                    over: 0.4,
+                }),
+            ),
+            ("target yaw override", Line::TargetYawOverride(vec![0.0])),
         ];
 
         ui.text("new line menu");
 
-        let half_way_index = button_names.len() / 2;
-        for (i, button_name) in button_names.iter().enumerate() {
+        let half_way_index = name_and_types.len() / 2;
+        for (i, (button_name, button_type)) in name_and_types.iter().enumerate() {
             if ui.button(button_name) {
-                let _type = &button_type[i];
-
-                tab.new_line_at_click_index(_type.to_owned());
+                tab.new_line_at_click_index(button_type.to_owned());
 
                 ui.close_current_popup();
             }

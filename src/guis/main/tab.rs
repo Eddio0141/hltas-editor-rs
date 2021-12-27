@@ -1,22 +1,27 @@
 use std::{
+    fs,
     ops::Deref,
     path::{Path, PathBuf},
 };
 
 use fluent_templates::{LanguageIdentifier, Loader};
 use hltas::{
-    types::{AutoMovement, FrameBulk, Line},
+    types::{AutoMovement, FrameBulk, Line, Properties},
     HLTAS,
 };
+use native_dialog::FileDialog;
 
-use crate::locale::LOCALES;
+use crate::{
+    helpers::{hltas::hltas_to_str, locale::locale_lang::LocaleLang},
+    locale::LOCALES,
+};
 
+#[derive(Clone, Debug)]
 pub struct HLTASFileTab {
-    pub title: String,
-    pub path: Option<PathBuf>,
+    title: String,
+    path: Option<PathBuf>,
+    // TODO make this better with making it private and borrow iter mut on the lines
     pub hltas: HLTAS,
-    pub got_modified: bool,
-
     pub tab_menu_data: HLTASMenuState,
 }
 
@@ -40,7 +45,6 @@ impl<'a> HLTASFileTab {
         Ok(Self {
             title,
             path: Some(path.to_path_buf()),
-            got_modified: false,
             hltas,
             tab_menu_data,
         })
@@ -66,19 +70,86 @@ impl<'a> HLTASFileTab {
             // title: format!("{} {}", Self::default_title(lang), file_value),
             title: Self::default_title(lang),
             path: None,
-            got_modified: false,
             hltas: HLTAS::default(),
             tab_menu_data: HLTASMenuState::new(&HLTAS::default()),
         }
         // Self::default()
     }
+
+    pub fn hltas_properties_mut(&mut self) -> &mut Properties {
+        &mut self.hltas.properties
+    }
+
+    pub fn new_line_at_click_index(&mut self, line: hltas::types::Line) {
+        match self.tab_menu_data.right_click_popup_index() {
+            Some(mut index) => {
+                index += 1;
+
+                self.tab_menu_data.insert_hltas_line(index, &line);
+                self.hltas.lines.insert(index, line);
+            }
+            None => {
+                self.tab_menu_data.push_hltas_line(&line);
+                self.hltas.lines.push(line);
+            }
+        }
+        self.tab_menu_data.got_modified();
+    }
+
+    pub fn remove_line_at_index(&mut self, index: usize) {
+        self.hltas.lines.remove(index);
+        self.tab_menu_data.remove_line_at_index(index);
+        self.tab_menu_data.got_modified();
+    }
+
+    pub fn hltas_lines_is_empty(&self) -> bool {
+        self.hltas.lines.is_empty()
+    }
+
+    /// Get a reference to the hltasfile tab's path.
+    pub fn path(&self) -> Option<&PathBuf> {
+        self.path.as_ref()
+    }
+
+    fn ask_hltas_save_location() -> Result<Option<PathBuf>, native_dialog::Error> {
+        FileDialog::new()
+            .add_filter("HLTAS Files", &["hltas"])
+            .show_save_single_file()
+    }
+
+    pub fn write_hltas_to_file(&mut self, locale_lang: &LocaleLang) -> Result<(), std::io::Error> {
+        if let Some(path) = &self.path {
+            // save_path = Some(path.to_owned());
+            fs::write(path, hltas_to_str(&self.hltas))?;
+            self.tab_menu_data.saved_modified();
+        } else {
+            // no file, save as new file
+            if let Ok(Some(path)) = Self::ask_hltas_save_location() {
+                fs::write(&path, hltas_to_str(&self.hltas))?;
+                self.title = Self::title_from_path(&path, &locale_lang.get_lang());
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn select_all_lines(&mut self) {
+        self.tab_menu_data.select_all_indexes();
+    }
+
+    /// Get a reference to the hltasfile tab's title.
+    pub fn title(&self) -> &str {
+        self.title.as_ref()
+    }
 }
 
 /// Struct to keep track of some menu states for the hltas object in the tab
+#[derive(Clone, Debug)]
 pub struct HLTASMenuState {
-    pub strafe_menu_selections: Vec<Option<StrafeMenuSelection>>,
-    pub right_click_popup_index: Option<usize>,
-    pub selected_indexes: Vec<Option<()>>,
+    strafe_menu_selections: Vec<Option<StrafeMenuSelection>>,
+    right_click_popup_index: Option<usize>,
+    selected_indexes: Vec<bool>,
+    got_modified: bool,
 }
 
 impl HLTASMenuState {
@@ -98,24 +169,86 @@ impl HLTASMenuState {
         Self {
             strafe_menu_selections,
             right_click_popup_index: None,
-            selected_indexes: vec![None; hltas.lines.len()],
+            selected_indexes: vec![false; hltas.lines.len()],
+            got_modified: false,
         }
     }
 
     /// Get a reference to the hltasmenu state's selected indexes.
-    pub fn selected_indexes(&self) -> &[Option<()>] {
+    pub fn selected_indexes(&self) -> &[bool] {
         self.selected_indexes.as_ref()
     }
 
     pub fn reset_selected_indexes(&mut self) {
-        self.selected_indexes = vec![None; self.selected_indexes.len()];
+        self.selected_indexes = vec![false; self.selected_indexes.len()];
     }
 
     pub fn select_all_indexes(&mut self) {
-        self.selected_indexes = vec![Some(()); self.selected_indexes.len()];
+        self.selected_indexes = vec![true; self.selected_indexes.len()];
+    }
+
+    pub fn insert_hltas_line(&mut self, index: usize, line: &hltas::types::Line) {
+        self.strafe_menu_selections.insert(
+            index,
+            match line {
+                Line::FrameBulk(framebulk) => Some(StrafeMenuSelection::new(framebulk)),
+                _ => None,
+            },
+        );
+        self.selected_indexes.insert(index, false);
+    }
+
+    pub fn push_hltas_line(&mut self, line: &hltas::types::Line) {
+        self.strafe_menu_selections.push(match line {
+            Line::FrameBulk(framebulk) => Some(StrafeMenuSelection::new(framebulk)),
+            _ => None,
+        });
+        self.selected_indexes.push(false);
+    }
+
+    pub fn remove_line_at_index(&mut self, index: usize) {
+        self.strafe_menu_selections.remove(index);
+        self.selected_indexes.remove(index);
+    }
+
+    pub fn set_right_click_index(&mut self, index: usize) {
+        self.right_click_popup_index = Some(index);
+    }
+
+    pub fn right_click_elsewhere(&mut self) {
+        self.right_click_popup_index = None;
+    }
+
+    /// Get a reference to the hltasmenu state's right click popup index.
+    pub fn right_click_popup_index(&self) -> Option<usize> {
+        self.right_click_popup_index
+    }
+
+    pub fn got_modified(&mut self) {
+        self.got_modified = true;
+    }
+
+    pub fn saved_modified(&mut self) {
+        self.got_modified = false;
+    }
+
+    pub fn is_modified(&self) -> bool {
+        self.got_modified
+    }
+
+    pub fn strafe_menu_selection_at_mut(
+        &mut self,
+        index: usize,
+    ) -> Option<&mut Option<StrafeMenuSelection>> {
+        self.strafe_menu_selections.get_mut(index)
+    }
+
+    pub fn is_line_selected(&self, index: usize) -> bool {
+        self.selected_indexes()[index]
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum StrafeMenuSelection {
     Strafe,
     Keys,

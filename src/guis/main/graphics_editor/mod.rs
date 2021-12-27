@@ -32,7 +32,7 @@ use super::{
     option_menu::AppOptions,
     property_some_none_field::{property_some_none_field_ui, PropertyFieldResult},
     property_string_field::property_string_field_ui,
-    tab::{HLTASFileTab, StrafeMenuSelection},
+    tab::HLTASFileTab,
 };
 
 // TODO drag speed variables stored somewhere in the function for convinience
@@ -45,7 +45,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
     {
         let demo_edited = property_string_field_ui(
             ui,
-            &mut tab.hltas.properties.demo,
+            &mut tab.hltas_properties_mut().demo,
             true,
             "Demo name",
             "Set demo recording",
@@ -54,7 +54,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
 
         let save_after_edited = property_string_field_ui(
             ui,
-            &mut tab.hltas.properties.save,
+            &mut tab.hltas_properties_mut().save,
             true,
             "Save name",
             "Save after hltas",
@@ -64,7 +64,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
         // TODO, make this easier to edit
         let ducktap_0ms_edited = property_some_none_field_ui(
             ui,
-            &mut tab.hltas.properties.frametime_0ms,
+            &mut tab.hltas_properties_mut().frametime_0ms,
             // TODO make this an option
             "0.0000000001".to_string(),
             "Enable 0ms ducktap",
@@ -94,7 +94,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
         //  since if people want different rng results, they can just add 1
         let seed_edited = property_some_none_field_ui(
             ui,
-            &mut tab.hltas.properties.seeds,
+            &mut tab.hltas_properties_mut().seeds,
             Seeds {
                 shared: 0,
                 non_shared: 0,
@@ -133,7 +133,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
         // TODO figure out "default"
         let hlstrafe_version_edited = property_some_none_field_ui(
             ui,
-            &mut tab.hltas.properties.hlstrafe_version,
+            &mut tab.hltas_properties_mut().hlstrafe_version,
             NonZeroU32::new(3).unwrap(),
             "set hlstrafe version",
             |hlstrafe_version| {
@@ -171,7 +171,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
 
         let load_cmds_edited = property_some_none_field_ui(
             ui,
-            &mut tab.hltas.properties.load_command,
+            &mut tab.hltas_properties_mut().load_command,
             String::new(),
             "set hltas load commands",
             |cmds| {
@@ -286,35 +286,7 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
             if ui.button(button_name) {
                 let _type = &button_type[i];
 
-                let line_type_to_strafe_menu_selection = || match _type {
-                    Line::FrameBulk(framebulk) => Some(StrafeMenuSelection::new(framebulk)),
-                    _ => None,
-                };
-
-                match tab.tab_menu_data.right_click_popup_index {
-                    Some(mut index) => {
-                        index += 1;
-
-                        tab.hltas.lines.insert(index, _type.to_owned());
-
-                        // TODO make this better
-                        // insert menu data
-                        tab.tab_menu_data
-                            .strafe_menu_selections
-                            .insert(index, line_type_to_strafe_menu_selection());
-                        tab.tab_menu_data.selected_indexes.insert(index, None);
-                    }
-                    None => {
-                        // TODO make this better
-                        tab.hltas.lines.push(_type.to_owned());
-                        tab.tab_menu_data
-                            .strafe_menu_selections
-                            .push(line_type_to_strafe_menu_selection());
-                        tab.tab_menu_data.selected_indexes.push(None);
-                    }
-                }
-
-                tab.got_modified = true;
+                tab.new_line_at_click_index(_type.to_owned());
 
                 ui.close_current_popup();
             }
@@ -325,9 +297,9 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
         }
     });
 
-    if tab.hltas.lines.is_empty() {
+    if tab.hltas_lines_is_empty() {
         if ui.is_mouse_clicked(MouseButton::Right) {
-            tab.tab_menu_data.right_click_popup_index = None;
+            tab.tab_menu_data.right_click_elsewhere();
             ui.open_popup(new_line_menu_id);
         }
 
@@ -341,8 +313,10 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
 
     let mut new_line_menu_clicked_on_line = false;
 
-    for (i, line) in &mut tab.hltas.lines.iter_mut().enumerate() {
-        let strafe_menu_selection = &mut tab.tab_menu_data.strafe_menu_selections[i];
+    let tab_menu_data = &mut tab.tab_menu_data;
+
+    for (i, line) in tab.hltas.lines.iter_mut().enumerate() {
+        let strafe_menu_selection = tab_menu_data.strafe_menu_selection_at_mut(i).unwrap();
 
         let is_rendering_line = {
             let scroll_y = ui.scroll_y();
@@ -832,13 +806,13 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
 
                 // check if right click for new line menu
                 if ui.is_mouse_clicked(MouseButton::Right) {
-                    tab.tab_menu_data.right_click_popup_index = Some(i);
+                    tab_menu_data.set_right_click_index(i);
                     new_line_menu_clicked_on_line = true;
                     ui.open_popup(new_line_menu_id);
                 }
             } else {
                 if !new_line_menu_clicked_on_line && ui.is_mouse_clicked(MouseButton::Right) {
-                    tab.tab_menu_data.right_click_popup_index = None;
+                    tab_menu_data.right_click_elsewhere();
                     ui.open_popup(new_line_menu_id);
                 }
             }
@@ -848,12 +822,13 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
                 .add_rect(
                     group_rect_min,
                     group_rect_max,
-                    match tab.tab_menu_data.selected_indexes()[i] {
-                        Some(_) => [0.678, 0.847, 0.901, 0.2],
-                        None => [0.501, 0.501, 0.501, 0.25],
+                    if tab_menu_data.is_line_selected(i) {
+                        [0.678, 0.847, 0.901, 0.2]
+                    } else {
+                        [0.501, 0.501, 0.501, 0.25]
                     },
                 )
-                .filled(tab.tab_menu_data.selected_indexes()[i].is_some())
+                .filled(tab_menu_data.is_line_selected(i))
                 .build();
 
             if !lines_edited && line_edited {
@@ -884,12 +859,10 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
     }
 
     if let Some(stale_line) = stale_line {
-        tab.hltas.lines.remove(stale_line);
-        // TODO a better design for tab_menu_data
-        tab.tab_menu_data.strafe_menu_selections.remove(stale_line);
+        tab.remove_line_at_index(stale_line);
     }
 
     if properties_edited || lines_edited {
-        tab.got_modified = true;
+        tab.tab_menu_data.got_modified();
     }
 }

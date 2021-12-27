@@ -12,9 +12,6 @@ use std::path::Path;
 use std::rc::Rc;
 use std::{collections::VecDeque, fs, path::PathBuf};
 
-use crate::helpers::hltas::hltas_to_str;
-use fluent_templates::Loader;
-use hltas_cleaner::cleaners;
 use home::home_dir;
 use imgui::{
     Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window, WindowFlags,
@@ -114,7 +111,7 @@ impl MainGUI {
     pub fn open_file(&mut self, path: &Path) {
         // check for dupe tab and switch to it if found
         for (i, tab) in self.tabs.iter().enumerate() {
-            if let Some(tab_path) = &tab.borrow().path {
+            if let Some(tab_path) = tab.borrow().path() {
                 if tab_path == path {
                     // dupe found
                     if self.options.auto_switch_new_tab() {
@@ -149,12 +146,6 @@ impl MainGUI {
         }
     }
 
-    fn ask_hltas_save_location() -> Result<Option<PathBuf>, native_dialog::Error> {
-        FileDialog::new()
-            .add_filter("HLTAS Files", &["hltas"])
-            .show_save_single_file()
-    }
-
     pub fn save_current_tab(&self, warn_user: Option<String>) -> Result<(), std::io::Error> {
         if let Some(tab) = &self.current_tab {
             self.save_tab(warn_user, &mut tab.borrow_mut())?;
@@ -183,25 +174,14 @@ impl MainGUI {
             }
         }
 
-        if let Some(path) = &tab.path {
-            // save_path = Some(path.to_owned());
-            fs::write(path, hltas_to_str(&tab.hltas))?;
-            tab.got_modified = false;
-        } else {
-            // no file, save as new file
-            if let Ok(Some(path)) = Self::ask_hltas_save_location() {
-                fs::write(&path, hltas_to_str(&tab.hltas))?;
-                tab.title =
-                    HLTASFileTab::title_from_path(&path, &self.options.locale_lang().get_lang());
-            }
-        }
+        tab.write_hltas_to_file(&self.options.locale_lang())?;
 
         Ok(())
     }
 
     pub fn close_current_tab(&mut self) {
         let remove_index = if let Some(tab) = &self.current_tab {
-            let got_modified = tab.borrow().got_modified;
+            let got_modified = tab.borrow().tab_menu_data.is_modified();
             if got_modified
                 && self
                     .save_current_tab(Some(
@@ -233,7 +213,7 @@ impl MainGUI {
         {
             let mut tab = self.tabs[index].borrow_mut();
 
-            if tab.got_modified
+            if tab.tab_menu_data.is_modified()
                 && self
                     .save_tab(
                         Some(
@@ -327,29 +307,30 @@ impl MainGUI {
                         .build(ui)
                     {
                         if let Some(current_tab) = &self.current_tab {
-                            current_tab.borrow_mut().tab_menu_data.select_all_indexes();
+                            current_tab.borrow_mut().select_all_lines();
                         }
                     }
                 },
             );
-            ui.menu(
-                self.options.locale_lang().get_string_from_id("tools-menu"),
-                || {
-                    if MenuItem::new(
-                        self.options
-                            .locale_lang()
-                            .get_string_from_id("hltas-cleaner"),
-                    )
-                    .build(ui)
-                    {
-                        // TODO show options
-                        if let Some(current_tab) = &self.current_tab {
-                            cleaners::no_dupe_framebulks(&mut current_tab.borrow_mut().hltas);
-                            current_tab.borrow_mut().got_modified = true;
-                        }
-                    }
-                },
-            );
+            // ui.menu(
+            //     self.options.locale_lang().get_string_from_id("tools-menu"),
+            //     || {
+            //         if MenuItem::new(
+            //             self.options
+            //                 .locale_lang()
+            //                 .get_string_from_id("hltas-cleaner"),
+            //         )
+            //         .build(ui)
+            //         {
+            //             // TODO show options
+            //             // TODO think of how to make the hltas mutable borrow work
+            //             // if let Some(current_tab) = &self.current_tab {
+            //             //     cleaners::no_dupe_framebulks(&mut current_tab.borrow_mut().hltas);
+            //             //     current_tab.borrow_mut().got_modified();
+            //             // }
+            //         }
+            //     },
+            // );
 
             ui.menu(
                 self.options
@@ -422,7 +403,7 @@ impl MainGUI {
                                 self.current_tab = Some(Rc::clone(tab));
                             }
 
-                            if tab.borrow().got_modified {
+                            if tab.borrow().tab_menu_data.is_modified() {
                                 flags = flags.union(TabItemFlags::UNSAVED_DOCUMENT);
                             }
 
@@ -431,7 +412,7 @@ impl MainGUI {
 
                         let mut opened = true;
 
-                        TabItem::new(format!("{}##tab_{}", &tab.borrow().title, i))
+                        TabItem::new(format!("{}##tab_{}", &tab.borrow().title(), i))
                             .flags(flags)
                             .opened(&mut opened)
                             .build(ui, || {

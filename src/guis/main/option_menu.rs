@@ -2,7 +2,7 @@ use std::num::{IntErrorKind, ParseIntError};
 
 use fluent_templates::Loader;
 use hltas::types::LeaveGroundActionSpeed;
-use imgui::{ComboBox, InputText, Selectable, StyleColor, Ui};
+use imgui::{ColorEdit, ComboBox, InputText, Selectable, StyleColor, Ui};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -19,6 +19,7 @@ pub struct AppOptions {
     locale_lang: LocaleLang,
     auto_switch_new_tab: bool,
     default_comment: String,
+    comment_colour: [f32; 4],
 }
 
 impl AppOptions {
@@ -51,6 +52,11 @@ impl AppOptions {
     pub fn default_comment(&self) -> &str {
         &self.default_comment
     }
+
+    /// Get a reference to the app options's comment colour.
+    pub fn comment_colour(&self) -> [f32; 4] {
+        self.comment_colour
+    }
 }
 
 impl Default for AppOptions {
@@ -62,6 +68,7 @@ impl Default for AppOptions {
             locale_lang: LocaleLang::new(None),
             auto_switch_new_tab: true,
             default_comment: "".to_string(),
+            comment_colour: [0.0, 1.0, 0.0, 1.0],
         }
     }
 }
@@ -275,16 +282,32 @@ pub fn show_option_menu(
                 .ducktap_lgagst_option
                 .show_ui(ui, "ducktap_lgagst");
             ui.unindent();
+            ui.dummy([0.0, 15.0]);
             ui.text("default comment");
             ui.indent();
+            // let comment_frame_bg =
+            // ui.push_style_color(StyleColor::FrameBg, [0.0, 0.0, 0.0, 0.0]);
+            let comment_colour = ui.push_style_color(StyleColor::Text, app_settings.comment_colour);
             let default_comment_changed = InputText::new(
                 ui,
                 "##default_comment_option",
                 &mut app_settings.default_comment,
             )
             .build();
+            comment_colour.pop();
+            ui.unindent();
+            ui.text("comment colour");
+            ui.indent();
+            let comment_color_changed =
+                ColorEdit::new("comment colour", &mut app_settings.comment_colour)
+                    .label(false)
+                    .build(ui);
+            ui.unindent();
 
-            jump_lgagst_option_changed || ducktap_lgagst_option_changed || default_comment_changed
+            jump_lgagst_option_changed
+                || ducktap_lgagst_option_changed
+                || default_comment_changed
+                || comment_color_changed
         }
     };
 

@@ -596,9 +596,8 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
                     Line::Comment(comment) => {
                         let comment_frame_bg =
                             ui.push_style_color(StyleColor::FrameBg, [0.0, 0.0, 0.0, 0.0]);
-                        // TODO customizable comment colour
                         let comment_colour =
-                            ui.push_style_color(StyleColor::Text, [0.0, 1.0, 0.0, 1.0]);
+                            ui.push_style_color(StyleColor::Text, options.comment_colour());
 
                         let comment_edited =
                             InputText::new(ui, format!("##comment_editor{}", i), comment).build();
@@ -743,7 +742,6 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
                         let drag_size_token = ui.push_item_width(drag_size);
                         let seconds_edited = Drag::new(format!("s##change_over{}", i))
                             .speed(0.1)
-                            // TODO change limiter option
                             .range(0.001, f32::MAX)
                             .build(ui, &mut change.over);
                         drag_size_token.pop(ui);

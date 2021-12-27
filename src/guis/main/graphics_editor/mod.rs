@@ -240,7 +240,6 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
             ),
             // TODO custom save name
             ("save", Line::Save("buffer".to_string())),
-            // TODO default seed
             ("shared seed", Line::SharedSeed(0)),
             (
                 "buttons",

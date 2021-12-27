@@ -141,6 +141,21 @@ impl<'a> HLTASFileTab {
     pub fn title(&self) -> &str {
         self.title.as_ref()
     }
+
+    pub fn get_selected_lines(&self) -> Vec<&Line> {
+        self.hltas
+            .lines
+            .iter()
+            .enumerate()
+            .filter_map(|(i, line)| {
+                if self.tab_menu_data.is_index_selected(i) {
+                    Some(line)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+    }
 }
 
 /// Struct to keep track of some menu states for the hltas object in the tab
@@ -172,6 +187,10 @@ impl HLTASMenuState {
             selected_indexes: vec![false; hltas.lines.len()],
             got_modified: false,
         }
+    }
+
+    pub fn is_index_selected(&self, index: usize) -> bool {
+        self.selected_indexes[index]
     }
 
     /// Get a reference to the hltasmenu state's selected indexes.

@@ -15,6 +15,8 @@ use imgui::{
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
+use crate::helpers::hltas::{hltas_to_str, lines_to_str};
+
 use self::graphics_editor::show_graphics_editor;
 use self::option_menu::{AppOptions, OptionMenu};
 use self::tab::HLTASFileTab;
@@ -266,6 +268,21 @@ impl MainGUI {
             ui.menu(
                 self.options.locale_lang().get_string_from_id("edit-menu"),
                 || {
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("copy"))
+                        .build(ui)
+                    {
+                        if let Some(current_tab) = &self.current_tab {
+                            ui.set_clipboard_text(lines_to_str(
+                                current_tab
+                                    .borrow()
+                                    .get_selected_lines()
+                                    .iter()
+                                    .map(|&line| line.to_owned())
+                                    .collect::<Vec<_>>(),
+                            ));
+                        }
+                    }
+
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("select-all"))
                         .build(ui)
                     {

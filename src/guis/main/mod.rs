@@ -6,20 +6,17 @@ mod property_string_field;
 mod tab;
 
 use std::cell::RefCell;
-use std::env;
-use std::error::Error;
 use std::path::Path;
 use std::rc::Rc;
 use std::{collections::VecDeque, fs, path::PathBuf};
 
-use home::home_dir;
 use imgui::{
     Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window, WindowFlags,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
 use self::graphics_editor::show_graphics_editor;
-use self::option_menu::{show_option_menu, AppOptions, OptionMenuStatus};
+use self::option_menu::{AppOptions, OptionMenu};
 use self::tab::HLTASFileTab;
 
 pub struct MainGUI {
@@ -28,45 +25,13 @@ pub struct MainGUI {
     tab_switch_index: Option<usize>,
     recent_paths: VecDeque<PathBuf>,
     graphics_editor: bool,
-    options_menu_opened: bool,
     options: AppOptions,
-    option_menu_status: OptionMenuStatus,
+    option_menu: OptionMenu,
     #[cfg(debug_assertions)]
     debug_menu_opened: bool,
 }
 
 impl MainGUI {
-    pub fn get_save_dir() -> Result<PathBuf, std::io::Error> {
-        let mut save_dir = match home_dir() {
-            Some(home_dir) => home_dir,
-            None => env::current_dir()?,
-        };
-
-        save_dir.push("hltas-editor");
-
-        if !save_dir.exists() {
-            fs::create_dir(&save_dir)?;
-        }
-
-        Ok(save_dir)
-    }
-
-    pub fn option_path() -> Result<PathBuf, std::io::Error> {
-        Ok(Self::get_save_dir()?.join("options.json"))
-    }
-
-    pub fn save_options(&self) -> Result<(), std::io::Error> {
-        let option_data = serde_json::to_string(&self.options).unwrap();
-        fs::write(Self::option_path()?, &option_data)?;
-        Ok(())
-    }
-
-    pub fn load_options(&mut self) -> Result<(), Box<dyn Error>> {
-        let option_data = fs::read_to_string(Self::option_path()?)?;
-        self.options = serde_json::from_str(&option_data)?;
-        Ok(())
-    }
-
     pub fn new_file(&mut self) {
         let new_tab = HLTASFileTab::new_file(&self.options.locale_lang().get_lang());
         self.tabs.push(Rc::new(RefCell::new(new_tab)));
@@ -353,7 +318,7 @@ impl MainGUI {
                     )
                     .build(ui)
                     {
-                        self.options_menu_opened = !self.options_menu_opened;
+                        self.option_menu.open();
                     }
                 },
             );
@@ -381,7 +346,7 @@ impl MainGUI {
             .resizable(false)
             .title_bar(false)
             .scrollable(false)
-            .bring_to_front_on_focus(!self.options_menu_opened)
+            .bring_to_front_on_focus(!self.option_menu.is_opened())
             .build(ui, || {
                 TabBar::new("file_tabs").reorderable(true).build(ui, || {
                     let mut new_tab = None;
@@ -456,7 +421,7 @@ impl MainGUI {
             .resizable(false)
             .title_bar(false)
             .horizontal_scrollbar(true)
-            .bring_to_front_on_focus(!self.options_menu_opened)
+            .bring_to_front_on_focus(!self.option_menu.is_opened())
             .build(ui, || {
                 if self.graphics_editor {
                     if let Some(tab) = &self.current_tab {
@@ -472,19 +437,18 @@ impl MainGUI {
         window_min_size_token.pop();
 
         {
-            // TODO merge option menu status with options menu opened so it flushes status when re-opened
-            let options_menu_opened = &mut self.options_menu_opened;
+            let mut options_menu_opened = self.option_menu.is_opened();
             let options = &mut self.options;
-            let option_menu_status = &mut self.option_menu_status;
+            let option_menu = &mut self.option_menu;
 
-            if *options_menu_opened {
+            if options_menu_opened {
                 Window::new("options##options_menu")
-                    .flags(if option_menu_status.modified() {
+                    .flags(if option_menu.modified() {
                         WindowFlags::UNSAVED_DOCUMENT
                     } else {
                         WindowFlags::empty()
                     })
-                    .opened(options_menu_opened)
+                    .opened(&mut options_menu_opened)
                     .position(
                         {
                             let display_size = ui.io().display_size;
@@ -498,26 +462,14 @@ impl MainGUI {
                     .position_pivot([0.5, 0.5])
                     .size([500.0, 400.0], Condition::Always)
                     .build(ui, || {
-                        show_option_menu(ui, options, option_menu_status);
+                        option_menu.show(ui, options);
                     });
             }
 
-            if !self.options_menu_opened {
-                option_menu_status.revert(options);
+            if !options_menu_opened {
+                option_menu.revert(options);
+                option_menu.close();
             }
-        }
-
-        if self.option_menu_status.requires_save() {
-            if let Err(err) = self.save_options() {
-                native_dialog::MessageDialog::new()
-                    .set_title(&self.options.locale_lang().get_string_from_id("error"))
-                    .set_type(native_dialog::MessageType::Error)
-                    .set_text(&err.to_string())
-                    .show_alert()
-                    .ok();
-            }
-
-            self.option_menu_status.saved();
         }
 
         #[cfg(debug_assertions)]
@@ -527,18 +479,25 @@ impl MainGUI {
     }
 
     pub fn init() -> Self {
-        let mut main_gui = Self::default();
+        let main_gui = MainGUI::default();
+        let options = match AppOptions::load_options() {
+            Ok(app_options) => app_options,
+            Err(err) => {
+                MessageDialog::new()
+                    .set_title(&main_gui.options.locale_lang().get_string_from_id("error"))
+                    .set_type(MessageType::Error)
+                    .set_text(&err.to_string())
+                    .show_alert()
+                    .ok();
 
-        if let Err(err) = main_gui.load_options() {
-            MessageDialog::new()
-                .set_title(&main_gui.options.locale_lang().get_string_from_id("error"))
-                .set_type(MessageType::Error)
-                .set_text(&err.to_string())
-                .show_alert()
-                .ok();
+                AppOptions::default()
+            }
+        };
+
+        Self {
+            options,
+            ..main_gui
         }
-
-        main_gui
     }
 }
 
@@ -557,9 +516,8 @@ impl Default for MainGUI {
             tab_switch_index: None,
             recent_paths: VecDeque::new(),
             graphics_editor: true,
-            options_menu_opened: false,
             options,
-            option_menu_status: OptionMenuStatus::default(),
+            option_menu: OptionMenu::default(),
             #[cfg(debug_assertions)]
             debug_menu_opened: false,
         }

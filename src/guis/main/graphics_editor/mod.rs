@@ -262,7 +262,6 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
             // TODO default lgagstminspd
             // TODO maybe grab from previous
             Line::LGAGSTMinSpeed(30.0),
-            // TODO default seed
             Line::Reset { non_shared_seed: 0 },
             Line::Comment(options.default_comment().to_string()),
             // TODO maybe check previous vectorial strafing and toggle

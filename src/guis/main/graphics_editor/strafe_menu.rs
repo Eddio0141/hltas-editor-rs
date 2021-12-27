@@ -68,10 +68,7 @@ pub fn show_strafe_menu(
                                     // TODO make this an option to auto select direction for each strafe type
                                     dir: match strafe_type {
                                         StrafeType::MaxDeccel => StrafeDir::Best,
-                                        _ => {
-                                            // TODO store "default" yaw value somewhere
-                                            StrafeDir::Yaw(prev_yaw.unwrap_or(0.0))
-                                        }
+                                        _ => StrafeDir::Yaw(prev_yaw.unwrap_or(0.0)),
                                     },
                                 }));
                         }

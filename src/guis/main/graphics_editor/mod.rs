@@ -259,9 +259,8 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
                 ground_left: Button::Left,
                 ground_right: Button::Right,
             }),
-            // TODO default lgagstminspd
-            // TODO maybe grab from previous
-            Line::LGAGSTMinSpeed(30.0),
+            // TODO grab previous frame
+            Line::LGAGSTMinSpeed(options.lgagst_min_speed()),
             Line::Reset { non_shared_seed: 0 },
             Line::Comment(options.default_comment().to_string()),
             // TODO maybe check previous vectorial strafing and toggle

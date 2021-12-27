@@ -7,7 +7,7 @@ use std::{
 use fluent_templates::Loader;
 use hltas::types::LeaveGroundActionSpeed;
 use home::home_dir;
-use imgui::{ColorEdit, ComboBox, InputText, Selectable, StyleColor, Ui};
+use imgui::{ColorEdit, ComboBox, InputFloat, InputText, Selectable, StyleColor, Ui};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -25,6 +25,8 @@ pub struct AppOptions {
     auto_switch_new_tab: bool,
     default_comment: String,
     comment_colour: [f32; 4],
+    lgagst_min_speed: f32,
+    lgagst_min_speed_grab_prev: bool,
 }
 
 impl AppOptions {
@@ -56,6 +58,11 @@ impl AppOptions {
     pub fn load_options() -> Result<Self, Box<dyn std::error::Error>> {
         let option_data = fs::read_to_string(Self::option_path()?)?;
         Ok(serde_json::from_str(&option_data)?)
+    }
+
+    /// Get a reference to the app options's lgagst min speed.
+    pub fn lgagst_min_speed(&self) -> f32 {
+        self.lgagst_min_speed
     }
 }
 
@@ -106,6 +113,8 @@ impl Default for AppOptions {
             auto_switch_new_tab: true,
             default_comment: "".to_string(),
             comment_colour: [0.0, 1.0, 0.0, 1.0],
+            lgagst_min_speed: 30.0,
+            lgagst_min_speed_grab_prev: true,
         }
     }
 }
@@ -121,8 +130,8 @@ enum LeaveGroundActionSpeedDef {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LgagstOption {
     #[serde(with = "LeaveGroundActionSpeedDef")]
-    pub default_selection: LeaveGroundActionSpeed,
-    pub copy_previous_framebulk: bool,
+    default_selection: LeaveGroundActionSpeed,
+    copy_previous_framebulk: bool,
 }
 
 impl Default for LgagstOption {
@@ -156,6 +165,16 @@ impl LgagstOption {
         );
 
         lgagst_option_changed || copy_prev_framebulk_checkbox_clicked
+    }
+
+    /// Get a reference to the lgagst option's default selection.
+    pub fn default_selection(&self) -> LeaveGroundActionSpeed {
+        self.default_selection
+    }
+
+    /// Get a reference to the lgagst option's copy previous framebulk.
+    pub fn copy_previous_framebulk(&self) -> bool {
+        self.copy_previous_framebulk
     }
 }
 
@@ -307,6 +326,8 @@ impl OptionMenu {
                 recent_path_size_edited || auto_switch_new_tab_edited
             }
             Category::LineOption => {
+                ui.columns(2, "line option table", false);
+
                 ui.text("jump lgagst default option");
                 ui.indent();
                 let jump_lgagst_option_changed =
@@ -341,10 +362,28 @@ impl OptionMenu {
                         .build(ui);
                 ui.unindent();
 
+                ui.next_column();
+
+                ui.text("default lgagst min speed");
+                ui.indent();
+                let lgagst_min_speed_changed = InputFloat::new(
+                    ui,
+                    "##lgagst_min_spd_default",
+                    &mut app_settings.lgagst_min_speed,
+                )
+                .build();
+                let lgagst_min_speed_grab_prev_changed = ui.checkbox(
+                    "grab from previous line",
+                    &mut app_settings.lgagst_min_speed_grab_prev,
+                );
+                ui.unindent();
+
                 jump_lgagst_option_changed
                     || ducktap_lgagst_option_changed
                     || default_comment_changed
                     || comment_color_changed
+                    || lgagst_min_speed_changed
+                    || lgagst_min_speed_grab_prev_changed
             }
         };
 
@@ -359,6 +398,8 @@ impl OptionMenu {
                 - ui.calc_text_size("")[1]
                 - style.frame_padding[1] * 2.0
         }]);
+
+        ui.columns(1, "save column", false);
 
         if ui.button("Save") {
             self.option_menu_before = None;

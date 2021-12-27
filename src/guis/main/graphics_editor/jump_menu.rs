@@ -173,7 +173,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
                     Some(leave_ground_action) => leave_ground_action.speed,
                     None => {
                         // TODO copy framebulk option thing
-                        options.ducktap_lgagst_option().default_selection
+                        options.ducktap_lgagst_option().default_selection()
                     }
                 },
                 times: Times::UnlimitedWithinFrameBulk,
@@ -193,7 +193,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
                     Some(leave_ground_action) => leave_ground_action.speed,
                     None => {
                         // TODO copy framebulk option thing
-                        options.jump_lgagst_option().default_selection
+                        options.jump_lgagst_option().default_selection()
                     }
                 },
                 times: Times::UnlimitedWithinFrameBulk,

@@ -64,6 +64,11 @@ impl AppOptions {
     pub fn lgagst_min_speed(&self) -> f32 {
         self.lgagst_min_speed
     }
+
+    /// Get a reference to the app options's lgagst min speed grab prev.
+    pub fn lgagst_min_speed_grab_prev(&self) -> bool {
+        self.lgagst_min_speed_grab_prev
+    }
 }
 
 impl AppOptions {
@@ -225,10 +230,10 @@ impl OptionMenu {
         self.opened = false;
     }
 
-    pub fn show(&mut self, ui: &Ui, app_settings: &mut AppOptions) {
+    pub fn show(&mut self, ui: &Ui, app_options: &mut AppOptions) {
         // back up option before modifying
         if self.option_menu_before.is_none() {
-            self.option_menu_before = Some(app_settings.clone());
+            self.option_menu_before = Some(app_options.clone());
         }
 
         let button_label_pairs = vec![
@@ -263,31 +268,31 @@ impl OptionMenu {
 
         let modified = match self.category_selection {
             Category::Language => {
-                let mut use_system_lang = app_settings.locale_lang.is_using_system_lang();
+                let mut use_system_lang = app_options.locale_lang.is_using_system_lang();
                 let changed_using_system_lang =
                     ui.checkbox("use system language", &mut use_system_lang);
                 if changed_using_system_lang {
                     if use_system_lang {
-                        app_settings.locale_lang.use_system_lang();
+                        app_options.locale_lang.use_system_lang();
                     } else {
-                        app_settings
+                        app_options
                             .locale_lang
-                            .set_lang(&app_settings.locale_lang().get_lang());
+                            .set_lang(&app_options.locale_lang().get_lang());
                     }
                 }
 
                 let option_menu_changed = ComboBox::new("language##option_menu")
-                    .preview_value(app_settings.locale_lang.get_lang().to_string())
+                    .preview_value(app_options.locale_lang.get_lang().to_string())
                     .build(ui, || {
                         let mut combo_box_changed = false;
                         for locale in LOCALES.locales() {
                             let selectable_clicked =
                                 Selectable::new(format!("{}##option_menu", locale.to_string()))
-                                    .selected(app_settings.locale_lang.get_lang() == *locale)
+                                    .selected(app_options.locale_lang.get_lang() == *locale)
                                     .build(ui);
 
                             if selectable_clicked {
-                                app_settings.locale_lang.set_lang(locale);
+                                app_options.locale_lang.set_lang(locale);
                                 combo_box_changed = true;
                             }
                         }
@@ -300,7 +305,7 @@ impl OptionMenu {
                 changed_using_system_lang || option_menu_changed
             }
             Category::MenuOption => {
-                let mut recent_path_size = app_settings.recent_path_size.to_string();
+                let mut recent_path_size = app_options.recent_path_size.to_string();
                 let recent_path_size_edited =
                     InputText::new(ui, "recent path size", &mut recent_path_size)
                         .chars_decimal(true)
@@ -308,7 +313,7 @@ impl OptionMenu {
                         .build();
 
                 if recent_path_size_edited {
-                    app_settings.recent_path_size =
+                    app_options.recent_path_size =
                         recent_path_size
                             .parse()
                             .unwrap_or_else(|err: ParseIntError| match err.kind() {
@@ -320,7 +325,7 @@ impl OptionMenu {
 
                 let auto_switch_new_tab_edited = ui.checkbox(
                     "auto switch to new tab",
-                    &mut app_settings.auto_switch_new_tab,
+                    &mut app_options.auto_switch_new_tab,
                 );
 
                 recent_path_size_edited || auto_switch_new_tab_edited
@@ -331,11 +336,11 @@ impl OptionMenu {
                 ui.text("jump lgagst default option");
                 ui.indent();
                 let jump_lgagst_option_changed =
-                    app_settings.jump_lgagst_option.show_ui(ui, "jump_lgagst");
+                    app_options.jump_lgagst_option.show_ui(ui, "jump_lgagst");
                 ui.unindent();
                 ui.text("ducktap lgagst default option");
                 ui.indent();
-                let ducktap_lgagst_option_changed = app_settings
+                let ducktap_lgagst_option_changed = app_options
                     .ducktap_lgagst_option
                     .show_ui(ui, "ducktap_lgagst");
                 ui.unindent();
@@ -345,11 +350,11 @@ impl OptionMenu {
                 // let comment_frame_bg =
                 // ui.push_style_color(StyleColor::FrameBg, [0.0, 0.0, 0.0, 0.0]);
                 let comment_colour =
-                    ui.push_style_color(StyleColor::Text, app_settings.comment_colour);
+                    ui.push_style_color(StyleColor::Text, app_options.comment_colour);
                 let default_comment_changed = InputText::new(
                     ui,
                     "##default_comment_option",
-                    &mut app_settings.default_comment,
+                    &mut app_options.default_comment,
                 )
                 .build();
                 comment_colour.pop();
@@ -357,7 +362,7 @@ impl OptionMenu {
                 ui.text("comment colour");
                 ui.indent();
                 let comment_color_changed =
-                    ColorEdit::new("comment colour", &mut app_settings.comment_colour)
+                    ColorEdit::new("comment colour", &mut app_options.comment_colour)
                         .label(false)
                         .build(ui);
                 ui.unindent();
@@ -369,12 +374,12 @@ impl OptionMenu {
                 let lgagst_min_speed_changed = InputFloat::new(
                     ui,
                     "##lgagst_min_spd_default",
-                    &mut app_settings.lgagst_min_speed,
+                    &mut app_options.lgagst_min_speed,
                 )
                 .build();
                 let lgagst_min_speed_grab_prev_changed = ui.checkbox(
                     "grab from previous line",
-                    &mut app_settings.lgagst_min_speed_grab_prev,
+                    &mut app_options.lgagst_min_speed_grab_prev,
                 );
                 ui.unindent();
 
@@ -405,9 +410,9 @@ impl OptionMenu {
             self.option_menu_before = None;
             self.modified = false;
 
-            if let Err(err) = app_settings.save_options() {
+            if let Err(err) = app_options.save_options() {
                 native_dialog::MessageDialog::new()
-                    .set_title(&app_settings.locale_lang().get_string_from_id("error"))
+                    .set_title(&app_options.locale_lang().get_string_from_id("error"))
                     .set_type(native_dialog::MessageType::Error)
                     .set_text(&err.to_string())
                     .show_alert()
@@ -416,7 +421,12 @@ impl OptionMenu {
         }
         ui.same_line();
         if ui.button("Cancel") {
-            self.revert(app_settings);
+            self.revert(app_options);
+        }
+        ui.same_line();
+        if ui.button("Default") {
+            *app_options = AppOptions::default();
+            self.modified = true;
         }
     }
 }

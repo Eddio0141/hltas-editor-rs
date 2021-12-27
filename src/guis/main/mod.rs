@@ -139,9 +139,7 @@ impl MainGUI {
             }
         }
 
-        tab.write_hltas_to_file(&self.options.locale_lang())?;
-
-        Ok(())
+        tab.write_hltas_to_file(self.options.locale_lang())
     }
 
     pub fn close_current_tab(&mut self) {

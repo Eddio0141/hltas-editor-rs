@@ -8,7 +8,7 @@ fn get_fallback_lang() -> LanguageIdentifier {
     "en-US".parse::<LanguageIdentifier>().unwrap()
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct LocaleLang {
     lang: Option<LanguageIdentifier>,
 }
@@ -44,12 +44,6 @@ impl LocaleLang {
 
     pub fn get_string_from_id(&self, text_id: &str) -> String {
         LOCALES.lookup(&self.get_lang(), text_id)
-    }
-}
-
-impl Default for LocaleLang {
-    fn default() -> Self {
-        Self { lang: None }
     }
 }
 

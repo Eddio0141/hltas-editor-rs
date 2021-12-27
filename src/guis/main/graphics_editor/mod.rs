@@ -808,11 +808,9 @@ pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOption
                     new_line_menu_clicked_on_line = true;
                     ui.open_popup(new_line_menu_id);
                 }
-            } else {
-                if !new_line_menu_clicked_on_line && ui.is_mouse_clicked(MouseButton::Right) {
-                    tab_menu_data.right_click_elsewhere();
-                    ui.open_popup(new_line_menu_id);
-                }
+            } else if !new_line_menu_clicked_on_line && ui.is_mouse_clicked(MouseButton::Right) {
+                tab_menu_data.right_click_elsewhere();
+                ui.open_popup(new_line_menu_id);
             }
 
             let draw_list = ui.get_window_draw_list();

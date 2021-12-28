@@ -171,10 +171,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
             framebulk.auto_actions.leave_ground_action = Some(LeaveGroundAction {
                 speed: match framebulk.auto_actions.leave_ground_action {
                     Some(leave_ground_action) => leave_ground_action.speed,
-                    None => {
-                        // TODO copy framebulk option thing
-                        options.ducktap_lgagst_option().default_selection()
-                    }
+                    None => options.ducktap_lgagst_option().default_selection(),
                 },
                 times: Times::UnlimitedWithinFrameBulk,
                 type_: LeaveGroundActionType::DuckTap { zero_ms: true },
@@ -191,10 +188,7 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
             framebulk.auto_actions.leave_ground_action = Some(LeaveGroundAction {
                 speed: match framebulk.auto_actions.leave_ground_action {
                     Some(leave_ground_action) => leave_ground_action.speed,
-                    None => {
-                        // TODO copy framebulk option thing
-                        options.jump_lgagst_option().default_selection()
-                    }
+                    None => options.jump_lgagst_option().default_selection(),
                 },
                 times: Times::UnlimitedWithinFrameBulk,
                 type_: LeaveGroundActionType::Jump,

@@ -17,6 +17,7 @@ use crate::{
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AppOptions {
+    copy_previous_framebulk: bool,
     jump_lgagst_option: LgagstOption,
     ducktap_lgagst_option: LgagstOption,
     recent_path_size: usize,
@@ -69,6 +70,11 @@ impl AppOptions {
     pub fn lgagst_min_speed_grab_prev(&self) -> bool {
         self.lgagst_min_speed_grab_prev
     }
+
+    /// Get a reference to the app options's copy previous framebulk.
+    pub fn copy_previous_framebulk(&self) -> bool {
+        self.copy_previous_framebulk
+    }
 }
 
 impl AppOptions {
@@ -111,6 +117,7 @@ impl AppOptions {
 impl Default for AppOptions {
     fn default() -> Self {
         Self {
+            copy_previous_framebulk: true,
             jump_lgagst_option: Default::default(),
             ducktap_lgagst_option: Default::default(),
             recent_path_size: 20,
@@ -136,14 +143,12 @@ enum LeaveGroundActionSpeedDef {
 pub struct LgagstOption {
     #[serde(with = "LeaveGroundActionSpeedDef")]
     default_selection: LeaveGroundActionSpeed,
-    copy_previous_framebulk: bool,
 }
 
 impl Default for LgagstOption {
     fn default() -> Self {
         Self {
             default_selection: LeaveGroundActionSpeed::Optimal,
-            copy_previous_framebulk: true,
         }
     }
 }
@@ -164,22 +169,12 @@ impl LgagstOption {
             &format!("lgagst_option_lgagst_selection{}", id),
         );
 
-        let copy_prev_framebulk_checkbox_clicked = ui.checkbox(
-            format!("copy previous framebulk##{}", id),
-            &mut self.copy_previous_framebulk,
-        );
-
-        lgagst_option_changed || copy_prev_framebulk_checkbox_clicked
+        lgagst_option_changed
     }
 
     /// Get a reference to the lgagst option's default selection.
     pub fn default_selection(&self) -> LeaveGroundActionSpeed {
         self.default_selection
-    }
-
-    /// Get a reference to the lgagst option's copy previous framebulk.
-    pub fn copy_previous_framebulk(&self) -> bool {
-        self.copy_previous_framebulk
     }
 }
 
@@ -333,6 +328,11 @@ impl OptionMenu {
             Category::LineOption => {
                 ui.columns(2, "line option table", false);
 
+                let copy_previous_framebulk_changed = ui.checkbox(
+                    "copy previous framebulk",
+                    &mut app_options.copy_previous_framebulk,
+                );
+                ui.dummy([0.0, 15.0]);
                 ui.text("jump lgagst default option");
                 ui.indent();
                 let jump_lgagst_option_changed =
@@ -383,7 +383,8 @@ impl OptionMenu {
                 );
                 ui.unindent();
 
-                jump_lgagst_option_changed
+                copy_previous_framebulk_changed
+                    || jump_lgagst_option_changed
                     || ducktap_lgagst_option_changed
                     || default_comment_changed
                     || comment_color_changed

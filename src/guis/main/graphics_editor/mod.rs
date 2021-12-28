@@ -212,6 +212,11 @@ pub fn show_graphics_editor(
 
     let new_line_menu_id = "new_line_menu";
     ui.popup(new_line_menu_id, || {
+        let previous_lines = match tab.tab_menu_data.right_click_popup_index() {
+            Some(index) => Some(tab.hltas.lines[..index + 1].iter().rev()),
+            None => None,
+        };
+
         // TODO option for what to choose here
         let name_and_types = vec![
             (
@@ -259,11 +264,32 @@ pub fn show_graphics_editor(
                     ground_right: Button::Right,
                 }),
             ),
-            // TODO grab previous frame
-            (
-                "lgagst min spd",
-                Line::LGAGSTMinSpeed(options.lgagst_min_speed()),
-            ),
+            ("lgagst min spd", {
+                let options_lgagst_min_spd = Line::LGAGSTMinSpeed(options.lgagst_min_speed());
+
+                if options.lgagst_min_speed_grab_prev() {
+                    if let Some(mut previous_lines) = previous_lines {
+                        if let Some(Line::LGAGSTMinSpeed(lgagst_min_spd)) =
+                            previous_lines.find(|&line| {
+                                if let Line::LGAGSTMinSpeed(_) = *line {
+                                    true
+                                } else {
+                                    false
+                                }
+                            })
+                        {
+                            println!("{}", lgagst_min_spd);
+                            Line::LGAGSTMinSpeed(*lgagst_min_spd)
+                        } else {
+                            options_lgagst_min_spd
+                        }
+                    } else {
+                        options_lgagst_min_spd
+                    }
+                } else {
+                    options_lgagst_min_spd
+                }
+            }),
             ("non-shared seed", Line::Reset { non_shared_seed: 0 }),
             (
                 "comment",

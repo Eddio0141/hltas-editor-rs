@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 hltas-cleaner = { git = "https://github.com/Eddio0141/hltas-cleaner/", branch = "master" }
 hltas = { git = "https://github.com/HLTAS/hltas", branch = "master" }
-native-dialog = "0.5.5"
+native-dialog = "0.6.1"
 fluent-templates = "0.6.1"
 locale_config = "0.3.0"
 unic-langid-impl = "0.9.0"
@@ -18,7 +18,7 @@ glium = "0.30.2"
 image = "0.23"
 imgui-glium-renderer = "0.8.0"
 imgui-winit-support = "0.8.0"
-winit = "0.25.0"
+winit = "0.26.0"
 home = "0.5.3"
 serde = { version = "1.0.132", features = ["derive"] }
 serde_json = "1.0"

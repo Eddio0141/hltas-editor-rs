@@ -309,7 +309,7 @@ impl MainGUI {
             let paste_key = KeyCombination::new(VirtualKeyCode::V).ctrl();
             let select_all_key = KeyCombination::new(VirtualKeyCode::A).ctrl();
 
-            if copy_key.just_pressed(&self.keyboard_state) {
+            let copy = || {
                 if let Some(current_tab) = &self.current_tab {
                     ui.set_clipboard_text(lines_to_str(
                         current_tab
@@ -320,26 +320,7 @@ impl MainGUI {
                             .collect::<Vec<_>>(),
                     ));
                 }
-            }
-            if select_all_key.just_pressed(&self.keyboard_state) {
-                if let Some(current_tab) = &self.current_tab {
-                    current_tab.borrow_mut().select_all_lines();
-                }
-            }
-            if cut_key.just_pressed(&self.keyboard_state) {
-                if let Some(current_tab) = &self.current_tab {
-                    ui.set_clipboard_text(lines_to_str(
-                        current_tab
-                            .borrow()
-                            .get_selected_lines()
-                            .iter()
-                            .map(|&line| line.to_owned())
-                            .collect::<Vec<_>>(),
-                    ));
-
-                    current_tab.borrow_mut().remove_selected_lines();
-                }
-            }
+            };
             let paste = || {
                 if let Some(current_tab) = &self.current_tab {
                     if let Some(clipboard) = ui.clipboard_text() {
@@ -364,10 +345,38 @@ impl MainGUI {
                     }
                 }
             };
+            let select_all = || {
+                if let Some(current_tab) = &self.current_tab {
+                    current_tab.borrow_mut().select_all_lines();
+                }
+            };
+            let cut = || {
+                if let Some(current_tab) = &self.current_tab {
+                    ui.set_clipboard_text(lines_to_str(
+                        current_tab
+                            .borrow()
+                            .get_selected_lines()
+                            .iter()
+                            .map(|&line| line.to_owned())
+                            .collect::<Vec<_>>(),
+                    ));
+
+                    current_tab.borrow_mut().remove_selected_lines();
+                }
+            };
+
+            if copy_key.just_pressed(&self.keyboard_state) {
+                copy();
+            }
             if paste_key.just_pressed(&self.keyboard_state) {
                 paste();
             }
-
+            if select_all_key.just_pressed(&self.keyboard_state) {
+                select_all();
+            }
+            if cut_key.just_pressed(&self.keyboard_state) {
+                cut();
+            }
 
             ui.menu(
                 self.options.locale_lang().get_string_from_id("edit-menu"),
@@ -376,33 +385,13 @@ impl MainGUI {
                         .shortcut(cut_key.to_string())
                         .build(ui)
                     {
-                        if let Some(current_tab) = &self.current_tab {
-                            ui.set_clipboard_text(lines_to_str(
-                                current_tab
-                                    .borrow()
-                                    .get_selected_lines()
-                                    .iter()
-                                    .map(|&line| line.to_owned())
-                                    .collect::<Vec<_>>(),
-                            ));
-
-                            current_tab.borrow_mut().remove_selected_lines();
-                        }
+                        cut();
                     }
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("copy"))
                         .shortcut(copy_key.to_string())
                         .build(ui)
                     {
-                        if let Some(current_tab) = &self.current_tab {
-                            ui.set_clipboard_text(lines_to_str(
-                                current_tab
-                                    .borrow()
-                                    .get_selected_lines()
-                                    .iter()
-                                    .map(|&line| line.to_owned())
-                                    .collect::<Vec<_>>(),
-                            ));
-                        }
+                        copy();
                     }
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("paste"))
                         .shortcut(paste_key.to_string())
@@ -414,9 +403,7 @@ impl MainGUI {
                         .shortcut(select_all_key.to_string())
                         .build(ui)
                     {
-                        if let Some(current_tab) = &self.current_tab {
-                            current_tab.borrow_mut().select_all_lines();
-                        }
+                        select_all();
                     }
                 },
             );

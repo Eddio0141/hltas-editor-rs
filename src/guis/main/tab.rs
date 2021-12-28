@@ -206,6 +206,10 @@ impl HLTASMenuState {
         self.selected_indexes = vec![true; self.selected_indexes.len()];
     }
 
+    pub fn toggle_index(&mut self, index: usize) {
+        self.selected_indexes[index] = !self.selected_indexes[index];
+    }
+
     pub fn insert_hltas_line(&mut self, index: usize, line: &hltas::types::Line) {
         self.strafe_menu_selections.insert(
             index,

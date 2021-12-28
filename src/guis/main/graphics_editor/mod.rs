@@ -6,7 +6,7 @@ mod jump_menu;
 mod strafe_menu;
 mod yaw_pitch_menu;
 
-use std::{collections::HashMap, num::NonZeroU32};
+use std::num::NonZeroU32;
 
 use hltas::types::{
     Button, Buttons, Change, ChangeTarget, FrameBulk, Line, Seeds, VectorialStrafingConstraints,
@@ -15,6 +15,7 @@ use imgui::{
     CollapsingHeader, ComboBox, Drag, InputFloat, InputText, MouseButton, Selectable, StyleColor,
     Ui,
 };
+use winit::event::VirtualKeyCode;
 
 use crate::{
     guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button},
@@ -29,6 +30,7 @@ use self::{
 
 use super::{
     cmd_editor::show_cmd_editor,
+    key_state::KeyboardState,
     option_menu::AppOptions,
     property_some_none_field::{property_some_none_field_ui, PropertyFieldResult},
     property_string_field::property_string_field_ui,
@@ -38,7 +40,12 @@ use super::{
 // TODO drag speed variables stored somewhere in the function for convinience
 // TODO am I suppose to have translation for those? maybe for some, not all
 // TODO minimal view to limit each line to be easier to read with shortcut
-pub fn show_graphics_editor(ui: &Ui, tab: &mut HLTASFileTab, options: &AppOptions) {
+pub fn show_graphics_editor(
+    ui: &Ui,
+    tab: &mut HLTASFileTab,
+    options: &AppOptions,
+    keyboard_state: &KeyboardState,
+) {
     let properties_edited = if CollapsingHeader::new("Properties")
         .default_open(true)
         .build(ui)

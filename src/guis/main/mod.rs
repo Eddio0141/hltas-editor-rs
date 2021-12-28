@@ -1,5 +1,6 @@
 mod cmd_editor;
 mod graphics_editor;
+mod key_state;
 mod option_menu;
 mod property_some_none_field;
 mod property_string_field;
@@ -15,9 +16,10 @@ use imgui::{
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
-use crate::helpers::hltas::{hltas_to_str, lines_to_str};
+use crate::helpers::hltas::lines_to_str;
 
 use self::graphics_editor::show_graphics_editor;
+use self::key_state::KeyboardState;
 use self::option_menu::{AppOptions, OptionMenu};
 use self::tab::HLTASFileTab;
 
@@ -31,6 +33,7 @@ pub struct MainGUI {
     option_menu: OptionMenu,
     #[cfg(debug_assertions)]
     debug_menu_opened: bool,
+    keyboard_state: KeyboardState,
 }
 
 impl MainGUI {
@@ -201,7 +204,9 @@ impl MainGUI {
         }
     }
 
-    pub fn show(&mut self, _run: &mut bool, ui: &mut Ui) {
+    pub fn show(&mut self, _: &mut bool, ui: &mut Ui) {
+        self.keyboard_state.update(ui.io());
+
         let window_border_size_token = ui.push_style_var(StyleVar::WindowBorderSize(0.0));
         let window_min_size_token = ui.push_style_var(StyleVar::WindowMinSize([1.0, 1.0]));
 
@@ -440,7 +445,12 @@ impl MainGUI {
             .build(ui, || {
                 if self.graphics_editor {
                     if let Some(tab) = &self.current_tab {
-                        show_graphics_editor(ui, &mut tab.borrow_mut(), &self.options);
+                        show_graphics_editor(
+                            ui,
+                            &mut tab.borrow_mut(),
+                            &self.options,
+                            &self.keyboard_state,
+                        );
                     }
                 } else {
                     // show_text_editor(ui);
@@ -535,6 +545,7 @@ impl Default for MainGUI {
             option_menu: OptionMenu::default(),
             #[cfg(debug_assertions)]
             debug_menu_opened: false,
+            keyboard_state: KeyboardState::default(),
         }
     }
 }

@@ -304,10 +304,32 @@ impl MainGUI {
                     );
                 },
             );
+            let copy_key = KeyCombination::new(VirtualKeyCode::C).ctrl();
+            let select_all_key = KeyCombination::new(VirtualKeyCode::A).ctrl();
+
+            if copy_key.just_pressed(&self.keyboard_state) {
+                if let Some(current_tab) = &self.current_tab {
+                    ui.set_clipboard_text(lines_to_str(
+                        current_tab
+                            .borrow()
+                            .get_selected_lines()
+                            .iter()
+                            .map(|&line| line.to_owned())
+                            .collect::<Vec<_>>(),
+                    ));
+                }
+            }
+            if select_all_key.just_pressed(&self.keyboard_state) {
+                if let Some(current_tab) = &self.current_tab {
+                    current_tab.borrow_mut().select_all_lines();
+                }
+            }
+
             ui.menu(
                 self.options.locale_lang().get_string_from_id("edit-menu"),
                 || {
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("copy"))
+                        .shortcut(copy_key.to_string())
                         .build(ui)
                     {
                         if let Some(current_tab) = &self.current_tab {
@@ -323,6 +345,7 @@ impl MainGUI {
                     }
 
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("select-all"))
+                        .shortcut(select_all_key.to_string())
                         .build(ui)
                     {
                         if let Some(current_tab) = &self.current_tab {

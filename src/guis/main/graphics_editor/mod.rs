@@ -909,9 +909,7 @@ pub fn show_graphics_editor(
     } else if keyboard_state.just_pressed(VirtualKeyCode::Delete)
         || keyboard_state.just_pressed(VirtualKeyCode::Back)
     {
-        for index in tab_menu_data.selected_indexes_collection().iter().rev() {
-            tab.remove_line_at_index(*index);
-        }
+        tab.remove_selected_lines();
     }
 
     if properties_edited || lines_edited {

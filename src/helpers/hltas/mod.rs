@@ -35,7 +35,7 @@ pub fn lines_to_str(lines: Vec<Line>) -> String {
         panic!("No match found for version 1\\nframes\\n. Probably HLTAS default format changed and function `lines_to_str` needs an update.");
     }
 
-    hltas[header_lines.len()..].to_string()
+    hltas[header_lines.len()..hltas.len() - 1].to_string()
 }
 
 pub fn button_to_str(button: &Button) -> &str {

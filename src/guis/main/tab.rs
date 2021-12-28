@@ -153,6 +153,17 @@ impl<'a> HLTASFileTab {
             })
             .collect::<Vec<_>>()
     }
+
+    pub fn remove_selected_lines(&mut self) {
+        for index in self
+            .tab_menu_data
+            .selected_indexes_collection()
+            .iter()
+            .rev()
+        {
+            self.remove_line_at_index(*index);
+        }
+    }
 }
 
 /// Struct to keep track of some menu states for the hltas object in the tab

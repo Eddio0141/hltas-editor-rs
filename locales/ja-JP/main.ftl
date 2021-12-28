@@ -9,6 +9,7 @@ save-file = 保存
 close-file = 閉じる
 recent-files = 最近使用したファイル
 
+cut = 切り取り
 copy = コピー
 select-all = すべて選択
 

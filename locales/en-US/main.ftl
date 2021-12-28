@@ -9,6 +9,7 @@ save-file = Save
 close-file = Close
 recent-files = Recent files
 
+cut = Cut
 copy = Copy
 select-all = Select all
 

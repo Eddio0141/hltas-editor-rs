@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use imgui::Io;
 use winit::event::VirtualKeyCode;
 
@@ -25,9 +27,9 @@ impl KeyboardState {
         }
     }
 
-    // pub fn is_held(&self, key: VirtualKeyCode) -> bool {
-    //     self.pressed[key as usize]
-    // }
+    pub fn held(&self, key: VirtualKeyCode) -> bool {
+        self.pressed[key as usize]
+    }
 
     pub fn just_pressed(&self, key: VirtualKeyCode) -> bool {
         self.just_pressed[key as usize]

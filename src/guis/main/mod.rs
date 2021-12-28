@@ -1,5 +1,6 @@
 mod cmd_editor;
 mod graphics_editor;
+mod key_combination;
 mod key_state;
 mod option_menu;
 mod property_some_none_field;
@@ -15,10 +16,12 @@ use imgui::{
     Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window, WindowFlags,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
+use winit::event::VirtualKeyCode;
 
 use crate::helpers::hltas::lines_to_str;
 
 use self::graphics_editor::show_graphics_editor;
+use self::key_combination::KeyCombination;
 use self::key_state::KeyboardState;
 use self::option_menu::{AppOptions, OptionMenu};
 use self::tab::HLTASFileTab;
@@ -170,6 +173,10 @@ impl MainGUI {
         if let Some(remove_index) = remove_index {
             self.tabs.remove(remove_index);
             self.current_tab = None;
+
+            if !self.tabs.is_empty() {
+                self.tab_switch_index = Some(self.tabs.len() - 1);
+            }
         }
     }
 
@@ -211,6 +218,32 @@ impl MainGUI {
         let window_min_size_token = ui.push_style_var(StyleVar::WindowMinSize([1.0, 1.0]));
 
         ui.main_menu_bar(|| {
+            // TODO better solution
+            let new_file_key = KeyCombination::new(VirtualKeyCode::N).ctrl();
+            let open_file_key = KeyCombination::new(VirtualKeyCode::O).ctrl();
+            let save_file_key = KeyCombination::new(VirtualKeyCode::S).ctrl();
+            let close_file_key = KeyCombination::new(VirtualKeyCode::W).ctrl();
+
+            if new_file_key.just_pressed(&self.keyboard_state) {
+                self.new_file();
+            }
+            if open_file_key.just_pressed(&self.keyboard_state) {
+                self.open_file_by_dialog();
+            }
+            if save_file_key.just_pressed(&self.keyboard_state) {
+                self.save_current_tab(None).unwrap_or_else(|err| {
+                    MessageDialog::new()
+                        .set_title(&self.options.locale_lang().get_string_from_id("error"))
+                        .set_type(MessageType::Error)
+                        .set_text(&err.to_string())
+                        .show_alert()
+                        .ok();
+                });
+            }
+            if close_file_key.just_pressed(&self.keyboard_state) {
+                self.close_current_tab();
+            }
+
             ui.menu(
                 self.options.locale_lang().get_string_from_id("file-menu"),
                 || {
@@ -218,20 +251,20 @@ impl MainGUI {
                     if MenuItem::new("debug menu").build(ui) {
                         self.debug_menu_opened = !self.debug_menu_opened;
                     }
-
-                    // TODO shortcut keys
-                    // if MenuItem::new("New").shortcut("Ctrl+O").build(ui) || (ui.io().keys_down[VirtualKeyCode::O as usize] && ui.io().key_ctrl ){
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("new-file"))
+                        .shortcut(new_file_key.to_string())
                         .build(ui)
                     {
                         self.new_file();
                     }
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("open-file"))
+                        .shortcut(open_file_key.to_string())
                         .build(ui)
                     {
                         self.open_file_by_dialog();
                     }
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("save-file"))
+                        .shortcut(save_file_key.to_string())
                         .build(ui)
                     {
                         self.save_current_tab(None).unwrap_or_else(|err| {
@@ -244,6 +277,7 @@ impl MainGUI {
                         });
                     }
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("close-file"))
+                        .shortcut(close_file_key.to_string())
                         .build(ui)
                     {
                         self.close_current_tab();

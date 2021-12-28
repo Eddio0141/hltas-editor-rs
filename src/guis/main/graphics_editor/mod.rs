@@ -375,6 +375,8 @@ pub fn show_graphics_editor(
                 tab_menu_data.change_selected_index(i, !is_selected);
             }
 
+            if keyboard_state.just_pressed(VirtualKeyCode::Delete) {}
+
             let line_count_offset = ui.cursor_screen_pos()[0];
 
             // TODO translation
@@ -904,6 +906,12 @@ pub fn show_graphics_editor(
 
     if let Some(stale_line) = stale_line {
         tab.remove_line_at_index(stale_line);
+    } else if keyboard_state.just_pressed(VirtualKeyCode::Delete)
+        || keyboard_state.just_pressed(VirtualKeyCode::Back)
+    {
+        for index in tab_menu_data.selected_indexes_collection().iter().rev() {
+            tab.remove_line_at_index(*index);
+        }
     }
 
     if properties_edited || lines_edited {

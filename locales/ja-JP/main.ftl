@@ -11,6 +11,7 @@ recent-files = 最近使用したファイル
 
 cut = 切り取り
 copy = コピー
+paste = 貼り付け
 select-all = すべて選択
 
 hltas-cleaner = HLTASのクリーンアップ

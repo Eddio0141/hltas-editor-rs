@@ -77,18 +77,22 @@ impl<'a> HLTASFileTab {
         &mut self.hltas.properties
     }
 
+    pub fn insert_line(&mut self, index: usize, line: hltas::types::Line) {
+        self.tab_menu_data.insert_hltas_line(index, &line);
+        self.hltas.lines.insert(index, line);
+        self.tab_menu_data.got_modified();
+    }
+
+    pub fn push_line(&mut self, line: hltas::types::Line) {
+        self.tab_menu_data.push_hltas_line(&line);
+        self.hltas.lines.push(line);
+        self.tab_menu_data.got_modified();
+    }
+
     pub fn new_line_at_click_index(&mut self, line: hltas::types::Line) {
         match self.tab_menu_data.right_click_popup_index() {
-            Some(mut index) => {
-                index += 1;
-
-                self.tab_menu_data.insert_hltas_line(index, &line);
-                self.hltas.lines.insert(index, line);
-            }
-            None => {
-                self.tab_menu_data.push_hltas_line(&line);
-                self.hltas.lines.push(line);
-            }
+            Some(index) => self.insert_line(index + 1, line),
+            None => self.push_line(line),
         }
         self.tab_menu_data.got_modified();
     }

@@ -38,6 +38,27 @@ pub fn lines_to_str(lines: Vec<Line>) -> String {
     hltas[header_lines.len()..hltas.len() - 1].to_string()
 }
 
+pub fn str_to_lines(lines: &str) -> Option<Vec<Line>> {
+    let version1_text = "version 1";
+
+    if lines.len() < version1_text.len() {
+        return None;
+    }
+
+    let lines = if lines[..version1_text.len()].starts_with(version1_text) {
+        // parse as whole hltas file
+        lines.to_string()
+    } else {
+        // parse as hltas lines
+        format!("version 1\nframes\n{}", lines)
+    };
+
+    match HLTAS::from_str(&lines) {
+        Ok(hltas) => Some(hltas.lines),
+        Err(_) => None,
+    }
+}
+
 pub fn button_to_str(button: &Button) -> &str {
     match button {
         Button::Forward => "forward",

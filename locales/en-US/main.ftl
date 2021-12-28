@@ -11,6 +11,7 @@ recent-files = Recent files
 
 cut = Cut
 copy = Copy
+paste = Paste
 select-all = Select all
 
 hltas-cleaner = HLTAS cleaner

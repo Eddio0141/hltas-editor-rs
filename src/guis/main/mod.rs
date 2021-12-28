@@ -18,7 +18,7 @@ use imgui::{
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use winit::event::VirtualKeyCode;
 
-use crate::helpers::hltas::lines_to_str;
+use crate::helpers::hltas::{lines_to_str, str_to_lines};
 
 use self::graphics_editor::show_graphics_editor;
 use self::key_combination::KeyCombination;
@@ -306,6 +306,7 @@ impl MainGUI {
             );
             let cut_key = KeyCombination::new(VirtualKeyCode::X).ctrl();
             let copy_key = KeyCombination::new(VirtualKeyCode::C).ctrl();
+            let paste_key = KeyCombination::new(VirtualKeyCode::V).ctrl();
             let select_all_key = KeyCombination::new(VirtualKeyCode::A).ctrl();
 
             if copy_key.just_pressed(&self.keyboard_state) {
@@ -339,6 +340,34 @@ impl MainGUI {
                     current_tab.borrow_mut().remove_selected_lines();
                 }
             }
+            let paste = || {
+                if let Some(current_tab) = &self.current_tab {
+                    if let Some(clipboard) = ui.clipboard_text() {
+                        if let Some(clipboard) = str_to_lines(&clipboard) {
+                            let mut current_tab = current_tab.borrow_mut();
+
+                            if let Some(last_selected_index) = current_tab
+                                .tab_menu_data
+                                .selected_indexes_collection()
+                                .last()
+                            {
+                                for (i, line) in clipboard.iter().enumerate() {
+                                    current_tab
+                                        .insert_line(last_selected_index + i, line.to_owned());
+                                }
+                            } else if current_tab.hltas_lines_is_empty() {
+                                for line in clipboard {
+                                    current_tab.push_line(line);
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            if paste_key.just_pressed(&self.keyboard_state) {
+                paste();
+            }
+
 
             ui.menu(
                 self.options.locale_lang().get_string_from_id("edit-menu"),
@@ -360,7 +389,6 @@ impl MainGUI {
                             current_tab.borrow_mut().remove_selected_lines();
                         }
                     }
-
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("copy"))
                         .shortcut(copy_key.to_string())
                         .build(ui)
@@ -376,7 +404,12 @@ impl MainGUI {
                             ));
                         }
                     }
-
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("paste"))
+                        .shortcut(paste_key.to_string())
+                        .build(ui)
+                    {
+                        paste();
+                    }
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("select-all"))
                         .shortcut(select_all_key.to_string())
                         .build(ui)

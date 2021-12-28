@@ -64,16 +64,13 @@ impl<'a> HLTASFileTab {
         LOCALES.lookup(lang, "new-file-title")
     }
 
-    pub fn new_file(lang: &LanguageIdentifier /*, file_value: usize*/) -> Self {
-        // TODO maybe make the language global?
+    pub fn new_file(lang: &LanguageIdentifier) -> Self {
         Self {
-            // title: format!("{} {}", Self::default_title(lang), file_value),
             title: Self::default_title(lang),
             path: None,
             hltas: HLTAS::default(),
             tab_menu_data: HLTASMenuState::new(&HLTAS::default()),
         }
-        // Self::default()
     }
 
     pub fn hltas_properties_mut(&mut self) -> &mut Properties {
@@ -206,8 +203,8 @@ impl HLTASMenuState {
         self.selected_indexes = vec![true; self.selected_indexes.len()];
     }
 
-    pub fn toggle_index(&mut self, index: usize) {
-        self.selected_indexes[index] = !self.selected_indexes[index];
+    pub fn change_selected_index(&mut self, index: usize, state: bool) {
+        self.selected_indexes[index] = state;
     }
 
     pub fn insert_hltas_line(&mut self, index: usize, line: &hltas::types::Line) {

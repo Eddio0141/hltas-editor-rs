@@ -46,6 +46,8 @@ pub fn show_graphics_editor(
     options: &AppOptions,
     keyboard_state: &KeyboardState,
 ) {
+    let draw_list = ui.get_window_draw_list();
+
     let properties_edited = if CollapsingHeader::new("Properties")
         .default_open(true)
         .build(ui)
@@ -322,8 +324,6 @@ pub fn show_graphics_editor(
     let tab_menu_data = &mut tab.tab_menu_data;
 
     for (i, line) in tab.hltas.lines.iter_mut().enumerate() {
-        let strafe_menu_selection = tab_menu_data.strafe_menu_selection_at_mut(i).unwrap();
-
         let is_rendering_line = {
             let scroll_y = ui.scroll_y();
             let cursor_y = ui.cursor_pos()[1];
@@ -336,6 +336,31 @@ pub fn show_graphics_editor(
         if is_rendering_line {
             ui.text(format!("{}", i + 1));
             ui.same_line();
+
+            // grab area
+            // TODO option for area size
+            ui.dummy([20.0, 20.0]);
+            ui.same_line();
+            draw_list
+                .add_rect(
+                    ui.item_rect_min(),
+                    ui.item_rect_max(),
+                    ui.style_color(StyleColor::Button),
+                )
+                .filled(true)
+                .build();
+
+            if ui.is_item_clicked()
+                && (keyboard_state.held(VirtualKeyCode::LControl)
+                    || keyboard_state.held(VirtualKeyCode::RControl))
+            {
+                tab_menu_data.change_selected_index(i, !tab_menu_data.is_index_selected(i));
+            } else if ui.is_item_clicked() {
+                let is_selected = tab_menu_data.is_index_selected(i);
+                tab_menu_data.reset_selected_indexes();
+                tab_menu_data.change_selected_index(i, !is_selected);
+            }
+
             let line_count_offset = ui.cursor_screen_pos()[0];
 
             // TODO translation
@@ -395,6 +420,9 @@ pub fn show_graphics_editor(
                         ui.set_cursor_screen_pos([strafe_menu_offset, ui.cursor_screen_pos()[1]]);
 
                         // strafe menu
+                        let strafe_menu_selection =
+                            tab_menu_data.strafe_menu_selection_at_mut(i).unwrap();
+
                         let strafe_menu_edited = ui.group(|| {
                             show_strafe_menu(ui, strafe_menu_selection, framebulk, &i.to_string())
                         });
@@ -796,7 +824,8 @@ pub fn show_graphics_editor(
 
                 let button_pos = {
                     let min_rect = group_rect_min;
-                    [min_rect[0] - 20.0, min_rect[1]]
+                    // TODO take in calculation for grab area size
+                    [min_rect[0] - 20.0 - 25.0, min_rect[1]]
                 };
 
                 ui.set_cursor_screen_pos(button_pos);
@@ -819,7 +848,6 @@ pub fn show_graphics_editor(
                 ui.open_popup(new_line_menu_id);
             }
 
-            let draw_list = ui.get_window_draw_list();
             draw_list
                 .add_rect(
                     group_rect_min,

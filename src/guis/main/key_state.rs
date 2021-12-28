@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use imgui::Io;
 use winit::event::VirtualKeyCode;
 

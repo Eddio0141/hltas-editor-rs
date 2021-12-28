@@ -355,6 +355,20 @@ pub fn show_graphics_editor(
                     || keyboard_state.held(VirtualKeyCode::RControl))
             {
                 tab_menu_data.change_selected_index(i, !tab_menu_data.is_index_selected(i));
+            } else if tab_menu_data
+                .selected_indexes()
+                .iter()
+                .filter(|&i| *i)
+                .count()
+                == 1
+                && ui.is_item_clicked()
+                && (keyboard_state.held(VirtualKeyCode::LShift)
+                    || keyboard_state.held(VirtualKeyCode::RShift))
+            {
+                tab_menu_data.select_index_range(
+                    tab_menu_data.selected_indexes_collection()[0]..i + 1,
+                    true,
+                );
             } else if ui.is_item_clicked() {
                 let is_selected = tab_menu_data.is_index_selected(i);
                 tab_menu_data.reset_selected_indexes();

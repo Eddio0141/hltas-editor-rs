@@ -1,6 +1,6 @@
 use std::{
     fs,
-    ops::Deref,
+    ops::{Deref, Range},
     path::{Path, PathBuf},
 };
 
@@ -195,6 +195,14 @@ impl HLTASMenuState {
         self.selected_indexes.as_ref()
     }
 
+    pub fn selected_indexes_collection(&self) -> Vec<usize> {
+        self.selected_indexes
+            .iter()
+            .enumerate()
+            .filter_map(|(i, is_selected)| if *is_selected { Some(i) } else { None })
+            .collect::<Vec<_>>()
+    }
+
     pub fn reset_selected_indexes(&mut self) {
         self.selected_indexes = vec![false; self.selected_indexes.len()];
     }
@@ -205,6 +213,12 @@ impl HLTASMenuState {
 
     pub fn change_selected_index(&mut self, index: usize, state: bool) {
         self.selected_indexes[index] = state;
+    }
+
+    pub fn select_index_range(&mut self, range: Range<usize>, state: bool) {
+        self.selected_indexes[range]
+            .iter_mut()
+            .for_each(|index| *index = state);
     }
 
     pub fn insert_hltas_line(&mut self, index: usize, line: &hltas::types::Line) {

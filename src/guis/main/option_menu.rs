@@ -7,11 +7,12 @@ use std::{
 use fluent_templates::Loader;
 use hltas::types::LeaveGroundActionSpeed;
 use home::home_dir;
-use imgui::{ColorEdit, ComboBox, InputFloat, InputText, Selectable, StyleColor, Ui};
+use imgui::{ColorEdit, ComboBox, Drag, InputFloat, InputText, Selectable, StyleColor, Ui};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    guis::list_box_enum::show_list_box_enum, helpers::locale::locale_lang::LocaleLang,
+    guis::list_box_enum::show_list_box_enum,
+    helpers::{hltas::frametime, locale::locale_lang::LocaleLang},
     locale::LOCALES,
 };
 
@@ -31,6 +32,7 @@ pub struct AppOptions {
     lgagst_min_speed: f32,
     lgagst_min_speed_grab_prev: bool,
     default_0ms_frametime: f32,
+    default_frametime: f32,
 }
 
 impl AppOptions {
@@ -82,6 +84,11 @@ impl AppOptions {
     /// Get a reference to the app options's default 0ms frametime.
     pub fn default_0ms_frametime(&self) -> f32 {
         self.default_0ms_frametime
+    }
+
+    /// Get a reference to the app options's default frametime.
+    pub fn default_frametime(&self) -> f32 {
+        self.default_frametime
     }
 }
 
@@ -136,6 +143,7 @@ impl Default for AppOptions {
             lgagst_min_speed: 30.0,
             lgagst_min_speed_grab_prev: true,
             default_0ms_frametime: 0.0000000001,
+            default_frametime: frametime::MAX_STRAFE,
         }
     }
 }
@@ -271,6 +279,8 @@ impl OptionMenu {
             }
         }
 
+        let dummy_spacing = [0.0, 15.0];
+
         let modified = match self.category_selection {
             Category::PropertiesOption => {
                 ui.text("0ms frametime default");
@@ -354,7 +364,7 @@ impl OptionMenu {
                     "copy previous framebulk",
                     &mut app_options.copy_previous_framebulk,
                 );
-                ui.dummy([0.0, 15.0]);
+                ui.dummy(dummy_spacing);
                 ui.text("jump lgagst default option");
                 ui.indent();
                 let jump_lgagst_option_changed =
@@ -366,7 +376,7 @@ impl OptionMenu {
                     .ducktap_lgagst_option
                     .show_ui(ui, "ducktap_lgagst");
                 ui.unindent();
-                ui.dummy([0.0, 15.0]);
+                ui.dummy(dummy_spacing);
                 ui.text("default comment");
                 ui.indent();
                 // let comment_frame_bg =
@@ -405,6 +415,16 @@ impl OptionMenu {
                 );
                 ui.unindent();
 
+                ui.dummy(dummy_spacing);
+
+                ui.text("framebulk default frametime");
+                ui.indent();
+                let default_frametime_changed = Drag::new("##default_frametime")
+                    .range(frametime::MAX_STRAFE, frametime::MIN)
+                    .speed(frametime::MAX_STRAFE)
+                    .build(ui, &mut app_options.default_frametime);
+                ui.unindent();
+
                 copy_previous_framebulk_changed
                     || jump_lgagst_option_changed
                     || ducktap_lgagst_option_changed
@@ -412,6 +432,7 @@ impl OptionMenu {
                     || comment_color_changed
                     || lgagst_min_speed_changed
                     || lgagst_min_speed_grab_prev_changed
+                    || default_frametime_changed
             }
         };
 

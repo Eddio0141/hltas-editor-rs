@@ -222,12 +222,36 @@ pub fn show_graphics_editor(
             }
         };
 
+        let new_framebulk_with_frametime_framecount = || {
+            let default_frametime = &options.default_frametime().to_string();
+
+            let frametime = if let Some(previous_lines) = previous_lines {
+                if let Some(previous_framebulk) = previous_lines
+                    .iter()
+                    .rev()
+                    .find(|line| matches!(line, Line::FrameBulk(..)))
+                {
+                    if let Line::FrameBulk(framebulk) = &previous_framebulk {
+                        &framebulk.frame_time
+                    } else {
+                        default_frametime
+                    }
+                } else {
+                    default_frametime
+                }
+            } else {
+                default_frametime
+            };
+
+            let frame_count = NonZeroU32::new(1).unwrap();
+
+            Line::FrameBulk(empty_framebulk(frametime, frame_count))
+        };
+
         // TODO option for what to choose here
         let name_and_types = vec![
             ("framebulk", {
-                // TODO copy frame_time
-                let new_framebulk =
-                    Line::FrameBulk(empty_framebulk("0.001", NonZeroU32::new(1).unwrap()));
+                let new_framebulk = new_framebulk_with_frametime_framecount();
 
                 if options.copy_previous_framebulk() {
                     if let Some(previous_lines) = previous_lines {
@@ -247,11 +271,7 @@ pub fn show_graphics_editor(
                     new_framebulk
                 }
             }),
-            (
-                "empty framebulk",
-                // TODO copy frame_time
-                Line::FrameBulk(empty_framebulk("0.001", NonZeroU32::new(1).unwrap())),
-            ),
+            ("empty framebulk", new_framebulk_with_frametime_framecount()),
             // TODO custom save name
             ("save", Line::Save("buffer".to_string())),
             ("shared seed", Line::SharedSeed(0)),

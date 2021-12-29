@@ -23,13 +23,14 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
         selectable_changed
     };
 
-    let (autojump_before, ducktap_before) = match &framebulk.auto_actions.leave_ground_action {
-        Some(leave_ground_action) => match leave_ground_action.type_ {
-            LeaveGroundActionType::Jump => (true, false),
-            LeaveGroundActionType::DuckTap { .. } => (false, true),
-        },
-        None => (false, false),
-    };
+    let (autojump_before, ducktap_before, zero_ms_before) =
+        match &framebulk.auto_actions.leave_ground_action {
+            Some(leave_ground_action) => match leave_ground_action.type_ {
+                LeaveGroundActionType::Jump => (true, false, false),
+                LeaveGroundActionType::DuckTap { zero_ms } => (false, true, zero_ms),
+            },
+            None => (false, false, false),
+        };
 
     let jump_before = framebulk.action_keys.jump;
     let duck_before = framebulk.action_keys.duck;
@@ -47,17 +48,15 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
         },
         !ducktap_before,
     );
-
     ui.same_line();
-
-    let jump_changed = disabled_text_selectable(
+    let zero_ms_changed = disabled_text_selectable(
         &|ui| {
-            Selectable::new(format!("jump##jump_menu{}", id))
-                .selected(jump_before)
+            Selectable::new(format!("0ms##jump_menu{}", id))
+                .selected(zero_ms_before)
                 .size([jump_ducktap_selectable_width, 0.0])
                 .build(ui)
         },
-        !jump_before,
+        !ducktap_before,
     );
 
     let autojump_changed = disabled_text_selectable(
@@ -68,6 +67,16 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
                 .build(ui)
         },
         !autojump_before,
+    );    
+    
+    let jump_changed = disabled_text_selectable(
+        &|ui| {
+            Selectable::new(format!("jump##jump_menu{}", id))
+                .selected(jump_before)
+                .size([jump_ducktap_selectable_width, 0.0])
+                .build(ui)
+        },
+        !jump_before,
     );
 
     ui.same_line();
@@ -176,6 +185,14 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
                 times: Times::UnlimitedWithinFrameBulk,
                 type_: LeaveGroundActionType::DuckTap { zero_ms: true },
             })
+        }
+    }
+
+    if zero_ms_changed {
+        if let Some(leave_ground_action) = &mut framebulk.auto_actions.leave_ground_action {
+            if let LeaveGroundActionType::DuckTap { zero_ms } = &mut leave_ground_action.type_ {
+                *zero_ms = !zero_ms_before;
+            }
         }
     }
 

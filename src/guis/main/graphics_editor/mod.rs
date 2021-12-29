@@ -924,7 +924,7 @@ pub fn show_graphics_editor(
             ui.dummy([
                 0.0,
                 match line {
-                    Line::FrameBulk(_) => 120.0,
+                    Line::FrameBulk(_) => 140.0,
                     Line::Save(_) => 19.0,
                     Line::SharedSeed(_) => 19.0,
                     Line::Buttons(buttons) => match buttons {

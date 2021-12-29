@@ -288,8 +288,22 @@ pub fn show_graphics_editor(
                 "comment",
                 Line::Comment(options.default_comment().to_string()),
             ),
-            // TODO check previous vectorial strafing and toggle
-            ("vectorial strafing", Line::VectorialStrafing(false)),
+            ("vectorial strafing", {
+                let default_option = Line::VectorialStrafing(true);
+                if let Some(previous_lines) = previous_lines {
+                    if let Some(Line::VectorialStrafing(vectorial_strafing)) = previous_lines
+                        .iter()
+                        .rev()
+                        .find(|line| matches!(line, Line::VectorialStrafing(_)))
+                    {
+                        Line::VectorialStrafing(!*vectorial_strafing)
+                    } else {
+                        default_option
+                    }
+                } else {
+                    default_option
+                }
+            }),
             (
                 "vectorial strafing constraints",
                 Line::VectorialStrafingConstraints(

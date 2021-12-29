@@ -24,9 +24,13 @@ use crate::{
 };
 
 use self::{
-    action_keys_menu::show_action_keys_menu, command_menu::show_command_menu,
-    duck_menu::show_duck_menu, frames_menu::show_frames_menu, jump_menu::show_jump_menu,
-    seed_editor::show_non_shared_seed_editor, strafe_menu::show_strafe_menu,
+    action_keys_menu::show_action_keys_menu,
+    command_menu::show_command_menu,
+    duck_menu::show_duck_menu,
+    frames_menu::show_frames_menu,
+    jump_menu::show_jump_menu,
+    seed_editor::{show_non_shared_seed_editor, show_shared_seed_editor},
+    strafe_menu::show_strafe_menu,
     yaw_pitch_menu::show_yaw_pitch_menu,
 };
 
@@ -100,9 +104,6 @@ pub fn show_graphics_editor(
                 }
             },
         );
-
-        // TODO some easy way of increasing shared / nonshared rng
-        //  since if people want different rng results, they can just add 1
         let seed_edited = property_some_none_field_ui(
             ui,
             &mut tab.hltas_properties_mut().seeds,
@@ -115,18 +116,14 @@ pub fn show_graphics_editor(
                 let x_button_clicked = !show_x_button(ui, "seeds");
                 ui.same_line();
 
-                let item_width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
+                let item_width = ui.window_content_region_width() * 0.25;
 
-                let shared_rng_edited = Drag::new("shared rng")
-                    .speed(0.05)
-                    .build(ui, &mut seeds.shared);
+                let shared_rng_edited =
+                    show_shared_seed_editor(ui, item_width, "properties", &mut seeds.shared);
                 ui.same_line();
-                ui.text(format!("(mod 256 = {})", seeds.shared % 256));
-                ui.same_line();
-                item_width_token.pop(ui);
                 let nonshared_rng_edited = show_non_shared_seed_editor(
                     ui,
-                    ui.window_content_region_width() * 0.25,
+                    item_width,
                     "properties",
                     &mut seeds.non_shared,
                 );
@@ -525,20 +522,12 @@ pub fn show_graphics_editor(
 
                         save_edit_input_edited
                     }
-                    Line::SharedSeed(shared_seed) => {
-                        // TODO use the same seed editor as the one in properties
-                        ui.text("seed");
-                        ui.same_line();
-
-                        let width_token =
-                            ui.push_item_width(ui.window_content_region_width() * 0.25);
-                        let seed_edited = Drag::new(format!("##shared_seed_edit{}", i))
-                            .speed(0.05)
-                            .build(ui, shared_seed);
-                        width_token.pop(ui);
-
-                        seed_edited
-                    }
+                    Line::SharedSeed(shared_seed) => show_shared_seed_editor(
+                        ui,
+                        ui.window_content_region_width() * 0.25,
+                        "properties",
+                        shared_seed,
+                    ),
                     Line::Buttons(buttons) => {
                         let set_text = "set";
                         let reset_text = "reset";

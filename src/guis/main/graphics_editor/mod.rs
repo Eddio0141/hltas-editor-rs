@@ -214,7 +214,13 @@ pub fn show_graphics_editor(
     ui.popup(new_line_menu_id, || {
         let previous_lines = match tab.tab_menu_data.right_click_popup_index() {
             Some(index) => Some(&tab.hltas.lines[..index + 1]),
-            None => None,
+            None => {
+                if tab.hltas.lines.is_empty() {
+                    None
+                } else {
+                    Some(&tab.hltas.lines[..])
+                }
+            }
         };
 
         // TODO option for what to choose here

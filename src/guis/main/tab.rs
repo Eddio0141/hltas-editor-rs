@@ -21,6 +21,8 @@ pub struct HLTASFileTab {
     title: String,
     path: Option<PathBuf>,
     // TODO make this better with making it private and borrow iter mut on the lines
+    // idea: make a "token" that lets you mutably access this field with pop required to be called at the end,
+    //  which will update the status of tab_menu_data. display a warning or a error if pop isn't called
     pub hltas: HLTAS,
     pub tab_menu_data: HLTASMenuState,
 }

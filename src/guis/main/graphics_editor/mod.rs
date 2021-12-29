@@ -41,6 +41,7 @@ use super::{
     property_some_none_field::{property_some_none_field_ui, PropertyFieldResult},
     property_string_field::property_string_field_ui,
     tab::HLTASFileTab,
+    zero_ms_editor::show_zero_ms_editor,
 };
 
 // TODO drag speed variables stored somewhere in the function for convinience
@@ -80,23 +81,24 @@ pub fn show_graphics_editor(
         let ducktap_0ms_edited = property_some_none_field_ui(
             ui,
             &mut tab.hltas_properties_mut().frametime_0ms,
-            // TODO make this an option
-            "0.0000000001".to_string(),
+            options.default_0ms_frametime().to_string(),
             "Enable 0ms ducktap",
             |frametime| {
                 let x_button_clicked = !show_x_button(ui, "frametime");
+                ui.same_line();
 
+                ui.text("0ms frametime");
                 ui.same_line();
 
                 let item_width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
-
-                let input_text_edited = InputText::new(ui, "0ms frametime", frametime)
-                    .chars_noblank(true)
-                    .chars_decimal(true)
-                    .hint("0ms frametime")
-                    .build();
-
+                let mut frametime_f32 = frametime.parse::<f32>().unwrap();
+                let input_text_edited =
+                    show_zero_ms_editor(ui, "field_0ms_editor", &mut frametime_f32);
                 item_width_token.pop(ui);
+
+                if input_text_edited {
+                    *frametime = frametime_f32.to_string();
+                }
 
                 PropertyFieldResult {
                     field_enabled: x_button_clicked,

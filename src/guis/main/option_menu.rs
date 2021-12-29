@@ -15,6 +15,8 @@ use crate::{
     locale::LOCALES,
 };
 
+use super::zero_ms_editor::show_zero_ms_editor;
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AppOptions {
     copy_previous_framebulk: bool,
@@ -28,6 +30,7 @@ pub struct AppOptions {
     comment_colour: [f32; 4],
     lgagst_min_speed: f32,
     lgagst_min_speed_grab_prev: bool,
+    default_0ms_frametime: f32,
 }
 
 impl AppOptions {
@@ -74,6 +77,11 @@ impl AppOptions {
     /// Get a reference to the app options's copy previous framebulk.
     pub fn copy_previous_framebulk(&self) -> bool {
         self.copy_previous_framebulk
+    }
+
+    /// Get a reference to the app options's default 0ms frametime.
+    pub fn default_0ms_frametime(&self) -> f32 {
+        self.default_0ms_frametime
     }
 }
 
@@ -127,6 +135,7 @@ impl Default for AppOptions {
             comment_colour: [0.0, 1.0, 0.0, 1.0],
             lgagst_min_speed: 30.0,
             lgagst_min_speed_grab_prev: true,
+            default_0ms_frametime: 0.0000000001,
         }
     }
 }
@@ -234,6 +243,7 @@ impl OptionMenu {
         let button_label_pairs = vec![
             ("menu options", Category::MenuOption),
             ("line options", Category::LineOption),
+            ("properties options", Category::PropertiesOption),
             ("language", Category::Language),
         ];
 
@@ -262,6 +272,18 @@ impl OptionMenu {
         }
 
         let modified = match self.category_selection {
+            Category::PropertiesOption => {
+                ui.text("0ms frametime default");
+                ui.indent();
+                let changed_0ms_frametime_default = show_zero_ms_editor(
+                    ui,
+                    "0ms_frametime_default",
+                    &mut app_options.default_0ms_frametime,
+                );
+                ui.unindent();
+
+                changed_0ms_frametime_default
+            }
             Category::Language => {
                 let mut use_system_lang = app_options.locale_lang.is_using_system_lang();
                 let changed_using_system_lang =
@@ -436,6 +458,7 @@ impl OptionMenu {
 pub enum Category {
     MenuOption,
     LineOption,
+    PropertiesOption,
     Language,
 }
 

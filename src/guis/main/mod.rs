@@ -6,6 +6,7 @@ mod option_menu;
 mod property_some_none_field;
 mod property_string_field;
 mod tab;
+mod zero_ms_editor;
 
 use std::cell::RefCell;
 use std::path::Path;

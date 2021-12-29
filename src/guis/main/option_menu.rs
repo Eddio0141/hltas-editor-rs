@@ -33,6 +33,7 @@ pub struct AppOptions {
     lgagst_min_speed_grab_prev: bool,
     default_0ms_frametime: f32,
     default_frametime: f32,
+    save_buffer_name: String,
 }
 
 impl AppOptions {
@@ -90,6 +91,11 @@ impl AppOptions {
     pub fn default_frametime(&self) -> f32 {
         self.default_frametime
     }
+
+    /// Get a reference to the app options's save buffer name.
+    pub fn save_buffer_name(&self) -> &str {
+        self.save_buffer_name.as_ref()
+    }
 }
 
 impl AppOptions {
@@ -144,6 +150,7 @@ impl Default for AppOptions {
             lgagst_min_speed_grab_prev: true,
             default_0ms_frametime: 0.0000000001,
             default_frametime: frametime::MAX_STRAFE,
+            save_buffer_name: "buffer".to_string(),
         }
     }
 }
@@ -425,6 +432,15 @@ impl OptionMenu {
                     .build(ui, &mut app_options.default_frametime);
                 ui.unindent();
 
+                ui.dummy(dummy_spacing);
+
+                ui.text("save buffer name");
+                ui.indent();
+                let save_buffer_name_changed =
+                    InputText::new(ui, "##save_buffer_name", &mut app_options.save_buffer_name)
+                        .build();
+                ui.unindent();
+
                 copy_previous_framebulk_changed
                     || jump_lgagst_option_changed
                     || ducktap_lgagst_option_changed
@@ -433,6 +449,7 @@ impl OptionMenu {
                     || lgagst_min_speed_changed
                     || lgagst_min_speed_grab_prev_changed
                     || default_frametime_changed
+                    || save_buffer_name_changed
             }
         };
 

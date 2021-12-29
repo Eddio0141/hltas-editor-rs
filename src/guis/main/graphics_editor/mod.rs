@@ -272,8 +272,7 @@ pub fn show_graphics_editor(
                 }
             }),
             ("empty framebulk", new_framebulk_with_frametime_framecount()),
-            // TODO custom save name
-            ("save", Line::Save("buffer".to_string())),
+            ("save", Line::Save(options.save_buffer_name().to_string())),
             ("shared seed", Line::SharedSeed(0)),
             (
                 "buttons",

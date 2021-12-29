@@ -9,7 +9,7 @@ mod yaw_pitch_menu;
 use std::num::NonZeroU32;
 
 use hltas::types::{
-    Button, Buttons, Change, ChangeTarget, FrameBulk, Line, Seeds, VectorialStrafingConstraints,
+    Button, Buttons, Change, ChangeTarget, Line, Seeds, VectorialStrafingConstraints,
 };
 use imgui::{
     CollapsingHeader, ComboBox, Drag, InputFloat, InputText, MouseButton, Selectable, StyleColor,
@@ -19,7 +19,7 @@ use winit::event::VirtualKeyCode;
 
 use crate::{
     guis::{radio_button_enum::show_radio_button_enum, x_button::show_x_button},
-    helpers::hltas::button_to_str,
+    helpers::hltas::{button_to_str, empty_framebulk},
 };
 
 use self::{
@@ -220,37 +220,9 @@ pub fn show_graphics_editor(
         // TODO option for what to choose here
         let name_and_types = vec![
             ("framebulk", {
-                let new_framebulk = Line::FrameBulk(FrameBulk {
-                    auto_actions: hltas::types::AutoActions {
-                        movement: None,
-                        leave_ground_action: None,
-                        jump_bug: None,
-                        duck_before_collision: None,
-                        duck_before_ground: None,
-                        duck_when_jump: None,
-                    },
-                    movement_keys: hltas::types::MovementKeys {
-                        forward: false,
-                        left: false,
-                        right: false,
-                        back: false,
-                        up: false,
-                        down: false,
-                    },
-                    action_keys: hltas::types::ActionKeys {
-                        jump: false,
-                        duck: false,
-                        use_: false,
-                        attack_1: false,
-                        attack_2: false,
-                        reload: false,
-                    },
-                    // TODO copy frame_time
-                    frame_time: "0.001".to_string(),
-                    pitch: None,
-                    frame_count: NonZeroU32::new(1).unwrap(),
-                    console_command: None,
-                });
+                // TODO copy frame_time
+                let new_framebulk =
+                    Line::FrameBulk(empty_framebulk("0.001", NonZeroU32::new(1).unwrap()));
 
                 if options.copy_previous_framebulk() {
                     if let Some(previous_lines) = previous_lines {
@@ -270,6 +242,11 @@ pub fn show_graphics_editor(
                     new_framebulk
                 }
             }),
+            (
+                "empty framebulk",
+                // TODO copy frame_time
+                Line::FrameBulk(empty_framebulk("0.001", NonZeroU32::new(1).unwrap())),
+            ),
             // TODO custom save name
             ("save", Line::Save("buffer".to_string())),
             ("shared seed", Line::SharedSeed(0)),

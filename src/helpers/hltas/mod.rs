@@ -1,8 +1,10 @@
 pub mod fps;
 pub mod frametime;
 
+use std::num::NonZeroU32;
+
 use hltas::{
-    types::{Button, Line},
+    types::{Button, FrameBulk, Line},
     HLTAS,
 };
 
@@ -69,5 +71,38 @@ pub fn button_to_str(button: &Button) -> &str {
         Button::BackRight => "back right",
         Button::Right => "right",
         Button::ForwardRight => "forward right",
+    }
+}
+
+pub fn empty_framebulk(frametime: &str, frame_count: NonZeroU32) -> FrameBulk {
+    FrameBulk {
+        auto_actions: hltas::types::AutoActions {
+            movement: None,
+            leave_ground_action: None,
+            jump_bug: None,
+            duck_before_collision: None,
+            duck_before_ground: None,
+            duck_when_jump: None,
+        },
+        movement_keys: hltas::types::MovementKeys {
+            forward: false,
+            left: false,
+            right: false,
+            back: false,
+            up: false,
+            down: false,
+        },
+        action_keys: hltas::types::ActionKeys {
+            jump: false,
+            duck: false,
+            use_: false,
+            attack_1: false,
+            attack_2: false,
+            reload: false,
+        },
+        frame_time: frametime.to_string(),
+        pitch: None,
+        frame_count,
+        console_command: None,
     }
 }

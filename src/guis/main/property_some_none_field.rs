@@ -32,7 +32,6 @@ where
 
     let edited_some_none = if field_result.field_enabled {
         if field.is_none() {
-            // TODO option to auto fill with file name
             *field = Some(field_default);
             true
         } else {

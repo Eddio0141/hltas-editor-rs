@@ -83,7 +83,7 @@ pub fn show_strafe_menu(
                 list_box_changed
             }
             StrafeMenuSelection::Keys => {
-                // TODO key layout
+                // TODO key layout view
                 let keys = &mut framebulk.movement_keys;
                 let forward_edited = ui.checkbox(
                     format!("Forward##strafe_menu_editor{}", id),

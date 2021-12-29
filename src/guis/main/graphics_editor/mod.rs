@@ -513,7 +513,6 @@ pub fn show_graphics_editor(
                         ui.same_line();
                         let save_edit_width =
                             ui.push_item_width(ui.window_content_region_width() * 0.5);
-                        // TODO limit save max char size
                         let save_edit_input_edited =
                             InputText::new(ui, format!("##save_edit_input{}", i), save)
                                 .chars_noblank(true)

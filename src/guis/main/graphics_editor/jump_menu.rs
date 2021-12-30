@@ -183,7 +183,6 @@ pub fn show_jump_menu(
             framebulk.auto_actions.leave_ground_action = None;
         } else {
             framebulk.action_keys.jump = false;
-            // TODO 0ms detector or option to have 0ms by default
             framebulk.auto_actions.leave_ground_action = Some(LeaveGroundAction {
                 speed: match framebulk.auto_actions.leave_ground_action {
                     Some(leave_ground_action) => leave_ground_action.speed,

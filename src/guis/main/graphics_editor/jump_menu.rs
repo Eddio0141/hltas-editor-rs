@@ -1,11 +1,18 @@
 use hltas::types::{
-    FrameBulk, JumpBug, LeaveGroundAction, LeaveGroundActionSpeed, LeaveGroundActionType, Times,
+    FrameBulk, JumpBug, LeaveGroundAction, LeaveGroundActionSpeed, LeaveGroundActionType,
+    Properties, Times,
 };
 use imgui::{Selectable, StyleColor, Ui};
 
 use crate::guis::main::option_menu::AppOptions;
 
-pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &AppOptions) -> bool {
+pub fn show_jump_menu(
+    ui: &Ui,
+    framebulk: &mut FrameBulk,
+    properties: &Properties,
+    id: &str,
+    options: &AppOptions,
+) -> bool {
     let jump_ducktap_selectable_width = 65.0;
     let disabled_text_selectable = |selectable: &dyn Fn(&Ui) -> bool, grey_condition: bool| {
         let color_token = if !grey_condition {
@@ -67,8 +74,8 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
                 .build(ui)
         },
         !autojump_before,
-    );    
-    
+    );
+
     let jump_changed = disabled_text_selectable(
         &|ui| {
             Selectable::new(format!("jump##jump_menu{}", id))
@@ -183,7 +190,10 @@ pub fn show_jump_menu(ui: &Ui, framebulk: &mut FrameBulk, id: &str, options: &Ap
                     None => options.ducktap_lgagst_option().default_selection(),
                 },
                 times: Times::UnlimitedWithinFrameBulk,
-                type_: LeaveGroundActionType::DuckTap { zero_ms: true },
+                type_: LeaveGroundActionType::DuckTap {
+                    zero_ms: properties.frametime_0ms.is_some()
+                        && options.zero_ms_if_property_enabled(),
+                },
             })
         }
     }

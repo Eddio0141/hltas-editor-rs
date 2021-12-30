@@ -34,6 +34,7 @@ pub struct AppOptions {
     default_0ms_frametime: f32,
     default_frametime: f32,
     save_buffer_name: String,
+    zero_ms_if_property_enabled: bool,
 }
 
 impl AppOptions {
@@ -96,6 +97,11 @@ impl AppOptions {
     pub fn save_buffer_name(&self) -> &str {
         self.save_buffer_name.as_ref()
     }
+
+    /// Get a reference to the app options's zero ms if property enabled.
+    pub fn zero_ms_if_property_enabled(&self) -> bool {
+        self.zero_ms_if_property_enabled
+    }
 }
 
 impl AppOptions {
@@ -151,6 +157,7 @@ impl Default for AppOptions {
             default_0ms_frametime: 0.0000000001,
             default_frametime: frametime::MAX_STRAFE,
             save_buffer_name: "buffer".to_string(),
+            zero_ms_if_property_enabled: true,
         }
     }
 }
@@ -441,6 +448,13 @@ impl OptionMenu {
                         .build();
                 ui.unindent();
 
+                ui.dummy(dummy_spacing);
+
+                let zero_ms_if_property_enabled_changed = ui.checkbox(
+                    "0ms if property enabled",
+                    &mut app_options.zero_ms_if_property_enabled,
+                );
+
                 copy_previous_framebulk_changed
                     || jump_lgagst_option_changed
                     || ducktap_lgagst_option_changed
@@ -450,6 +464,7 @@ impl OptionMenu {
                     || lgagst_min_speed_grab_prev_changed
                     || default_frametime_changed
                     || save_buffer_name_changed
+                    || zero_ms_if_property_enabled_changed
             }
         };
 

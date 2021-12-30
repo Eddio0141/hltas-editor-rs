@@ -376,6 +376,7 @@ pub fn show_graphics_editor(
     let mut new_line_menu_clicked_on_line = false;
 
     let tab_menu_data = &mut tab.tab_menu_data;
+    let properties = &tab.hltas.properties;
 
     for (i, line) in tab.hltas.lines.iter_mut().enumerate() {
         let is_rendering_line = {
@@ -502,7 +503,7 @@ pub fn show_graphics_editor(
 
                         // jump menu
                         let jump_menu_edited =
-                            ui.group(|| show_jump_menu(ui, framebulk, &i.to_string(), options));
+                            ui.group(|| show_jump_menu(ui, framebulk, properties, &i.to_string(), options));
 
                         ui.same_line();
                         ui.set_cursor_screen_pos([duck_menu_offset, ui.cursor_screen_pos()[1]]);

@@ -4,8 +4,13 @@ use super::tab::HLTASMenuState;
 
 #[derive(Clone, Debug)]
 enum Action {
-    DeleteLine { index: usize, lines: Vec<Line> },
-    AddLine { index: usize, count: usize },
+    DeleteLine {
+        lines_and_indexes: Vec<(usize, Line)>,
+    },
+    AddLine {
+        index: usize,
+        count: usize,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -26,19 +31,16 @@ impl UndoRedoHandler {
     pub fn undo(&mut self, hltas: &mut HLTAS, tab_menu_data: &mut HLTASMenuState) {
         if let Some(undo_action) = self.undo_stack.pop() {
             match undo_action {
-                Action::DeleteLine { index, lines } => {
-                    if hltas.lines.is_empty() {
-                        for line in lines.into_iter() {
+                Action::DeleteLine { lines_and_indexes } => {
+                    for (i, line) in lines_and_indexes {
+                        if hltas.lines.is_empty() {
                             tab_menu_data.push_hltas_line(&line);
                             hltas.lines.push(line);
-                            tab_menu_data.got_modified();
+                        } else {
+                            tab_menu_data.insert_hltas_line(i, &line);
+                            hltas.lines.insert(i, line);
                         }
-                    } else {
-                        for (i, line) in lines.into_iter().enumerate() {
-                            tab_menu_data.insert_hltas_line(index + i, &line);
-                            hltas.lines.insert(index + i, line);
-                            tab_menu_data.got_modified();
-                        }
+                        tab_menu_data.got_modified();
                     }
                 }
                 Action::AddLine { index, count } => {
@@ -52,12 +54,11 @@ impl UndoRedoHandler {
         }
     }
 
-    pub fn delete_lines(&mut self, starting_index: usize, deleted_lines: Vec<Line>) {
+    pub fn delete_lines(&mut self, deleted_lines: Vec<(usize, Line)>) {
         self.redo_stack.clear();
 
         self.undo_stack.push(Action::DeleteLine {
-            index: starting_index,
-            lines: deleted_lines,
+            lines_and_indexes: deleted_lines,
         });
     }
 

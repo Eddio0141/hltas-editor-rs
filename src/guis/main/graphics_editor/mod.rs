@@ -246,7 +246,7 @@ pub fn show_graphics_editor(
 
         // TODO option for what to choose here
         // TODO new line menu doesn't let users insert lines at index 0
-        //      make it so it knows its selecting line before line 0? 
+        //      make it so it knows its selecting line before line 0?
         //      or if right click elsewhere then insert at index 0?
         let name_and_types = vec![
             ("framebulk", {
@@ -425,10 +425,14 @@ pub fn show_graphics_editor(
                 && (keyboard_state.held(VirtualKeyCode::LShift)
                     || keyboard_state.held(VirtualKeyCode::RShift))
             {
-                tab_menu_data.select_index_range(
-                    tab_menu_data.selected_indexes_collection()[0]..i + 1,
-                    true,
-                );
+                let selected_index = tab_menu_data.selected_indexes_collection()[0];
+                let (start_index, end_index) = if i < selected_index {
+                    (i, selected_index)
+                } else {
+                    (selected_index, i + 1)
+                };
+
+                tab_menu_data.select_index_range(start_index..end_index, true);
             } else if ui.is_item_clicked() {
                 let is_selected = tab_menu_data.is_index_selected(i);
                 tab_menu_data.reset_selected_indexes();
@@ -950,13 +954,28 @@ pub fn show_graphics_editor(
 
     if let Some(stale_line) = stale_line {
         tab.undo_redo_handler
-            .delete_lines(stale_line, vec![tab.hltas.lines[stale_line].to_owned()]);
+            .delete_lines(vec![(stale_line, tab.hltas.lines[stale_line].to_owned())]);
         tab.remove_line_at_index(stale_line);
     }
 
     if keyboard_state.just_pressed(VirtualKeyCode::Delete)
         || keyboard_state.just_pressed(VirtualKeyCode::Back)
     {
+        let lines_to_delete = tab
+            .tab_menu_data
+            .selected_indexes()
+            .iter()
+            .enumerate()
+            .filter_map(|(i, is_selected)| {
+                if *is_selected {
+                    Some((i, tab.hltas.lines[i].to_owned()))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+        tab.undo_redo_handler.delete_lines(lines_to_delete);
+
         tab.remove_selected_lines();
     }
 

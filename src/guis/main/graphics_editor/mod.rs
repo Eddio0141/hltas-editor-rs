@@ -226,16 +226,12 @@ pub fn show_graphics_editor(
             let default_frametime = &options.default_frametime().to_string();
 
             let frametime = if let Some(previous_lines) = previous_lines {
-                if let Some(previous_framebulk) = previous_lines
+                if let Some(Line::FrameBulk(framebulk)) = &previous_lines
                     .iter()
                     .rev()
                     .find(|line| matches!(line, Line::FrameBulk(..)))
                 {
-                    if let Line::FrameBulk(framebulk) = &previous_framebulk {
-                        &framebulk.frame_time
-                    } else {
-                        default_frametime
-                    }
+                    &framebulk.frame_time
                 } else {
                     default_frametime
                 }
@@ -249,6 +245,9 @@ pub fn show_graphics_editor(
         };
 
         // TODO option for what to choose here
+        // TODO new line menu doesn't let users insert lines at index 0
+        //      make it so it knows its selecting line before line 0? 
+        //      or if right click elsewhere then insert at index 0?
         let name_and_types = vec![
             ("framebulk", {
                 let new_framebulk = new_framebulk_with_frametime_framecount();
@@ -349,6 +348,12 @@ pub fn show_graphics_editor(
         for (i, (button_name, button_type)) in name_and_types.iter().enumerate() {
             if ui.button(button_name) {
                 tab.new_line_at_click_index(button_type.to_owned());
+
+                let right_click_index = match tab.tab_menu_data.right_click_popup_index() {
+                    Some(index) => index + 1,
+                    None => tab.hltas.lines.len() - 1,
+                };
+                tab.undo_redo_handler.add_lines(right_click_index, 1);
 
                 ui.close_current_popup();
             }
@@ -502,8 +507,9 @@ pub fn show_graphics_editor(
                         ui.set_cursor_screen_pos([jump_menu_offset, ui.cursor_screen_pos()[1]]);
 
                         // jump menu
-                        let jump_menu_edited =
-                            ui.group(|| show_jump_menu(ui, framebulk, properties, &i.to_string(), options));
+                        let jump_menu_edited = ui.group(|| {
+                            show_jump_menu(ui, framebulk, properties, &i.to_string(), options)
+                        });
 
                         ui.same_line();
                         ui.set_cursor_screen_pos([duck_menu_offset, ui.cursor_screen_pos()[1]]);
@@ -943,8 +949,12 @@ pub fn show_graphics_editor(
     }
 
     if let Some(stale_line) = stale_line {
+        tab.undo_redo_handler
+            .delete_lines(stale_line, vec![tab.hltas.lines[stale_line].to_owned()]);
         tab.remove_line_at_index(stale_line);
-    } else if keyboard_state.just_pressed(VirtualKeyCode::Delete)
+    }
+
+    if keyboard_state.just_pressed(VirtualKeyCode::Delete)
         || keyboard_state.just_pressed(VirtualKeyCode::Back)
     {
         tab.remove_selected_lines();

@@ -9,6 +9,7 @@ save-file = 保存
 close-file = 閉じる
 recent-files = 最近使用したファイル
 
+undo = 元に戻す
 cut = 切り取り
 copy = コピー
 paste = 貼り付け

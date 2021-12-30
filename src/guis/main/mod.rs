@@ -6,6 +6,7 @@ mod option_menu;
 mod property_some_none_field;
 mod property_string_field;
 mod tab;
+mod undo_redo_hltas;
 mod zero_ms_editor;
 
 use std::cell::RefCell;
@@ -305,6 +306,7 @@ impl MainGUI {
                     );
                 },
             );
+            let undo_key = KeyCombination::new(VirtualKeyCode::Z).ctrl();
             let cut_key = KeyCombination::new(VirtualKeyCode::X).ctrl();
             let copy_key = KeyCombination::new(VirtualKeyCode::C).ctrl();
             let paste_key = KeyCombination::new(VirtualKeyCode::V).ctrl();
@@ -365,6 +367,11 @@ impl MainGUI {
                     current_tab.borrow_mut().remove_selected_lines();
                 }
             };
+            let undo = || {
+                if let Some(current_tab) = &self.current_tab {
+                    current_tab.borrow_mut().undo_hltas();
+                }
+            };
 
             if copy_key.just_pressed(&self.keyboard_state) {
                 copy();
@@ -378,10 +385,19 @@ impl MainGUI {
             if cut_key.just_pressed(&self.keyboard_state) {
                 cut();
             }
+            if undo_key.just_pressed(&self.keyboard_state) {
+                undo();
+            }
 
             ui.menu(
                 self.options.locale_lang().get_string_from_id("edit-menu"),
                 || {
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("undo"))
+                        .shortcut(undo_key.to_string())
+                        .build(ui)
+                    {
+                        undo();
+                    }
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("cut"))
                         .shortcut(cut_key.to_string())
                         .build(ui)

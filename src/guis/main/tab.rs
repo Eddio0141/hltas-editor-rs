@@ -16,6 +16,8 @@ use crate::{
     locale::LOCALES,
 };
 
+use super::undo_redo_hltas::UndoRedoHandler;
+
 #[derive(Clone, Debug)]
 pub struct HLTASFileTab {
     title: String,
@@ -23,8 +25,10 @@ pub struct HLTASFileTab {
     // TODO make this better with making it private and borrow iter mut on the lines
     // idea: make a "token" that lets you mutably access this field with pop required to be called at the end,
     //  which will update the status of tab_menu_data. display a warning or a error if pop isn't called
+    //  use [must_use]
     pub hltas: HLTAS,
     pub tab_menu_data: HLTASMenuState,
+    pub undo_redo_handler: UndoRedoHandler,
 }
 
 impl<'a> HLTASFileTab {
@@ -49,6 +53,7 @@ impl<'a> HLTASFileTab {
             path: Some(path.to_path_buf()),
             hltas,
             tab_menu_data,
+            undo_redo_handler: UndoRedoHandler::new(),
         })
     }
 
@@ -61,7 +66,7 @@ impl<'a> HLTASFileTab {
         HLTASFileTab::default_title(lang)
     }
 
-    // BUG fix language change for title (opt out serialization for the titles?)
+    // BUG fix language change for title
     fn default_title(lang: &LanguageIdentifier) -> String {
         LOCALES.lookup(lang, "new-file-title")
     }
@@ -72,6 +77,7 @@ impl<'a> HLTASFileTab {
             path: None,
             hltas: HLTAS::default(),
             tab_menu_data: HLTASMenuState::new(&HLTAS::default()),
+            undo_redo_handler: UndoRedoHandler::new(),
         }
     }
 
@@ -169,6 +175,11 @@ impl<'a> HLTASFileTab {
         {
             self.remove_line_at_index(*index);
         }
+    }
+
+    pub fn undo_hltas(&mut self) {
+        self.undo_redo_handler
+            .undo(&mut self.hltas, &mut self.tab_menu_data);
     }
 }
 

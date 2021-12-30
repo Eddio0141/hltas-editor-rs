@@ -9,6 +9,7 @@ save-file = Save
 close-file = Close
 recent-files = Recent files
 
+undo = Undo
 cut = Cut
 copy = Copy
 paste = Paste

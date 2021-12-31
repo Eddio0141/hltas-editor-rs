@@ -10,6 +10,7 @@ close-file = 閉じる
 recent-files = 最近使用したファイル
 
 undo = 元に戻す
+redo = やり直す
 cut = 切り取り
 copy = コピー
 paste = 貼り付け

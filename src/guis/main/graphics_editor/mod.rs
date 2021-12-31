@@ -353,7 +353,7 @@ pub fn show_graphics_editor(
                     Some(index) => index + 1,
                     None => tab.hltas.lines.len() - 1,
                 };
-                tab.undo_redo_handler.add_lines(right_click_index, 1);
+                tab.undo_redo_handler.add_lines(vec![right_click_index]);
 
                 ui.close_current_popup();
             }

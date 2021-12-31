@@ -307,6 +307,7 @@ impl MainGUI {
                 },
             );
             let undo_key = KeyCombination::new(VirtualKeyCode::Z).ctrl();
+            let redo_key = KeyCombination::new(VirtualKeyCode::Y).ctrl();
             let cut_key = KeyCombination::new(VirtualKeyCode::X).ctrl();
             let copy_key = KeyCombination::new(VirtualKeyCode::C).ctrl();
             let paste_key = KeyCombination::new(VirtualKeyCode::V).ctrl();
@@ -335,16 +336,26 @@ impl MainGUI {
                                 .selected_indexes_collection()
                                 .last()
                             {
-                                current_tab
-                                    .undo_redo_handler
-                                    .add_lines(*last_selected_index, clipboard.len());
+                                current_tab.undo_redo_handler.add_lines(
+                                    clipboard
+                                        .iter()
+                                        .enumerate()
+                                        .map(|(i, _)| i + *last_selected_index)
+                                        .collect::<Vec<_>>(),
+                                );
 
                                 for (i, line) in clipboard.iter().enumerate() {
                                     current_tab
                                         .insert_line(last_selected_index + i, line.to_owned());
                                 }
                             } else if current_tab.hltas_lines_is_empty() {
-                                current_tab.undo_redo_handler.add_lines(0, clipboard.len());
+                                current_tab.undo_redo_handler.add_lines(
+                                    clipboard
+                                        .iter()
+                                        .enumerate()
+                                        .map(|(i, _)| i)
+                                        .collect::<Vec<_>>(),
+                                );
 
                                 for line in clipboard {
                                     current_tab.push_line(line);
@@ -397,6 +408,11 @@ impl MainGUI {
                     current_tab.borrow_mut().undo_hltas();
                 }
             };
+            let redo = || {
+                if let Some(current_tab) = &self.current_tab {
+                    current_tab.borrow_mut().redo_hltas();
+                }
+            };
 
             if copy_key.just_pressed(&self.keyboard_state) {
                 copy();
@@ -413,6 +429,9 @@ impl MainGUI {
             if undo_key.just_pressed(&self.keyboard_state) {
                 undo();
             }
+            if redo_key.just_pressed(&self.keyboard_state) {
+                redo();
+            }
 
             ui.menu(
                 self.options.locale_lang().get_string_from_id("edit-menu"),
@@ -422,6 +441,12 @@ impl MainGUI {
                         .build(ui)
                     {
                         undo();
+                    }
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("redo"))
+                        .shortcut(redo_key.to_string())
+                        .build(ui)
+                    {
+                        redo();
                     }
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("cut"))
                         .shortcut(cut_key.to_string())

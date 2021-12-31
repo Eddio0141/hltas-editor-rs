@@ -181,6 +181,11 @@ impl<'a> HLTASFileTab {
         self.undo_redo_handler
             .undo(&mut self.hltas, &mut self.tab_menu_data);
     }
+
+    pub fn redo_hltas(&mut self) {
+        self.undo_redo_handler
+            .redo(&mut self.hltas, &mut self.tab_menu_data);
+    }
 }
 
 /// Struct to keep track of some menu states for the hltas object in the tab

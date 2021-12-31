@@ -10,6 +10,7 @@ close-file = Close
 recent-files = Recent files
 
 undo = Undo
+redo = Redo
 cut = Cut
 copy = Copy
 paste = Paste

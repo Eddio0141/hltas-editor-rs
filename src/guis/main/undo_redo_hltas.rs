@@ -20,10 +20,8 @@ impl Action {
     /// * Returns a reverse of what action was taken in a new Action instance
     fn take_action(&self, hltas: &mut HLTAS, tab_menu_data: &mut HLTASMenuState) -> Self {
         match self {
-            Action::DeleteLine {
-                indexes_and_lines: lines_and_indexes,
-            } => {
-                for (i, line) in lines_and_indexes {
+            Action::DeleteLine { indexes_and_lines } => {
+                for (i, line) in indexes_and_lines {
                     if hltas.lines.is_empty() {
                         tab_menu_data.push_hltas_line(&line);
                         hltas.lines.push(line.to_owned());
@@ -34,15 +32,17 @@ impl Action {
                 }
 
                 Action::AddLine {
-                    indexes: lines_and_indexes.into_iter().map(|(i, _)| *i).collect(),
+                    indexes: indexes_and_lines.into_iter().map(|(i, _)| *i).collect(),
                 }
             }
             Action::AddLine { indexes } => {
-                let mut indexes_and_lines = Vec::new();
+                let indexes_and_lines = indexes
+                    .iter()
+                    .map(|i| (*i, hltas.lines[*i].to_owned()))
+                    .collect();
 
                 for i in indexes.into_iter().rev() {
                     tab_menu_data.remove_line_at_index(*i);
-                    indexes_and_lines.push((*i, hltas.lines[*i].to_owned()));
                     hltas.lines.remove(*i);
                 }
 
@@ -71,6 +71,8 @@ impl UndoRedoHandler {
             self.redo_stack
                 .push(undo_action.take_action(hltas, tab_menu_data));
 
+            println!("{:#?}", self.redo_stack);
+
             tab_menu_data.got_modified();
         }
     }
@@ -79,6 +81,8 @@ impl UndoRedoHandler {
         if let Some(redo_action) = self.redo_stack.pop() {
             self.undo_stack
                 .push(redo_action.take_action(hltas, tab_menu_data));
+
+            println!("{:#?}", self.undo_stack);
 
             tab_menu_data.got_modified();
         }

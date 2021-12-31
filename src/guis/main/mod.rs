@@ -14,6 +14,7 @@ use std::path::Path;
 use std::rc::Rc;
 use std::{collections::VecDeque, fs, path::PathBuf};
 
+use hltas_cleaner::cleaners;
 use imgui::{
     Condition, MenuItem, StyleVar, TabBar, TabItem, TabItemFlags, Ui, Window, WindowFlags,
 };
@@ -476,25 +477,24 @@ impl MainGUI {
                     }
                 },
             );
-            // ui.menu(
-            //     self.options.locale_lang().get_string_from_id("tools-menu"),
-            //     || {
-            //         if MenuItem::new(
-            //             self.options
-            //                 .locale_lang()
-            //                 .get_string_from_id("hltas-cleaner"),
-            //         )
-            //         .build(ui)
-            //         {
-            //             // TODO show options
-            //             // TODO think of how to make the hltas mutable borrow work
-            //             // if let Some(current_tab) = &self.current_tab {
-            //             //     cleaners::no_dupe_framebulks(&mut current_tab.borrow_mut().hltas);
-            //             //     current_tab.borrow_mut().got_modified();
-            //             // }
-            //         }
-            //     },
-            // );
+            ui.menu(
+                self.options.locale_lang().get_string_from_id("tools-menu"),
+                || {
+                    if MenuItem::new(
+                        self.options
+                            .locale_lang()
+                            .get_string_from_id("hltas-cleaner"),
+                    )
+                    .build(ui)
+                    {
+                        // TODO show options
+                        if let Some(current_tab) = &self.current_tab {
+                            cleaners::no_dupe_framebulks(&mut current_tab.borrow_mut().hltas);
+                            current_tab.borrow_mut().tab_menu_data.got_modified();
+                        }
+                    }
+                },
+            );
 
             ui.menu(
                 self.options

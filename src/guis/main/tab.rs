@@ -99,7 +99,7 @@ impl<'a> HLTASFileTab {
 
     pub fn new_line_at_click_index(&mut self, line: hltas::types::Line) {
         match self.tab_menu_data.right_click_popup_index() {
-            Some(index) => self.insert_line(index + 1, line),
+            Some(index) => self.insert_line(index, line),
             None => self.push_line(line),
         }
         self.tab_menu_data.got_modified();

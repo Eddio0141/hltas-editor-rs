@@ -448,6 +448,7 @@ impl MainGUI {
                     {
                         redo();
                     }
+                    ui.separator();
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("cut"))
                         .shortcut(cut_key.to_string())
                         .build(ui)
@@ -466,6 +467,7 @@ impl MainGUI {
                     {
                         paste();
                     }
+                    ui.separator();
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("select-all"))
                         .shortcut(select_all_key.to_string())
                         .build(ui)

@@ -318,8 +318,8 @@ impl MainGUI {
                         current_tab
                             .borrow()
                             .get_selected_lines()
-                            .iter()
-                            .map(|&line| line.to_owned())
+                            .into_iter()
+                            .cloned()
                             .collect::<Vec<_>>(),
                     ));
                 }
@@ -335,11 +335,17 @@ impl MainGUI {
                                 .selected_indexes_collection()
                                 .last()
                             {
+                                current_tab
+                                    .undo_redo_handler
+                                    .add_lines(*last_selected_index, clipboard.len());
+
                                 for (i, line) in clipboard.iter().enumerate() {
                                     current_tab
                                         .insert_line(last_selected_index + i, line.to_owned());
                                 }
                             } else if current_tab.hltas_lines_is_empty() {
+                                current_tab.undo_redo_handler.add_lines(0, clipboard.len());
+
                                 for line in clipboard {
                                     current_tab.push_line(line);
                                 }
@@ -355,12 +361,31 @@ impl MainGUI {
             };
             let cut = || {
                 if let Some(current_tab) = &self.current_tab {
+                    let selected_lines = current_tab
+                        .borrow()
+                        .tab_menu_data
+                        .selected_indexes()
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, is_selected)| {
+                            if *is_selected {
+                                Some((i, current_tab.borrow().hltas.lines[i].to_owned()))
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    current_tab
+                        .borrow_mut()
+                        .undo_redo_handler
+                        .delete_lines(selected_lines);
+
                     ui.set_clipboard_text(lines_to_str(
                         current_tab
                             .borrow()
                             .get_selected_lines()
-                            .iter()
-                            .map(|&line| line.to_owned())
+                            .into_iter()
+                            .cloned()
                             .collect::<Vec<_>>(),
                     ));
 

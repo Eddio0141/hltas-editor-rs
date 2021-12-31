@@ -27,3 +27,5 @@ save-file-question = 編集したファイルを保存したいですか？
 
 warning = 警告
 error = エラー
+frametime-f32-parse-err = frametimeをf32として解析できません
+setting-default-frametime = ディフォルトのframetimeに変えます

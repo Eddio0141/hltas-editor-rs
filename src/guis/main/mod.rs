@@ -477,6 +477,7 @@ impl MainGUI {
                     }
                 },
             );
+            // TODO goto, find menu
             ui.menu(
                 self.options.locale_lang().get_string_from_id("tools-menu"),
                 || {

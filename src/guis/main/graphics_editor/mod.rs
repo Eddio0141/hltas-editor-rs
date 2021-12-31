@@ -212,7 +212,7 @@ pub fn show_graphics_editor(
     let new_line_menu_id = "new_line_menu";
     ui.popup(new_line_menu_id, || {
         let previous_lines = match tab.tab_menu_data.right_click_popup_index() {
-            Some(index) => Some(&tab.hltas.lines[..index + 1]),
+            Some(index) => Some(&tab.hltas.lines[..index]),
             None => {
                 if tab.hltas.lines.is_empty() {
                     None
@@ -245,9 +245,6 @@ pub fn show_graphics_editor(
         };
 
         // TODO option for what to choose here
-        // TODO new line menu doesn't let users insert lines at index 0
-        //      make it so it knows its selecting line before line 0?
-        //      or if right click elsewhere then insert at index 0?
         let name_and_types = vec![
             ("framebulk", {
                 let new_framebulk = new_framebulk_with_frametime_framecount();
@@ -380,6 +377,7 @@ pub fn show_graphics_editor(
 
     let mut new_line_menu_clicked_on_line = false;
 
+    let hltas_lines_is_empty = tab.hltas_lines_is_empty();
     let tab_menu_data = &mut tab.tab_menu_data;
     let properties = &tab.hltas.properties;
 
@@ -903,12 +901,22 @@ pub fn show_graphics_editor(
 
                 // check if right click for new line menu
                 if ui.is_mouse_clicked(MouseButton::Right) {
-                    tab_menu_data.set_right_click_index(i);
+                    tab_menu_data.set_right_click_index(i + 1);
                     new_line_menu_clicked_on_line = true;
                     ui.open_popup(new_line_menu_id);
                 }
             } else if !new_line_menu_clicked_on_line && ui.is_mouse_clicked(MouseButton::Right) {
-                tab_menu_data.right_click_elsewhere();
+                if hltas_lines_is_empty {
+                    tab_menu_data.right_click_elsewhere();
+                } else if i == 0
+                    && ui.is_mouse_hovering_rect([0.0, 0.0], [f32::MAX, group_rect_min[1]])
+                {
+                    // check for right click above first line
+                    tab_menu_data.set_right_click_index(i);
+                    new_line_menu_clicked_on_line = true;
+                } else {
+                    tab_menu_data.right_click_elsewhere();
+                }
                 ui.open_popup(new_line_menu_id);
             }
 

@@ -71,8 +71,6 @@ impl UndoRedoHandler {
             self.redo_stack
                 .push(undo_action.take_action(hltas, tab_menu_data));
 
-            println!("{:#?}", self.redo_stack);
-
             tab_menu_data.got_modified();
         }
     }
@@ -81,8 +79,6 @@ impl UndoRedoHandler {
         if let Some(redo_action) = self.redo_stack.pop() {
             self.undo_stack
                 .push(redo_action.take_action(hltas, tab_menu_data));
-
-            println!("{:#?}", self.undo_stack);
 
             tab_menu_data.got_modified();
         }

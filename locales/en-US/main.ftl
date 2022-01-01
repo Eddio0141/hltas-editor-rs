@@ -27,3 +27,6 @@ save-file-question = Would you like to save the modified file?
 
 warning = Warning!
 error = Error
+
+demo-name = Demo name
+set-demo-recording = Set demo recording

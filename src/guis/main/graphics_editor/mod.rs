@@ -63,8 +63,10 @@ pub fn show_graphics_editor(
             ui,
             &mut tab.hltas_properties_mut().demo,
             true,
-            "Demo name",
-            "Set demo recording",
+            &options.locale_lang().get_string_from_id("demo-name"),
+            &options
+                .locale_lang()
+                .get_string_from_id("set-demo-recording"),
             0.5,
         );
 

@@ -27,3 +27,6 @@ save-file-question = 編集したファイルを保存したいですか？
 
 warning = 警告
 error = エラー
+
+demo-name = デモ名
+set-demo-recording = デモを録画する

@@ -28,5 +28,24 @@ save-file-question = 編集したファイルを保存したいですか？
 
 warning = 警告
 error = エラー
-frametime-f32-parse-err = frametimeをf32として解析できません
-setting-default-frametime = ディフォルトのframetimeに変えます
+
+frametime-f32-parse-err = フレームタイムをf32として解析できません
+setting-default-frametime = ディフォルトのフレームタイムに変えます
+
+properties = プロパティ
+demo-name = デモ名
+set-demo-recording = デモを録画する
+save-name = セーブ名
+save-after-hltas = hltas実行後にセーブ
+enable-0ms-ducktap = 0ms ダックタップを有効にする
+zero-ms-frametime = 0ms フレームタイム
+enable-shared-nonshared = 共用 / 非共用 乱数を有効
+set-hlstrafe-version = hlstrafeバージョンを選択する
+hlstrafe-version = hlstrafeバージョン
+set-hltas-load-commands = hltasロードコマンドを選択する
+load-commands = ロードコマンド
+commands = コマンド
+shared-rng = 共用乱数
+non-shared-rng = 非共用乱数
+
+lines = 行

@@ -28,5 +28,8 @@ save-file-question = Would you like to save the modified file?
 warning = Warning!
 error = Error
 
+frametime-f32-parse-err = Cannot parse frametime as f32,
+setting-default-frametime = Setting frametime to default option
+
 demo-name = Demo name
 set-demo-recording = Set demo recording

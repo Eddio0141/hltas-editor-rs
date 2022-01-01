@@ -16,6 +16,7 @@ use imgui::{
     CollapsingHeader, ComboBox, Drag, InputFloat, InputText, MouseButton, Selectable, StyleColor,
     Ui,
 };
+use native_dialog::{MessageDialog, MessageType};
 use winit::event::VirtualKeyCode;
 
 use crate::{
@@ -93,18 +94,40 @@ pub fn show_graphics_editor(
                 ui.same_line();
 
                 let item_width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
-                let mut frametime_f32 = frametime.parse::<f32>().unwrap();
+
+                // will show an error and set to default value
+                let (mut frametime_f32, frametime_f32_edited) = match frametime.parse::<f32>() {
+                    Ok(frametime) => (frametime, false),
+                    Err(err) => {
+                        MessageDialog::new()
+                            .set_title(&options.locale_lang().get_string_from_id("error"))
+                            .set_text(&format!(
+                                "{}\n{}\n{}",
+                                options
+                                    .locale_lang()
+                                    .get_string_from_id("frametime-f32-parse-err"),
+                                options
+                                    .locale_lang()
+                                    .get_string_from_id("setting-default-frametime"),
+                                err
+                            ))
+                            .set_type(MessageType::Error)
+                            .show_alert()
+                            .ok();
+                        (options.default_0ms_frametime(), true)
+                    }
+                };
                 let input_text_edited =
                     show_zero_ms_editor(ui, "field_0ms_editor", &mut frametime_f32);
                 item_width_token.pop(ui);
 
-                if input_text_edited {
+                if input_text_edited || frametime_f32_edited {
                     *frametime = frametime_f32.to_string();
                 }
 
                 PropertyFieldResult {
                     field_enabled: x_button_clicked,
-                    edited: input_text_edited,
+                    edited: input_text_edited || frametime_f32_edited,
                 }
             },
         );

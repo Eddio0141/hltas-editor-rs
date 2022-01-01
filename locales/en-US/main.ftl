@@ -16,7 +16,8 @@ copy = Copy
 paste = Paste
 select-all = Select all
 
-hltas-cleaner = HLTAS cleaner
+no-dupe-framebulk = No duplicate framebulk
+no-comments = No comments
 
 open-options-menu = Options menu
 toggle-graphics-editor = Toggle graphics editor

@@ -6,8 +6,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-hltas-cleaner = { git = "https://github.com/Eddio0141/hltas-cleaner/", branch = "master" }
-hltas = { git = "https://github.com/HLTAS/hltas", branch = "master" }
+hltas_cleaner = "2.0.0"
+hltas = "0.5.0"
 native-dialog = "0.6.1"
 fluent-templates = "0.6.1"
 locale_config = "0.3.0"

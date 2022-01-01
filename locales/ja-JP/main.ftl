@@ -16,7 +16,8 @@ copy = コピー
 paste = 貼り付け
 select-all = すべて選択
 
-hltas-cleaner = HLTASのクリーンアップ
+no-dupe-framebulk = 複製のframebulkを一つに合わせる
+no-comments = No comments
 
 open-options-menu = オプションメニュー
 toggle-graphics-editor = グラフィックエディタの切り替え

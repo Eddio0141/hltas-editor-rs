@@ -484,13 +484,20 @@ impl MainGUI {
                     if MenuItem::new(
                         self.options
                             .locale_lang()
-                            .get_string_from_id("hltas-cleaner"),
+                            .get_string_from_id("no-dupe-framebulk"),
                     )
                     .build(ui)
                     {
-                        // TODO show options
                         if let Some(current_tab) = &self.current_tab {
                             cleaners::no_dupe_framebulks(&mut current_tab.borrow_mut().hltas);
+                            current_tab.borrow_mut().tab_menu_data.got_modified();
+                        }
+                    }
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("no-comments"))
+                        .build(ui)
+                    {
+                        if let Some(current_tab) = &self.current_tab {
+                            cleaners::remove_comments(&mut current_tab.borrow_mut().hltas);
                             current_tab.borrow_mut().tab_menu_data.got_modified();
                         }
                     }

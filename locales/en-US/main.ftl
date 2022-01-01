@@ -28,8 +28,23 @@ save-file-question = Would you like to save the modified file?
 warning = Warning!
 error = Error
 
-frametime-f32-parse-err = Cannot parse frametime as f32,
+frametime-f32-parse-err = Cannot parse frametime as f32
 setting-default-frametime = Setting frametime to default option
 
+properties = Properties
 demo-name = Demo name
 set-demo-recording = Set demo recording
+save-name = Save name
+save-after-hltas = Save after hltas
+enable-0ms-ducktap = Enable 0ms ducktap
+zero-ms-frametime = 0ms frametime
+enable-shared-nonshared = Enable shared / non-shared rng
+set-hlstrafe-version = Set hlstrafe version
+hlstrafe-version = hlstrafe version
+set-hltas-load-commands = Set hltas load commands
+load-commands = Load commands
+commands = Commands
+shared-rng = Shared rng
+non-shared-rng = Non-shared rng
+
+lines = Lines

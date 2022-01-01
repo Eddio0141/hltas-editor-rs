@@ -56,134 +56,156 @@ pub fn show_graphics_editor(
 ) {
     let draw_list = ui.get_window_draw_list();
 
-    let properties_edited = if CollapsingHeader::new("Properties")
-        .default_open(true)
-        .build(ui)
-    {
-        let demo_edited = property_string_field_ui(
-            ui,
-            &mut tab.hltas_properties_mut().demo,
-            true,
-            &options.locale_lang().get_string_from_id("demo-name"),
-            &options
-                .locale_lang()
-                .get_string_from_id("set-demo-recording"),
-            0.5,
-        );
+    let properties_edited =
+        if CollapsingHeader::new(options.locale_lang().get_string_from_id("properties"))
+            .default_open(true)
+            .build(ui)
+        {
+            let demo_edited = property_string_field_ui(
+                ui,
+                &mut tab.hltas_properties_mut().demo,
+                true,
+                &options.locale_lang().get_string_from_id("demo-name"),
+                &options
+                    .locale_lang()
+                    .get_string_from_id("set-demo-recording"),
+                0.5,
+            );
 
-        let save_after_edited = property_string_field_ui(
-            ui,
-            &mut tab.hltas_properties_mut().save,
-            true,
-            "Save name",
-            "Save after hltas",
-            0.5,
-        );
+            let save_after_edited = property_string_field_ui(
+                ui,
+                &mut tab.hltas_properties_mut().save,
+                true,
+                &options.locale_lang().get_string_from_id("save-name"),
+                &options.locale_lang().get_string_from_id("save-after-hltas"),
+                0.5,
+            );
 
-        // TODO, make this easier to edit
-        let ducktap_0ms_edited = property_some_none_field_ui(
-            ui,
-            &mut tab.hltas_properties_mut().frametime_0ms,
-            options.default_0ms_frametime().to_string(),
-            "Enable 0ms ducktap",
-            |frametime| {
-                let x_button_clicked = !show_x_button(ui, "frametime");
-                ui.same_line();
+            // TODO, make this easier to edit
+            let ducktap_0ms_edited = property_some_none_field_ui(
+                ui,
+                &mut tab.hltas_properties_mut().frametime_0ms,
+                options.default_0ms_frametime().to_string(),
+                &options
+                    .locale_lang()
+                    .get_string_from_id("enable-0ms-ducktap"),
+                |frametime| {
+                    let x_button_clicked = !show_x_button(ui, "frametime");
+                    ui.same_line();
 
-                ui.text("0ms frametime");
-                ui.same_line();
+                    ui.text(
+                        options
+                            .locale_lang()
+                            .get_string_from_id("zero-ms-frametime"),
+                    );
+                    ui.same_line();
 
-                let item_width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
+                    let item_width_token =
+                        ui.push_item_width(ui.window_content_region_width() * 0.25);
 
-                // will show an error and set to default value
-                let (mut frametime_f32, frametime_f32_edited) = match frametime.parse::<f32>() {
-                    Ok(frametime) => (frametime, false),
-                    Err(err) => {
-                        MessageDialog::new()
-                            .set_title(&options.locale_lang().get_string_from_id("error"))
-                            .set_text(&format!(
-                                "{}\n{}\n{}",
-                                options
-                                    .locale_lang()
-                                    .get_string_from_id("frametime-f32-parse-err"),
-                                options
-                                    .locale_lang()
-                                    .get_string_from_id("setting-default-frametime"),
-                                err
-                            ))
-                            .set_type(MessageType::Error)
-                            .show_alert()
-                            .ok();
-                        (options.default_0ms_frametime(), true)
+                    // will show an error and set to default value
+                    let (mut frametime_f32, frametime_f32_edited) = match frametime.parse::<f32>() {
+                        Ok(frametime) => (frametime, false),
+                        Err(err) => {
+                            MessageDialog::new()
+                                .set_title(&options.locale_lang().get_string_from_id("error"))
+                                .set_text(&format!(
+                                    "{}\n{}\n{}",
+                                    options
+                                        .locale_lang()
+                                        .get_string_from_id("frametime-f32-parse-err"),
+                                    options
+                                        .locale_lang()
+                                        .get_string_from_id("setting-default-frametime"),
+                                    err
+                                ))
+                                .set_type(MessageType::Error)
+                                .show_alert()
+                                .ok();
+                            (options.default_0ms_frametime(), true)
+                        }
+                    };
+                    let input_text_edited =
+                        show_zero_ms_editor(ui, "field_0ms_editor", &mut frametime_f32);
+                    item_width_token.pop(ui);
+
+                    if input_text_edited || frametime_f32_edited {
+                        *frametime = frametime_f32.to_string();
                     }
-                };
-                let input_text_edited =
-                    show_zero_ms_editor(ui, "field_0ms_editor", &mut frametime_f32);
-                item_width_token.pop(ui);
 
-                if input_text_edited || frametime_f32_edited {
-                    *frametime = frametime_f32.to_string();
-                }
+                    PropertyFieldResult {
+                        field_enabled: x_button_clicked,
+                        edited: input_text_edited || frametime_f32_edited,
+                    }
+                },
+            );
+            let seed_edited = property_some_none_field_ui(
+                ui,
+                &mut tab.hltas_properties_mut().seeds,
+                Seeds {
+                    shared: 0,
+                    non_shared: 0,
+                },
+                &options
+                    .locale_lang()
+                    .get_string_from_id("enable-shared-nonshared"),
+                |seeds| {
+                    let x_button_clicked = !show_x_button(ui, "seeds");
+                    ui.same_line();
 
-                PropertyFieldResult {
-                    field_enabled: x_button_clicked,
-                    edited: input_text_edited || frametime_f32_edited,
-                }
-            },
-        );
-        let seed_edited = property_some_none_field_ui(
-            ui,
-            &mut tab.hltas_properties_mut().seeds,
-            Seeds {
-                shared: 0,
-                non_shared: 0,
-            },
-            "enable shared / non-shared rng set",
-            |seeds| {
-                let x_button_clicked = !show_x_button(ui, "seeds");
-                ui.same_line();
+                    let item_width = ui.window_content_region_width() * 0.25;
 
-                let item_width = ui.window_content_region_width() * 0.25;
+                    let shared_rng_edited = show_shared_seed_editor(
+                        ui,
+                        item_width,
+                        "properties",
+                        &mut seeds.shared,
+                        options.locale_lang(),
+                    );
+                    ui.same_line();
+                    let nonshared_rng_edited = show_non_shared_seed_editor(
+                        ui,
+                        item_width,
+                        "properties",
+                        &mut seeds.non_shared,
+                        options.locale_lang(),
+                    );
 
-                let shared_rng_edited =
-                    show_shared_seed_editor(ui, item_width, "properties", &mut seeds.shared);
-                ui.same_line();
-                let nonshared_rng_edited = show_non_shared_seed_editor(
-                    ui,
-                    item_width,
-                    "properties",
-                    &mut seeds.non_shared,
-                );
+                    PropertyFieldResult {
+                        field_enabled: x_button_clicked,
+                        edited: shared_rng_edited || nonshared_rng_edited,
+                    }
+                },
+            );
 
-                PropertyFieldResult {
-                    field_enabled: x_button_clicked,
-                    edited: shared_rng_edited || nonshared_rng_edited,
-                }
-            },
-        );
+            // TODO better way for this to be showen? maybe a version check?
+            // TODO figure out "default"
+            let hlstrafe_version_edited = property_some_none_field_ui(
+                ui,
+                &mut tab.hltas_properties_mut().hlstrafe_version,
+                NonZeroU32::new(3).unwrap(),
+                &options
+                    .locale_lang()
+                    .get_string_from_id("set-hlstrafe-version"),
+                |hlstrafe_version| {
+                    let x_button_clicked = !show_x_button(ui, "hlstrafe_version");
 
-        // TODO better way for this to be showen? maybe a version check?
-        // TODO figure out "default"
-        let hlstrafe_version_edited = property_some_none_field_ui(
-            ui,
-            &mut tab.hltas_properties_mut().hlstrafe_version,
-            NonZeroU32::new(3).unwrap(),
-            "set hlstrafe version",
-            |hlstrafe_version| {
-                let x_button_clicked = !show_x_button(ui, "hlstrafe_version");
+                    ui.same_line();
 
-                ui.same_line();
+                    let item_width_token =
+                        ui.push_item_width(ui.window_content_region_width() * 0.25);
 
-                let item_width_token = ui.push_item_width(ui.window_content_region_width() * 0.25);
+                    let mut hlstrafe_version_string = hlstrafe_version.to_string();
 
-                let mut hlstrafe_version_string = hlstrafe_version.to_string();
-
-                let hlstrafe_version_edited =
-                    if InputText::new(ui, "hlstrafe version", &mut hlstrafe_version_string)
-                        .chars_noblank(true)
-                        .chars_decimal(true)
-                        .hint("hlstrafe version")
-                        .build()
+                    let hlstrafe_version_edited = if InputText::new(
+                        ui,
+                        options.locale_lang().get_string_from_id("hlstrafe-version"),
+                        &mut hlstrafe_version_string,
+                    )
+                    .chars_noblank(true)
+                    .chars_decimal(true)
+                    .hint(options.locale_lang().get_string_from_id("hlstrafe-version"))
+                    .build()
                     {
                         if let Ok(str_to_nonzero) = hlstrafe_version_string.parse::<NonZeroU32>() {
                             *hlstrafe_version = str_to_nonzero;
@@ -193,46 +215,53 @@ pub fn show_graphics_editor(
                         false
                     };
 
-                item_width_token.pop(ui);
+                    item_width_token.pop(ui);
 
-                PropertyFieldResult {
-                    field_enabled: x_button_clicked,
-                    edited: hlstrafe_version_edited,
-                }
-            },
-        );
+                    PropertyFieldResult {
+                        field_enabled: x_button_clicked,
+                        edited: hlstrafe_version_edited,
+                    }
+                },
+            );
 
-        let load_cmds_edited = property_some_none_field_ui(
-            ui,
-            &mut tab.hltas_properties_mut().load_command,
-            String::new(),
-            "set hltas load commands",
-            |cmds| {
-                let x_button_clicked = !show_x_button(ui, "load_commands");
+            let load_cmds_edited = property_some_none_field_ui(
+                ui,
+                &mut tab.hltas_properties_mut().load_command,
+                String::new(),
+                &options
+                    .locale_lang()
+                    .get_string_from_id("set-hltas-load-commands"),
+                |cmds| {
+                    let x_button_clicked = !show_x_button(ui, "load_commands");
 
-                ui.same_line();
+                    ui.same_line();
 
-                let command_edited = show_cmd_editor(ui, cmds, "load commands");
+                    let command_edited = show_cmd_editor(
+                        ui,
+                        cmds,
+                        &options.locale_lang().get_string_from_id("load-commands"),
+                        &options.locale_lang(),
+                    );
 
-                PropertyFieldResult {
-                    field_enabled: x_button_clicked,
-                    edited: command_edited,
-                }
-            },
-        );
+                    PropertyFieldResult {
+                        field_enabled: x_button_clicked,
+                        edited: command_edited,
+                    }
+                },
+            );
 
-        demo_edited
-            || save_after_edited
-            || ducktap_0ms_edited
-            || seed_edited
-            || hlstrafe_version_edited
-            || load_cmds_edited
-    } else {
-        false
-    };
+            demo_edited
+                || save_after_edited
+                || ducktap_0ms_edited
+                || seed_edited
+                || hlstrafe_version_edited
+                || load_cmds_edited
+        } else {
+            false
+        };
 
     ui.separator();
-    ui.text("Lines");
+    ui.text(options.locale_lang().get_string_from_id("lines"));
 
     let new_line_menu_id = "new_line_menu";
     ui.popup(new_line_menu_id, || {
@@ -566,8 +595,9 @@ pub fn show_graphics_editor(
                         ui.set_cursor_screen_pos([command_menu_offset, ui.cursor_screen_pos()[1]]);
 
                         // command menu
-                        let command_menu_edited =
-                            ui.group(|| show_command_menu(ui, framebulk, &i.to_string()));
+                        let command_menu_edited = ui.group(|| {
+                            show_command_menu(ui, framebulk, &i.to_string(), options.locale_lang())
+                        });
 
                         yaw_pitch_menu_edited
                             || strafe_menu_edited
@@ -595,6 +625,7 @@ pub fn show_graphics_editor(
                         ui.window_content_region_width() * 0.25,
                         "properties",
                         shared_seed,
+                        &options.locale_lang(),
                     ),
                     Line::Buttons(buttons) => {
                         let set_text = "set";
@@ -713,6 +744,7 @@ pub fn show_graphics_editor(
                         ui.window_content_region_width() * 0.25,
                         &format!("##nonshared_seed_edit{}", i),
                         non_shared_seed,
+                        options.locale_lang(),
                     ),
                     Line::Comment(comment) => {
                         let comment_frame_bg =

@@ -1,4 +1,5 @@
 mod cmd_editor;
+mod goto_menu;
 mod graphics_editor;
 mod key_combination;
 mod key_state;
@@ -23,6 +24,7 @@ use winit::event::VirtualKeyCode;
 
 use crate::helpers::hltas::{lines_to_str, str_to_lines};
 
+use self::goto_menu::GotoMenu;
 use self::graphics_editor::show_graphics_editor;
 use self::key_combination::KeyCombination;
 use self::key_state::KeyboardState;
@@ -40,6 +42,7 @@ pub struct MainGUI {
     #[cfg(debug_assertions)]
     debug_menu_opened: bool,
     keyboard_state: KeyboardState,
+    goto_menu: GotoMenu,
 }
 
 impl MainGUI {
@@ -216,6 +219,14 @@ impl MainGUI {
 
     pub fn show(&mut self, _: &mut bool, ui: &mut Ui) {
         self.keyboard_state.update(ui.io());
+
+        if let Some(current_tab) = &self.current_tab {
+            self.goto_menu.show(
+                ui,
+                self.options.locale_lang(),
+                &mut current_tab.borrow_mut(),
+            );
+        }
 
         let window_border_size_token = ui.push_style_var(StyleVar::WindowBorderSize(0.0));
         let window_min_size_token = ui.push_style_var(StyleVar::WindowMinSize([1.0, 1.0]));
@@ -477,7 +488,28 @@ impl MainGUI {
                     }
                 },
             );
-            // TODO goto, find menu
+
+            let goto_key = KeyCombination::new(VirtualKeyCode::G).ctrl();
+
+            if goto_key.just_pressed(&self.keyboard_state) {
+                if self.current_tab.is_some() {
+                    self.goto_menu.open();
+                }
+            }
+
+            // TODO find menu
+            ui.menu(
+                self.options.locale_lang().get_string_from_id("search-menu"),
+                || {
+                    if MenuItem::new(self.options.locale_lang().get_string_from_id("goto-line"))
+                        .build(ui)
+                    {
+                        if self.current_tab.is_some() {
+                            self.goto_menu.open();
+                        }
+                    }
+                },
+            );
             ui.menu(
                 self.options.locale_lang().get_string_from_id("tools-menu"),
                 || {
@@ -553,7 +585,7 @@ impl MainGUI {
             .resizable(false)
             .title_bar(false)
             .scrollable(false)
-            .bring_to_front_on_focus(!self.option_menu.is_opened())
+            .bring_to_front_on_focus(false)
             .build(ui, || {
                 TabBar::new("file_tabs").reorderable(true).build(ui, || {
                     let mut new_tab = None;
@@ -628,7 +660,7 @@ impl MainGUI {
             .resizable(false)
             .title_bar(false)
             .horizontal_scrollbar(true)
-            .bring_to_front_on_focus(!self.option_menu.is_opened())
+            .bring_to_front_on_focus(false)
             .build(ui, || {
                 if self.graphics_editor {
                     if let Some(tab) = &self.current_tab {
@@ -723,6 +755,7 @@ impl Default for MainGUI {
         let current_tab = Some(Rc::clone(&tabs[0]));
 
         Self {
+            goto_menu: GotoMenu::default(),
             tabs,
             current_tab,
             tab_switch_index: None,

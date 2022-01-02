@@ -195,6 +195,7 @@ pub struct HLTASMenuState {
     right_click_popup_index: Option<usize>,
     selected_indexes: Vec<bool>,
     got_modified: bool,
+    goto_line: Option<usize>,
 }
 
 impl HLTASMenuState {
@@ -216,6 +217,7 @@ impl HLTASMenuState {
             right_click_popup_index: None,
             selected_indexes: vec![false; hltas.lines.len()],
             got_modified: false,
+            goto_line: None,
         }
     }
 
@@ -312,6 +314,17 @@ impl HLTASMenuState {
 
     pub fn is_line_selected(&self, index: usize) -> bool {
         self.selected_indexes()[index]
+    }
+
+    /// Gets goto line and sets itself to None
+    pub fn goto_line(&mut self) -> Option<usize> {
+        let goto = self.goto_line;
+        self.goto_line = None;
+        goto
+    }
+
+    pub fn set_goto_line(&mut self, index: usize) {
+        self.goto_line = Some(index);
     }
 }
 

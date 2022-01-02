@@ -1,5 +1,6 @@
 file-menu = File
 edit-menu = Edit
+search-menu = Search
 tools-menu = Tools
 options-menu = Options
 
@@ -15,6 +16,9 @@ cut = Cut
 copy = Copy
 paste = Paste
 select-all = Select all
+
+goto-line = Goto line
+jump-to-line = Jump
 
 no-dupe-framebulk = No duplicate framebulk
 no-comments = No comments

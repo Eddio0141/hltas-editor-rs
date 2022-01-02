@@ -434,8 +434,15 @@ pub fn show_graphics_editor(
     let hltas_lines_is_empty = tab.hltas_lines_is_empty();
     let tab_menu_data = &mut tab.tab_menu_data;
     let properties = &tab.hltas.properties;
+    let goto_line = tab_menu_data.goto_line();
 
     for (i, line) in tab.hltas.lines.iter_mut().enumerate() {
+        if let Some(goto_line) = goto_line {
+            if i == goto_line {
+                ui.set_scroll_here_y();
+            }
+        }
+
         let is_rendering_line = {
             let scroll_y = ui.scroll_y();
             let cursor_y = ui.cursor_pos()[1];

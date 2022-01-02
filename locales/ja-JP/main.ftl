@@ -1,5 +1,6 @@
 file-menu = ファイル
 edit-menu = 編集
+search-menu = 検索
 tools-menu = ツール
 options-menu = オプション
 
@@ -15,6 +16,9 @@ cut = 切り取り
 copy = コピー
 paste = 貼り付け
 select-all = すべて選択
+
+goto-line = 行へジャンプ
+jump-to-line = ジャンプ
 
 no-dupe-framebulk = 複製のframebulkを一つに合わせる
 no-comments = コメントを消す

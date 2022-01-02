@@ -5,6 +5,7 @@ use crate::helpers::{imgui::input_usize, locale::locale_lang::LocaleLang};
 use super::tab::HLTASFileTab;
 
 pub struct GotoMenu {
+    prev_opened: bool,
     opened: bool,
     selected_index: usize,
 }
@@ -18,6 +19,7 @@ impl GotoMenu {
         if self.opened {
             let mut opened_internal = true;
             let mut selected_index = &mut self.selected_index;
+            let prev_opened = self.prev_opened;
 
             Window::new(locale_lang.get_string_from_id("goto-line"))
                 .opened(&mut self.opened)
@@ -32,6 +34,9 @@ impl GotoMenu {
                     Condition::Appearing,
                 )
                 .build(ui, || {
+                    if !prev_opened {
+                        ui.set_keyboard_focus_here();
+                    }
                     input_usize(ui, "goto line", &mut selected_index);
                     if ui.button(locale_lang.get_string_from_id("jump-to-line")) {
                         current_tab.tab_menu_data.set_goto_line(*selected_index);
@@ -43,12 +48,15 @@ impl GotoMenu {
                 self.opened = false;
             }
         }
+
+        self.prev_opened = self.opened;
     }
 }
 
 impl Default for GotoMenu {
     fn default() -> Self {
         Self {
+            prev_opened: false,
             opened: false,
             selected_index: 0,
         }

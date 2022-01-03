@@ -475,10 +475,8 @@ impl MainGUI {
 
             let goto_key = KeyCombination::new(VirtualKeyCode::G).ctrl();
 
-            if goto_key.just_pressed(&self.keyboard_state) {
-                if self.current_tab.is_some() {
-                    self.goto_menu.open();
-                }
+            if goto_key.just_pressed(&self.keyboard_state) && self.current_tab.is_some() {
+                self.goto_menu.open();
             }
 
             // TODO find menu
@@ -487,10 +485,9 @@ impl MainGUI {
                 || {
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("goto-line"))
                         .build(ui)
+                        && self.current_tab.is_some()
                     {
-                        if self.current_tab.is_some() {
-                            self.goto_menu.open();
-                        }
+                        self.goto_menu.open();
                     }
                 },
             );

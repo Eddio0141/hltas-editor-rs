@@ -23,16 +23,16 @@ impl Action {
             Action::DeleteLine { indexes_and_lines } => {
                 for (i, line) in indexes_and_lines {
                     if hltas.lines.is_empty() {
-                        tab_menu_data.push_hltas_line(&line);
+                        tab_menu_data.push_hltas_line(line);
                         hltas.lines.push(line.to_owned());
                     } else {
-                        tab_menu_data.insert_hltas_line(*i, &line);
+                        tab_menu_data.insert_hltas_line(*i, line);
                         hltas.lines.insert(*i, line.to_owned());
                     }
                 }
 
                 Action::AddLine {
-                    indexes: indexes_and_lines.into_iter().map(|(i, _)| *i).collect(),
+                    indexes: indexes_and_lines.iter().map(|(i, _)| *i).collect(),
                 }
             }
             Action::AddLine { indexes } => {
@@ -41,7 +41,7 @@ impl Action {
                     .map(|i| (*i, hltas.lines[*i].to_owned()))
                     .collect();
 
-                for i in indexes.into_iter().rev() {
+                for i in indexes.iter().rev() {
                     tab_menu_data.remove_line_at_index(*i);
                     hltas.lines.remove(*i);
                 }

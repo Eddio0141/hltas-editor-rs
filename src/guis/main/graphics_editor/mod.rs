@@ -240,7 +240,7 @@ pub fn show_graphics_editor(
                         ui,
                         cmds,
                         &options.locale_lang().get_string_from_id("load-commands"),
-                        &options.locale_lang(),
+                        options.locale_lang(),
                     );
 
                     PropertyFieldResult {
@@ -632,7 +632,7 @@ pub fn show_graphics_editor(
                         ui.window_content_region_width() * 0.25,
                         "properties",
                         shared_seed,
-                        &options.locale_lang(),
+                        options.locale_lang(),
                     ),
                     Line::Buttons(buttons) => {
                         let set_text = "set";

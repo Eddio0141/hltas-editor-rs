@@ -5,6 +5,7 @@ use crate::helpers::{imgui::input_editor::InputUsize, locale::locale_lang::Local
 
 use super::{key_state::KeyboardState, tab::HLTASFileTab};
 
+#[derive(Default)]
 pub struct GotoMenu {
     prev_opened: bool,
     opened: bool,
@@ -25,7 +26,7 @@ impl GotoMenu {
     ) {
         if self.opened {
             let mut opened_internal = true;
-            let mut selected_index = &mut self.selected_index;
+            let selected_index = &mut self.selected_index;
             let prev_opened = self.prev_opened;
 
             // reset menu state
@@ -52,7 +53,7 @@ impl GotoMenu {
                     InputUsize::new().auto_select_all(!prev_opened).build(
                         ui,
                         "goto line",
-                        &mut selected_index,
+                        selected_index,
                     );
                     if ui.button(locale_lang.get_string_from_id("jump-to-line"))
                         || keyboard_state.just_pressed(VirtualKeyCode::Return)
@@ -70,15 +71,5 @@ impl GotoMenu {
         }
 
         self.prev_opened = self.opened;
-    }
-}
-
-impl Default for GotoMenu {
-    fn default() -> Self {
-        Self {
-            prev_opened: false,
-            opened: false,
-            selected_index: 0,
-        }
     }
 }

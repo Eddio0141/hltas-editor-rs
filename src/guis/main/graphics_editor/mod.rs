@@ -401,7 +401,7 @@ pub fn show_graphics_editor(
                 tab.new_line_at_click_index(button_type.to_owned());
 
                 let right_click_index = match tab.tab_menu_data.right_click_popup_index() {
-                    Some(index) => index + 1,
+                    Some(index) => index,
                     None => tab.hltas.lines.len() - 1,
                 };
                 tab.undo_redo_handler.add_lines(vec![right_click_index]);

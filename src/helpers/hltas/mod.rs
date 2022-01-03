@@ -20,6 +20,10 @@ pub fn hltas_to_str(hltas: &HLTAS) -> String {
 }
 
 pub fn lines_to_str(lines: Vec<Line>) -> String {
+    if lines.is_empty() {
+        return String::new();
+    }
+
     // make a dummy hltas
     let hltas = HLTAS {
         lines,

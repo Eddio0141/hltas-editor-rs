@@ -225,7 +225,7 @@ impl MainGUI {
                 ui,
                 self.options.locale_lang(),
                 &mut current_tab.borrow_mut(),
-                &self.keyboard_state
+                &self.keyboard_state,
             );
         }
 
@@ -326,18 +326,6 @@ impl MainGUI {
             let paste_key = KeyCombination::new(VirtualKeyCode::V).ctrl();
             let select_all_key = KeyCombination::new(VirtualKeyCode::A).ctrl();
 
-            let copy = || {
-                if let Some(current_tab) = &self.current_tab {
-                    ui.set_clipboard_text(lines_to_str(
-                        current_tab
-                            .borrow()
-                            .get_selected_lines()
-                            .into_iter()
-                            .cloned()
-                            .collect::<Vec<_>>(),
-                    ));
-                }
-            };
             let paste = || {
                 if let Some(current_tab) = &self.current_tab {
                     if let Some(clipboard) = ui.clipboard_text() {
@@ -376,11 +364,6 @@ impl MainGUI {
                             }
                         }
                     }
-                }
-            };
-            let select_all = || {
-                if let Some(current_tab) = &self.current_tab {
-                    current_tab.borrow_mut().select_all_lines();
                 }
             };
             let cut = || {
@@ -428,13 +411,13 @@ impl MainGUI {
             };
 
             if copy_key.just_pressed(&self.keyboard_state) {
-                copy();
+                self.copy_selection(ui);
             }
             if paste_key.just_pressed(&self.keyboard_state) {
                 paste();
             }
             if select_all_key.just_pressed(&self.keyboard_state) {
-                select_all();
+                self.select_all();
             }
             if cut_key.just_pressed(&self.keyboard_state) {
                 cut();
@@ -472,7 +455,7 @@ impl MainGUI {
                         .shortcut(copy_key.to_string())
                         .build(ui)
                     {
-                        copy();
+                        self.copy_selection(ui);
                     }
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("paste"))
                         .shortcut(paste_key.to_string())
@@ -485,7 +468,7 @@ impl MainGUI {
                         .shortcut(select_all_key.to_string())
                         .build(ui)
                     {
-                        select_all();
+                        self.select_all();
                     }
                 },
             );
@@ -742,6 +725,29 @@ impl MainGUI {
         Self {
             options,
             ..main_gui
+        }
+    }
+
+    pub fn copy_selection(&self, ui: &Ui) {
+        if let Some(current_tab) = &self.current_tab {
+            if !current_tab.borrow().tab_menu_data.is_modifying_something() {
+                ui.set_clipboard_text(lines_to_str(
+                    current_tab
+                        .borrow()
+                        .get_selected_lines()
+                        .into_iter()
+                        .cloned()
+                        .collect::<Vec<_>>(),
+                ));
+            }
+        }
+    }
+
+    pub fn select_all(&self) {
+        if let Some(current_tab) = &self.current_tab {
+            if !current_tab.borrow().tab_menu_data.is_modifying_something() {
+                current_tab.borrow_mut().select_all_lines();
+            }
         }
     }
 }

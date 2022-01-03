@@ -196,6 +196,7 @@ pub struct HLTASMenuState {
     selected_indexes: Vec<bool>,
     got_modified: bool,
     goto_line: Option<usize>,
+    is_modifying_something: bool,
 }
 
 impl HLTASMenuState {
@@ -213,6 +214,7 @@ impl HLTASMenuState {
             .collect::<Vec<_>>();
 
         Self {
+            is_modifying_something: false,
             strafe_menu_selections,
             right_click_popup_index: None,
             selected_indexes: vec![false; hltas.lines.len()],
@@ -325,6 +327,15 @@ impl HLTASMenuState {
 
     pub fn set_goto_line(&mut self, index: usize) {
         self.goto_line = Some(index);
+    }
+
+    pub fn set_modifying_something(&mut self, value: bool) {
+        self.is_modifying_something = value;
+    }
+
+    /// Get a reference to the hltasmenu state's is modifying something.
+    pub fn is_modifying_something(&self) -> bool {
+        self.is_modifying_something
     }
 }
 

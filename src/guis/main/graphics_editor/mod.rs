@@ -428,8 +428,8 @@ pub fn show_graphics_editor(
 
     let mut lines_edited = false;
     let mut stale_line = None;
-
     let mut new_line_menu_clicked_on_line = false;
+    let mut is_modifying_something = false;
 
     let hltas_lines_is_empty = tab.hltas_lines_is_empty();
     let tab_menu_data = &mut tab.tab_menu_data;
@@ -762,6 +762,10 @@ pub fn show_graphics_editor(
                         let comment_edited =
                             InputText::new(ui, format!("##comment_editor{}", i), comment).build();
 
+                        if ui.is_item_active() {
+                            is_modifying_something = true;
+                        }
+
                         comment_colour.pop();
                         comment_frame_bg.pop();
 
@@ -1022,6 +1026,10 @@ pub fn show_graphics_editor(
                 },
             ]);
         }
+    }
+
+    if is_modifying_something {
+        tab_menu_data.set_modifying_something(true);
     }
 
     if let Some(stale_line) = stale_line {

@@ -225,6 +225,7 @@ impl MainGUI {
                 ui,
                 self.options.locale_lang(),
                 &mut current_tab.borrow_mut(),
+                &self.keyboard_state
             );
         }
 

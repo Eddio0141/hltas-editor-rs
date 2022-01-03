@@ -439,7 +439,7 @@ pub fn show_graphics_editor(
     for (i, line) in tab.hltas.lines.iter_mut().enumerate() {
         if let Some(goto_line) = goto_line {
             if i == goto_line {
-                ui.set_scroll_here_y();
+                ui.set_scroll_here_y_with_ratio(0.0);
             }
         }
 

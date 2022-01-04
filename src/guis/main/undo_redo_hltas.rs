@@ -10,6 +10,10 @@ enum Action {
     AddLine {
         indexes: Vec<usize>,
     },
+    EditLine {
+        line: Line,
+        index: usize,
+    },
 }
 
 impl Action {
@@ -47,6 +51,16 @@ impl Action {
                 }
 
                 Action::DeleteLine { indexes_and_lines }
+            }
+            Action::EditLine { line, index } => {
+                let line_before_edit = hltas.lines[*index].to_owned();
+
+                hltas.lines[*index] = line.to_owned();
+
+                Action::EditLine {
+                    line: line_before_edit,
+                    index: *index,
+                }
             }
         }
     }
@@ -96,5 +110,14 @@ impl UndoRedoHandler {
         self.redo_stack.clear();
 
         self.undo_stack.push(Action::AddLine { indexes });
+    }
+
+    pub fn edit_line(&mut self, prev_state: Line, index: usize) {
+        self.redo_stack.clear();
+
+        self.undo_stack.push(Action::EditLine {
+            index,
+            line: prev_state,
+        });
     }
 }

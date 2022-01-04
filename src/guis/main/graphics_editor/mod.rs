@@ -1028,9 +1028,7 @@ pub fn show_graphics_editor(
         }
     }
 
-    if is_modifying_something {
-        tab_menu_data.set_modifying_something(true);
-    }
+    tab_menu_data.set_modifying_something(is_modifying_something);
 
     if let Some(stale_line) = stale_line {
         tab.undo_redo_handler

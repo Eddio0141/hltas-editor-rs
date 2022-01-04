@@ -23,8 +23,10 @@ impl LocaleLang {
         match &self.lang {
             Some(lang) => lang.to_owned(),
             // shouldn't error
-            None => Locale::current()
+            None => Locale::user_default()
                 .to_string()
+                .split(',')
+                .collect::<Vec<_>>()[0]
                 .parse()
                 .unwrap_or_else(|_| get_fallback_lang()),
         }

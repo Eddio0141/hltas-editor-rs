@@ -115,6 +115,10 @@ impl<'a> HLTASFileTab {
         self.hltas.lines.is_empty()
     }
 
+    pub fn hltas_lines_len(&self) -> usize {
+        self.hltas.lines.len()
+    }
+
     /// Get a reference to the hltasfile tab's path.
     pub fn path(&self) -> Option<&PathBuf> {
         self.path.as_ref()

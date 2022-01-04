@@ -5,7 +5,6 @@ use crate::helpers::{imgui::input_editor::InputUsize, locale::locale_lang::Local
 
 use super::{key_state::KeyboardState, tab::HLTASFileTab};
 
-#[derive(Default)]
 pub struct GotoMenu {
     prev_opened: bool,
     opened: bool,
@@ -29,6 +28,12 @@ impl GotoMenu {
             let selected_index = &mut self.selected_index;
             let prev_opened = self.prev_opened;
 
+            // don't open if no lines exist
+            if current_tab.hltas_lines_is_empty() {
+                self.opened = false;
+                return;
+            }
+
             // reset menu state
             if !prev_opened {
                 *selected_index = 0;
@@ -38,7 +43,7 @@ impl GotoMenu {
                 .opened(&mut self.opened)
                 .resizable(false)
                 .position_pivot([0.5, 0.5])
-                .size([250.0, 90.0], Condition::Always)
+                .size([250.0, 100.0], Condition::Always)
                 .position(
                     {
                         let display_size = ui.io().display_size;
@@ -50,11 +55,21 @@ impl GotoMenu {
                     if !prev_opened {
                         ui.set_keyboard_focus_here();
                     }
-                    InputUsize::new().auto_select_all(!prev_opened).build(
+
+                    ui.text(format!("{} lines total", current_tab.hltas_lines_len()));
+
+                    InputUsize::new().auto_select_all(true).build(
                         ui,
-                        "goto line",
+                        "##goto_line_input",
                         selected_index,
                     );
+                    // limit upper to 1 ~ lines len
+                    if *selected_index < 1 {
+                        *selected_index = 1;
+                    } else if *selected_index > current_tab.hltas_lines_len() {
+                        *selected_index = current_tab.hltas_lines_len();
+                    }
+
                     if ui.button(locale_lang.get_string_from_id("jump-to-line"))
                         || keyboard_state.just_pressed(VirtualKeyCode::Return)
                     {
@@ -71,5 +86,19 @@ impl GotoMenu {
         }
 
         self.prev_opened = self.opened;
+    }
+
+    pub fn is_opened(&self) -> bool {
+        self.opened
+    }
+}
+
+impl Default for GotoMenu {
+    fn default() -> Self {
+        Self {
+            prev_opened: Default::default(),
+            opened: Default::default(),
+            selected_index: 1,
+        }
     }
 }

@@ -727,7 +727,11 @@ impl MainGUI {
 
     pub fn copy_selection(&self, ui: &Ui) {
         if let Some(current_tab) = &self.current_tab {
-            if !current_tab.borrow().tab_menu_data.is_modifying_something() {
+            if !self.goto_menu.is_opened()
+                && !self.option_menu.is_opened()
+                && self.graphics_editor
+                && !current_tab.borrow().tab_menu_data.is_modifying_something()
+            {
                 ui.set_clipboard_text(lines_to_str(
                     current_tab
                         .borrow()
@@ -742,7 +746,11 @@ impl MainGUI {
 
     pub fn select_all(&self) {
         if let Some(current_tab) = &self.current_tab {
-            if !current_tab.borrow().tab_menu_data.is_modifying_something() {
+            if !self.goto_menu.is_opened()
+                && !self.option_menu.is_opened()
+                && self.graphics_editor
+                && !current_tab.borrow().tab_menu_data.is_modifying_something()
+            {
                 current_tab.borrow_mut().select_all_lines();
             }
         }

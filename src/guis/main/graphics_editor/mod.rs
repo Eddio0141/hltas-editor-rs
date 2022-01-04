@@ -81,7 +81,6 @@ pub fn show_graphics_editor(
                 0.5,
             );
 
-            // TODO, make this easier to edit
             let ducktap_0ms_edited = property_some_none_field_ui(
                 ui,
                 &mut tab.hltas_properties_mut().frametime_0ms,

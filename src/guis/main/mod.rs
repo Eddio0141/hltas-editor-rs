@@ -517,6 +517,14 @@ impl MainGUI {
                 },
             );
 
+            let toggle_simple_view_key = KeyCombination::new(VirtualKeyCode::S).ctrl().shift();
+
+            if toggle_simple_view_key.just_pressed(&self.keyboard_state) {
+                if let Some(current_tab) = &self.current_tab {
+                    current_tab.borrow_mut().tab_menu_data.toggle_simple_view();
+                }
+            }
+
             ui.menu(
                 self.options
                     .locale_lang()
@@ -539,6 +547,17 @@ impl MainGUI {
                     .build(ui)
                     {
                         self.option_menu.open();
+                    }
+                    if MenuItem::new(
+                        self.options
+                            .locale_lang()
+                            .get_string_from_id("toggle-simple-view"),
+                    )
+                    .build(ui)
+                    {
+                        if let Some(current_tab) = &self.current_tab {
+                            current_tab.borrow_mut().tab_menu_data.toggle_simple_view();
+                        }
                     }
                 },
             );

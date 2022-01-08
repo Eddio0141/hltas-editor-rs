@@ -201,6 +201,7 @@ pub struct HLTASMenuState {
     got_modified: bool,
     goto_line: Option<usize>,
     is_modifying_something: bool,
+    simple_view: bool,
 }
 
 impl HLTASMenuState {
@@ -224,7 +225,20 @@ impl HLTASMenuState {
             selected_indexes: vec![false; hltas.lines.len()],
             got_modified: false,
             goto_line: None,
+            simple_view: false,
         }
+    }
+
+    // pub fn enable_simple_view(&mut self) {
+    //     self.simple_view = true;
+    // }
+
+    // pub fn disable_simple_view(&mut self) {
+    //     self.simple_view = false;
+    // }
+
+    pub fn toggle_simple_view(&mut self) {
+        self.simple_view = !self.simple_view;
     }
 
     pub fn is_index_selected(&self, index: usize) -> bool {

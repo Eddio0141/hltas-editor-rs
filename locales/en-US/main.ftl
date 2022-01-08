@@ -25,6 +25,7 @@ no-comments = No comments
 
 open-options-menu = Options menu
 toggle-graphics-editor = Toggle graphics editor
+toggle-simple-view = Toggle simple view
 
 new-file-title = New file
 

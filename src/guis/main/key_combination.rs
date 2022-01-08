@@ -35,12 +35,12 @@ impl KeyCombination {
     //     }
     // }
 
-    // pub fn shift(self) -> Self {
-    //     Self {
-    //         key_shift: true,
-    //         ..self
-    //     }
-    // }
+    pub fn shift(self) -> Self {
+        Self {
+            key_shift: true,
+            ..self
+        }
+    }
 
     pub fn just_pressed(&self, keyboard_state: &KeyboardState) -> bool {
         let alt_pressed =

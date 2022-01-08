@@ -25,6 +25,7 @@ no-comments = コメントを消す
 
 open-options-menu = オプションメニュー
 toggle-graphics-editor = グラフィックエディタの切り替え
+toggle-simple-view = 簡単表示
 
 new-file-title = 新規
 

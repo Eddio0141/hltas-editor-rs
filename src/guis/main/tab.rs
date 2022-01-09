@@ -369,6 +369,10 @@ impl HLTASMenuState {
     pub fn is_modifying_something(&self) -> bool {
         self.is_modifying_something
     }
+
+    pub fn simple_view(&self) -> bool {
+        self.simple_view
+    }
 }
 
 #[derive(Clone, Debug)]

@@ -961,9 +961,9 @@ dependencies = [
 
 [[package]]
 name = "hltas_cleaner"
-version = "2.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5db2e2caf0869d2ad29a06bcf6adfcd34514deda783ffd1cf67cbad450e3316"
+checksum = "099e4eb8f8a7d4be5edb5da68ee3567aeb5af8dce561f7054c8fc794c1f51471"
 dependencies = [
  "clap",
  "hltas",

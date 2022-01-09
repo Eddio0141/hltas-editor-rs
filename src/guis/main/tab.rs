@@ -9,6 +9,7 @@ use hltas::{
     types::{AutoMovement, FrameBulk, Line, Properties},
     HLTAS,
 };
+use hltas_cleaner::CleanerResult;
 use native_dialog::FileDialog;
 
 use crate::{
@@ -22,11 +23,7 @@ use super::undo_redo_hltas::UndoRedoHandler;
 pub struct HLTASFileTab {
     title: String,
     path: Option<PathBuf>,
-    // TODO make this better with making it private and borrow iter mut on the lines
-    // idea: make a "token" that lets you mutably access this field with pop required to be called at the end,
-    //  which will update the status of tab_menu_data. display a warning or a error if pop isn't called
-    //  use [must_use]
-    pub hltas: HLTAS,
+    hltas: HLTAS,
     pub tab_menu_data: HLTASMenuState,
     pub undo_redo_handler: UndoRedoHandler,
 }
@@ -85,6 +82,20 @@ impl<'a> HLTASFileTab {
         &mut self.hltas.properties
     }
 
+    pub fn hltas_lines(&self) -> &[Line] {
+        &self.hltas.lines
+    }
+
+    pub fn hltas_tab_menu_data_mut(
+        &mut self,
+    ) -> (&mut [Line], &mut Properties, &mut HLTASMenuState) {
+        (
+            &mut self.hltas.lines,
+            &mut self.hltas.properties,
+            &mut self.tab_menu_data,
+        )
+    }
+
     pub fn insert_line(&mut self, index: usize, line: hltas::types::Line) {
         self.tab_menu_data.insert_hltas_line(index, &line);
         self.hltas.lines.insert(index, line);
@@ -94,6 +105,19 @@ impl<'a> HLTASFileTab {
     pub fn push_line(&mut self, line: hltas::types::Line) {
         self.tab_menu_data.push_hltas_line(&line);
         self.hltas.lines.push(line);
+        self.tab_menu_data.got_modified();
+    }
+
+    pub fn hltas_cleaner_fn<F>(&mut self, cleaner: F)
+    where
+        F: FnOnce(&mut HLTAS) -> CleanerResult,
+    {
+        let cleaner_result = cleaner(&mut self.hltas);
+
+        for i in cleaner_result.lines_removed.iter().rev() {
+            self.tab_menu_data.remove_line_at_index(*i);
+        }
+
         self.tab_menu_data.got_modified();
     }
 
@@ -111,15 +135,6 @@ impl<'a> HLTASFileTab {
         self.tab_menu_data.got_modified();
     }
 
-    pub fn hltas_lines_is_empty(&self) -> bool {
-        self.hltas.lines.is_empty()
-    }
-
-    pub fn hltas_lines_len(&self) -> usize {
-        self.hltas.lines.len()
-    }
-
-    /// Get a reference to the hltasfile tab's path.
     pub fn path(&self) -> Option<&PathBuf> {
         self.path.as_ref()
     }
@@ -150,7 +165,6 @@ impl<'a> HLTASFileTab {
         self.tab_menu_data.select_all_indexes();
     }
 
-    /// Get a reference to the hltasfile tab's title.
     pub fn title(&self) -> &str {
         self.title.as_ref()
     }

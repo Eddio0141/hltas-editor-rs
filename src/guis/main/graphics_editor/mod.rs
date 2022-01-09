@@ -265,12 +265,13 @@ pub fn show_graphics_editor(
     let new_line_menu_id = "new_line_menu";
     ui.popup(new_line_menu_id, || {
         let previous_lines = match tab.tab_menu_data.right_click_popup_index() {
-            Some(index) => Some(&tab.hltas.lines[..index]),
+            Some(index) => Some(&tab.hltas_lines()[..index]),
             None => {
-                if tab.hltas.lines.is_empty() {
+                let lines = tab.hltas_lines();
+                if lines.is_empty() {
                     None
                 } else {
-                    Some(&tab.hltas.lines[..])
+                    Some(lines)
                 }
             }
         };
@@ -401,7 +402,7 @@ pub fn show_graphics_editor(
 
                 let right_click_index = match tab.tab_menu_data.right_click_popup_index() {
                     Some(index) => index,
-                    None => tab.hltas.lines.len() - 1,
+                    None => tab.hltas_lines().len() - 1,
                 };
                 tab.undo_redo_handler.add_lines(vec![right_click_index]);
 
@@ -414,7 +415,7 @@ pub fn show_graphics_editor(
         }
     });
 
-    if tab.hltas_lines_is_empty() {
+    if tab.hltas_lines().is_empty() {
         if ui.is_mouse_clicked(MouseButton::Right) {
             tab.tab_menu_data.right_click_elsewhere();
             ui.open_popup(new_line_menu_id);
@@ -430,12 +431,11 @@ pub fn show_graphics_editor(
     let mut new_line_menu_clicked_on_line = false;
     let mut is_modifying_something = false;
 
-    let hltas_lines_is_empty = tab.hltas_lines_is_empty();
-    let tab_menu_data = &mut tab.tab_menu_data;
-    let properties = &tab.hltas.properties;
+    let (lines, properties, tab_menu_data) = tab.hltas_tab_menu_data_mut();
+    let lines_is_empty = lines.is_empty();
     let goto_line = tab_menu_data.goto_line();
 
-    for (i, line) in tab.hltas.lines.iter_mut().enumerate() {
+    for (i, line) in lines.iter_mut().enumerate() {
         if let Some(goto_line) = goto_line {
             if i == goto_line {
                 ui.set_scroll_here_y_with_ratio(0.0);
@@ -973,7 +973,7 @@ pub fn show_graphics_editor(
                     ui.open_popup(new_line_menu_id);
                 }
             } else if !new_line_menu_clicked_on_line && ui.is_mouse_clicked(MouseButton::Right) {
-                if hltas_lines_is_empty {
+                if lines_is_empty {
                     tab_menu_data.right_click_elsewhere();
                 } else if i == 0
                     && ui.is_mouse_hovering_rect([0.0, 0.0], [f32::MAX, group_rect_min[1]])
@@ -1031,7 +1031,7 @@ pub fn show_graphics_editor(
 
     if let Some(stale_line) = stale_line {
         tab.undo_redo_handler
-            .delete_lines(vec![(stale_line, tab.hltas.lines[stale_line].to_owned())]);
+            .delete_lines(vec![(stale_line, tab.hltas_lines()[stale_line].to_owned())]);
         tab.remove_line_at_index(stale_line);
     }
 
@@ -1045,7 +1045,7 @@ pub fn show_graphics_editor(
             .enumerate()
             .filter_map(|(i, is_selected)| {
                 if *is_selected {
-                    Some((i, tab.hltas.lines[i].to_owned()))
+                    Some((i, tab.hltas_lines()[i].to_owned()))
                 } else {
                     None
                 }

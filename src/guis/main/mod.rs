@@ -349,7 +349,7 @@ impl MainGUI {
                                     current_tab
                                         .insert_line(last_selected_index + i, line.to_owned());
                                 }
-                            } else if current_tab.hltas_lines_is_empty() {
+                            } else if current_tab.hltas_lines().is_empty() {
                                 current_tab.undo_redo_handler.add_lines(
                                     clipboard
                                         .iter()
@@ -376,7 +376,7 @@ impl MainGUI {
                         .enumerate()
                         .filter_map(|(i, is_selected)| {
                             if *is_selected {
-                                Some((i, current_tab.borrow().hltas.lines[i].to_owned()))
+                                Some((i, current_tab.borrow().hltas_lines()[i].to_owned()))
                             } else {
                                 None
                             }
@@ -502,16 +502,18 @@ impl MainGUI {
                     .build(ui)
                     {
                         if let Some(current_tab) = &self.current_tab {
-                            cleaners::no_dupe_framebulks(&mut current_tab.borrow_mut().hltas);
-                            current_tab.borrow_mut().tab_menu_data.got_modified();
+                            current_tab
+                                .borrow_mut()
+                                .hltas_cleaner_fn(cleaners::no_dupe_framebulks);
                         }
                     }
                     if MenuItem::new(self.options.locale_lang().get_string_from_id("no-comments"))
                         .build(ui)
                     {
                         if let Some(current_tab) = &self.current_tab {
-                            cleaners::remove_comments(&mut current_tab.borrow_mut().hltas);
-                            current_tab.borrow_mut().tab_menu_data.got_modified();
+                            current_tab
+                                .borrow_mut()
+                                .hltas_cleaner_fn(cleaners::remove_comments);
                         }
                     }
                 },

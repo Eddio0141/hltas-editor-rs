@@ -29,7 +29,7 @@ impl GotoMenu {
             let prev_opened = self.prev_opened;
 
             // don't open if no lines exist
-            if current_tab.hltas_lines_is_empty() {
+            if current_tab.hltas_lines().is_empty() {
                 self.opened = false;
                 return;
             }
@@ -56,7 +56,9 @@ impl GotoMenu {
                         ui.set_keyboard_focus_here();
                     }
 
-                    ui.text(format!("{} lines total", current_tab.hltas_lines_len()));
+                    let lines = current_tab.hltas_lines();
+
+                    ui.text(format!("{} lines total", lines.len()));
 
                     InputUsize::new().auto_select_all(true).build(
                         ui,
@@ -66,8 +68,8 @@ impl GotoMenu {
                     // limit upper to 1 ~ lines len
                     if *selected_index < 1 {
                         *selected_index = 1;
-                    } else if *selected_index > current_tab.hltas_lines_len() {
-                        *selected_index = current_tab.hltas_lines_len();
+                    } else if *selected_index > lines.len() {
+                        *selected_index = lines.len();
                     }
 
                     if ui.button(locale_lang.get_string_from_id("jump-to-line"))

@@ -54,6 +54,7 @@ impl FramebulkEditor for DuckEditor {
 
         if before_collision_changed {
             if duck_before_collision {
+                framebulk.action_keys.duck = false;
                 auto_actions.duck_before_collision = Some(DuckBeforeCollision {
                     times: Times::UnlimitedWithinFrameBulk,
                     including_ceilings: duck_before_collision_inc_ceiling,
@@ -71,6 +72,7 @@ impl FramebulkEditor for DuckEditor {
 
         if before_ground_changed {
             if duck_before_ground {
+                framebulk.action_keys.duck = false;
                 auto_actions.duck_before_ground = Some(DuckBeforeGround {
                     times: Times::UnlimitedWithinFrameBulk,
                 });
@@ -81,6 +83,7 @@ impl FramebulkEditor for DuckEditor {
 
         if when_jump_changed {
             if duck_when_jump {
+                framebulk.action_keys.duck = false;
                 auto_actions.duck_when_jump = Some(DuckWhenJump {
                     times: Times::UnlimitedWithinFrameBulk,
                 });

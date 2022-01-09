@@ -249,6 +249,9 @@ impl FramebulkEditor for JumpEditor {
             if !duck_before {
                 // disable all other unused stuff
                 framebulk.auto_actions.jump_bug = None;
+                framebulk.auto_actions.duck_before_collision = None;
+                framebulk.auto_actions.duck_before_ground = None;
+                framebulk.auto_actions.duck_when_jump = None;
             }
             framebulk.action_keys.duck = !duck_before;
         }

@@ -179,11 +179,8 @@ impl FramebulkEditor for StrafeEditor {
                     ];
 
                     let mut strafe_selection = match framebulk.auto_actions.movement {
-                        Some(auto_movement) => match auto_movement {
-                            AutoMovement::Strafe(strafe_settings) => Some(strafe_settings.type_),
-                            _ => None,
-                        },
-                        None => None,
+                        Some(AutoMovement::Strafe(strafe_settings)) => Some(strafe_settings.type_),
+                        _ => None,
                     };
 
                     // TODO

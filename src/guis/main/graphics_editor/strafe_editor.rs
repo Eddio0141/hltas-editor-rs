@@ -1,12 +1,12 @@
-use hltas::types::{AutoMovement, FrameBulk, StrafeDir, StrafeSettings, StrafeType, Properties};
-use imgui::Ui;
+use hltas::types::{AutoMovement, FrameBulk, Properties, StrafeDir, StrafeSettings, StrafeType};
+use imgui::{StyleVar, Ui};
 
-use crate::guis::{
-    list_box_enum::show_list_box_enum,
-    main::{
+use crate::{
+    guis::main::{
         option_menu::AppOptions,
         tab::{HLTASMenuState, StrafeMenuSelection},
     },
+    helpers::imgui::{combo_enum::show_combo_enum, list_box_enum::show_list_box_enum},
 };
 
 use super::framebulk_editor::FramebulkEditor;
@@ -53,7 +53,7 @@ impl FramebulkEditor for StrafeEditor {
                     };
 
                     // TODO
-                    let strafe_list_box_windexth_token = ui.push_item_width(140.0);
+                    let width = ui.push_item_width(140.0);
 
                     let list_box_changed = show_list_box_enum(
                         ui,
@@ -102,7 +102,7 @@ impl FramebulkEditor for StrafeEditor {
                         }
                     }
 
-                    strafe_list_box_windexth_token.pop(ui);
+                    width.pop(ui);
 
                     list_box_changed
                 }
@@ -146,13 +146,128 @@ impl FramebulkEditor for StrafeEditor {
 
     fn show_minimal(
         &self,
-        _: &Ui,
-        _: &mut FrameBulk,
+        ui: &Ui,
+        framebulk: &mut FrameBulk,
         _: &Properties,
-        _: &mut HLTASMenuState,
+        tab_menu_data: &mut HLTASMenuState,
         _: &AppOptions,
-        _: usize,
+        index: usize,
     ) -> bool {
-        todo!()
+        let strafe_menu_selection = tab_menu_data.strafe_menu_selection_at_mut(index).unwrap();
+
+        if ui.button(format!("Strafe##{}", index)) {
+            *strafe_menu_selection = Some(StrafeMenuSelection::Strafe);
+        }
+
+        ui.same_line();
+
+        if ui.button(format!("Key##{}", index)) {
+            *strafe_menu_selection = Some(StrafeMenuSelection::Keys);
+        }
+
+        ui.same_line();
+
+        let strafe_keys_edited = if let Some(strafe_menu_selection) = strafe_menu_selection {
+            match strafe_menu_selection {
+                StrafeMenuSelection::Strafe => {
+                    let values = vec![
+                        ("Max accel", Some(StrafeType::MaxAccel)),
+                        ("Max angle", Some(StrafeType::MaxAngle)),
+                        ("Max deccel", Some(StrafeType::MaxDeccel)),
+                        ("Const speed", Some(StrafeType::ConstSpeed)),
+                        ("None", None),
+                    ];
+
+                    let mut strafe_selection = match framebulk.auto_actions.movement {
+                        Some(auto_movement) => match auto_movement {
+                            AutoMovement::Strafe(strafe_settings) => Some(strafe_settings.type_),
+                            _ => None,
+                        },
+                        None => None,
+                    };
+
+                    // TODO
+                    let width = ui.push_item_width(140.0);
+                    let strafe_selection_edited = show_combo_enum(
+                        ui,
+                        &mut strafe_selection,
+                        values,
+                        &format!("strafe_selection{}", index),
+                    );
+                    width.pop(ui);
+
+                    if strafe_selection_edited {
+                        let prev_yaw = match &framebulk.auto_actions.movement {
+                            Some(auto_movement) => match auto_movement {
+                                AutoMovement::SetYaw(yaw) => Some(*yaw),
+                                AutoMovement::Strafe(strafe_settings) => {
+                                    match strafe_settings.dir {
+                                        StrafeDir::Yaw(yaw) => Some(yaw),
+                                        StrafeDir::Line { yaw } => Some(yaw),
+                                        _ => None,
+                                    }
+                                }
+                            },
+                            None => None,
+                        };
+
+                        match strafe_selection {
+                            Some(strafe_type) => {
+                                framebulk.auto_actions.movement =
+                                    Some(AutoMovement::Strafe(StrafeSettings {
+                                        type_: strafe_type,
+                                        // TODO make this an option to auto select direction for each strafe type
+                                        dir: match strafe_type {
+                                            StrafeType::MaxDeccel => StrafeDir::Best,
+                                            _ => StrafeDir::Yaw(prev_yaw.unwrap_or(0.0)),
+                                        },
+                                    }));
+                            }
+                            None => {
+                                framebulk.auto_actions.movement =
+                                    prev_yaw.map(AutoMovement::SetYaw);
+                            }
+                        }
+                    }
+
+                    strafe_selection_edited
+                }
+                StrafeMenuSelection::Keys => {
+                    let keys = &mut framebulk.movement_keys;
+                    let no_spacing_token = ui.push_style_var(StyleVar::ItemSpacing([5.0, 0.0]));
+
+                    let forward_edited =
+                        ui.checkbox(format!("w##strafe_menu_editor{}", index), &mut keys.forward);
+                    ui.same_line();
+                    let left_edited =
+                        ui.checkbox(format!("a##strafe_menu_editor{}", index), &mut keys.left);
+                    ui.same_line();
+                    let back_edited =
+                        ui.checkbox(format!("s##strafe_menu_editor{}", index), &mut keys.back);
+                    ui.same_line();
+                    let right_edited =
+                        ui.checkbox(format!("d##strafe_menu_editor{}", index), &mut keys.right);
+                    ui.same_line();
+                    let up_edited =
+                        ui.checkbox(format!("Up##strafe_menu_editor{}", index), &mut keys.up);
+                    ui.same_line();
+                    let down_edited =
+                        ui.checkbox(format!("Dn##strafe_menu_editor{}", index), &mut keys.down);
+
+                    no_spacing_token.pop();
+
+                    forward_edited
+                        || up_edited
+                        || left_edited
+                        || down_edited
+                        || right_edited
+                        || back_edited
+                }
+            }
+        } else {
+            false
+        };
+
+        strafe_keys_edited
     }
 }

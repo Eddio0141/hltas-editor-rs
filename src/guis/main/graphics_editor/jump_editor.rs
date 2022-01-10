@@ -268,6 +268,6 @@ impl FramebulkEditor for JumpEditor {
         _: &AppOptions,
         _: usize,
     ) -> bool {
-        todo!()
+        false
     }
 }

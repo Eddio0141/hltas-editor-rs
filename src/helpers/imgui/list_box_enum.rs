@@ -6,7 +6,7 @@ pub fn show_list_box_enum<T: Copy + PartialEq>(
     label_enum_pairs: Vec<(&str, T)>,
     id: &str,
 ) -> bool {
-    let (labels, enums): (Vec<_>, Vec<_>) = label_enum_pairs.iter().cloned().unzip();
+    let (labels, enums): (Vec<_>, Vec<_>) = label_enum_pairs.iter().copied().unzip();
 
     let mut current_item = enums
         .iter()

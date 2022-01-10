@@ -11,8 +11,9 @@ use imgui::{ColorEdit, ComboBox, Drag, InputFloat, InputText, Selectable, StyleC
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    guis::list_box_enum::show_list_box_enum,
-    helpers::{hltas::frametime, locale::locale_lang::LocaleLang},
+    helpers::{
+        hltas::frametime, imgui::list_box_enum::show_list_box_enum, locale::locale_lang::LocaleLang,
+    },
     locale::LOCALES,
 };
 

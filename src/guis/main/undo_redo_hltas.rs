@@ -66,20 +66,13 @@ impl Action {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct UndoRedoHandler {
     undo_stack: Vec<Action>,
     redo_stack: Vec<Action>,
 }
 
 impl UndoRedoHandler {
-    pub fn new() -> Self {
-        Self {
-            undo_stack: Vec::new(),
-            redo_stack: Vec::new(),
-        }
-    }
-
     pub fn undo(&mut self, hltas: &mut HLTAS, tab_menu_data: &mut HLTASMenuState) {
         if let Some(undo_action) = self.undo_stack.pop() {
             self.redo_stack
@@ -112,6 +105,7 @@ impl UndoRedoHandler {
         self.undo_stack.push(Action::AddLine { indexes });
     }
 
+    // BUG undo on comment while having the cursor focused seems to break undo somehow
     pub fn edit_line(&mut self, prev_state: Line, index: usize) {
         self.redo_stack.clear();
 

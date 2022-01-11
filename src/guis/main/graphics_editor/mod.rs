@@ -431,7 +431,7 @@ pub fn show_graphics_editor(
     let mut lines_edited = false;
     let mut stale_line = None;
     let mut new_line_menu_clicked_on_line = false;
-    let mut is_modifying_something = false;
+    let mut modifying_something = None;
 
     let (lines, properties, tab_menu_data) = tab.hltas_tab_menu_data_mut();
     let lines_is_empty = lines.is_empty();
@@ -700,10 +700,12 @@ pub fn show_graphics_editor(
                             ui.push_style_color(StyleColor::Text, options.comment_colour());
 
                         let comment_edited =
-                            InputText::new(ui, format!("##comment_editor{}", i), comment).build();
+                            InputText::new(ui, format!("##comment_editor{}", i), comment)
+                                .no_undo_redo(true)
+                                .build();
 
                         if ui.is_item_active() {
-                            is_modifying_something = true;
+                            modifying_something = Some(i);
                         }
 
                         comment_colour.pop();
@@ -968,7 +970,14 @@ pub fn show_graphics_editor(
         }
     }
 
-    tab_menu_data.set_modifying_something(is_modifying_something);
+    match modifying_something {
+        Some(index) => tab.is_modifying_line(index),
+        None => tab.not_modifying_line(),
+    }
+
+    if tab.is_modifying_something() && lines_edited {
+        tab.modifying_line_edited();
+    }
 
     if let Some(stale_line) = stale_line {
         tab.undo_redo_handler
@@ -976,8 +985,9 @@ pub fn show_graphics_editor(
         tab.remove_line_at_index(stale_line);
     }
 
-    if keyboard_state.just_pressed(VirtualKeyCode::Delete)
-        || keyboard_state.just_pressed(VirtualKeyCode::Back)
+    if !tab.is_modifying_something()
+        && (keyboard_state.just_pressed(VirtualKeyCode::Delete)
+            || keyboard_state.just_pressed(VirtualKeyCode::Back))
     {
         let lines_to_delete = tab
             .tab_menu_data

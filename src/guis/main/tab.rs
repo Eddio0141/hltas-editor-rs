@@ -19,13 +19,16 @@ use crate::{
 
 use super::undo_redo_hltas::UndoRedoHandler;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct HLTASFileTab {
     title: String,
     path: Option<PathBuf>,
     hltas: HLTAS,
     pub tab_menu_data: HLTASMenuState,
     pub undo_redo_handler: UndoRedoHandler,
+    is_modifying_line: bool,
+    modifying_line_backup: Option<(Line, usize)>,
+    modifying_line_edited: bool,
 }
 
 impl<'a> HLTASFileTab {
@@ -50,7 +53,7 @@ impl<'a> HLTASFileTab {
             path: Some(path.to_path_buf()),
             hltas,
             tab_menu_data,
-            undo_redo_handler: UndoRedoHandler::new(),
+            ..Default::default()
         })
     }
 
@@ -71,10 +74,37 @@ impl<'a> HLTASFileTab {
     pub fn new_file(lang: &LanguageIdentifier) -> Self {
         Self {
             title: Self::default_title(lang),
-            path: None,
-            hltas: HLTAS::default(),
-            tab_menu_data: HLTASMenuState::new(&HLTAS::default()),
-            undo_redo_handler: UndoRedoHandler::new(),
+            ..Default::default()
+        }
+    }
+
+    pub fn is_modifying_something(&self) -> bool {
+        self.is_modifying_line
+    }
+
+    pub fn is_modifying_line(&mut self, index: usize) {
+        if !self.is_modifying_line {
+            self.modifying_line_backup = Some((self.hltas.lines[index].to_owned(), index));
+        } else if let Some((_, index_backup)) = self.modifying_line_backup {
+            if index != index_backup {
+                self.modifying_line_backup = Some((self.hltas.lines[index].to_owned(), index));
+            }
+        }
+        self.is_modifying_line = true;
+    }
+
+    pub fn not_modifying_line(&mut self) {
+        self.is_modifying_line = false;
+        self.modifying_line_edited = false;
+        self.modifying_line_backup = None;
+    }
+
+    pub fn modifying_line_edited(&mut self) {
+        if !self.modifying_line_edited {
+            if let Some((line, index)) = &self.modifying_line_backup {
+                self.undo_redo_handler.edit_line(line.to_owned(), *index);
+                self.modifying_line_edited = true;
+            }
         }
     }
 
@@ -207,14 +237,13 @@ impl<'a> HLTASFileTab {
 }
 
 /// Struct to keep track of some menu states for the hltas object in the tab
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct HLTASMenuState {
     strafe_menu_selections: Vec<Option<StrafeMenuSelection>>,
     right_click_popup_index: Option<usize>,
     selected_indexes: Vec<bool>,
     got_modified: bool,
     goto_line: Option<usize>,
-    is_modifying_something: bool,
     simple_view: bool,
 }
 
@@ -233,7 +262,6 @@ impl HLTASMenuState {
             .collect::<Vec<_>>();
 
         Self {
-            is_modifying_something: false,
             strafe_menu_selections,
             right_click_popup_index: None,
             selected_indexes: vec![false; hltas.lines.len()],
@@ -359,15 +387,6 @@ impl HLTASMenuState {
 
     pub fn set_goto_line(&mut self, index: usize) {
         self.goto_line = Some(index);
-    }
-
-    pub fn set_modifying_something(&mut self, value: bool) {
-        self.is_modifying_something = value;
-    }
-
-    /// Get a reference to the hltasmenu state's is modifying something.
-    pub fn is_modifying_something(&self) -> bool {
-        self.is_modifying_something
     }
 
     pub fn simple_view(&self) -> bool {

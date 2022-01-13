@@ -4,13 +4,13 @@ use super::tab::HLTASMenuState;
 
 #[derive(Clone, Debug)]
 enum Action {
-    DeleteLine {
+    Delete {
         indexes_and_lines: Vec<(usize, Line)>,
     },
-    AddLine {
+    Add {
         indexes: Vec<usize>,
     },
-    EditLine {
+    Edit {
         line: Line,
         index: usize,
     },
@@ -24,7 +24,7 @@ impl Action {
     /// * Returns a reverse of what action was taken in a new Action instance
     fn take_action(&self, hltas: &mut HLTAS, tab_menu_data: &mut HLTASMenuState) -> Self {
         match self {
-            Action::DeleteLine { indexes_and_lines } => {
+            Action::Delete { indexes_and_lines } => {
                 for (i, line) in indexes_and_lines {
                     if hltas.lines.is_empty() {
                         tab_menu_data.push_hltas_line(line);
@@ -35,11 +35,11 @@ impl Action {
                     }
                 }
 
-                Action::AddLine {
+                Action::Add {
                     indexes: indexes_and_lines.iter().map(|(i, _)| *i).collect(),
                 }
             }
-            Action::AddLine { indexes } => {
+            Action::Add { indexes } => {
                 let indexes_and_lines = indexes
                     .iter()
                     .map(|i| (*i, hltas.lines[*i].to_owned()))
@@ -50,14 +50,14 @@ impl Action {
                     hltas.lines.remove(*i);
                 }
 
-                Action::DeleteLine { indexes_and_lines }
+                Action::Delete { indexes_and_lines }
             }
-            Action::EditLine { line, index } => {
+            Action::Edit { line, index } => {
                 let line_before_edit = hltas.lines[*index].to_owned();
 
                 hltas.lines[*index] = line.to_owned();
 
-                Action::EditLine {
+                Action::Edit {
                     line: line_before_edit,
                     index: *index,
                 }
@@ -94,7 +94,7 @@ impl UndoRedoHandler {
     pub fn delete_lines(&mut self, deleted_lines: Vec<(usize, Line)>) {
         self.redo_stack.clear();
 
-        self.undo_stack.push(Action::DeleteLine {
+        self.undo_stack.push(Action::Delete {
             indexes_and_lines: deleted_lines,
         });
     }
@@ -102,14 +102,14 @@ impl UndoRedoHandler {
     pub fn add_lines(&mut self, indexes: Vec<usize>) {
         self.redo_stack.clear();
 
-        self.undo_stack.push(Action::AddLine { indexes });
+        self.undo_stack.push(Action::Add { indexes });
     }
 
     // BUG undo on comment while having the cursor focused seems to break undo somehow
     pub fn edit_line(&mut self, prev_state: Line, index: usize) {
         self.redo_stack.clear();
 
-        self.undo_stack.push(Action::EditLine {
+        self.undo_stack.push(Action::Edit {
             index,
             line: prev_state,
         });

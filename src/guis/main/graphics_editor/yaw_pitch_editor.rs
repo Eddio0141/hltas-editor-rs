@@ -1,12 +1,9 @@
-use hltas::types::{AutoMovement, FrameBulk, Line, Properties, StrafeDir};
+use hltas::types::{AutoMovement, Line, StrafeDir};
 use imgui::{Drag, InputFloat, Slider, StyleVar, Ui};
 
-use crate::guis::{
-    main::{option_menu::AppOptions, tab::HLTASMenuState, undo_redo_hltas::UndoRedoHandler},
-    x_button::show_x_button,
-};
+use crate::guis::x_button::show_x_button;
 
-use super::framebulk_editor::FramebulkEditor;
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
 
 pub struct YawPitchEditor;
 
@@ -14,13 +11,16 @@ impl FramebulkEditor for YawPitchEditor {
     fn show(
         &self,
         ui: &Ui,
-        framebulk: &mut FrameBulk,
-        _: &Properties,
-        tab_menu_data: &mut HLTASMenuState,
-        _: &AppOptions,
-        undo_redo_handler: &mut UndoRedoHandler,
+        hltas_info: HLTASInfo,
+        framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
+        let framebulk = hltas_info.framebulk;
+        let (tab_menu_data, undo_redo_handler) = (
+            framebulk_editor_misc_data.tab_menu_data,
+            framebulk_editor_misc_data.undo_redo_handler,
+        );
+
         let initial_x_pos = ui.cursor_pos()[0];
         let width = ui.window_content_region_width() * 0.2;
 
@@ -70,11 +70,10 @@ impl FramebulkEditor for YawPitchEditor {
                 let disabled = match framebulk.auto_actions.movement {
                     Some(auto_movement) => match auto_movement {
                         AutoMovement::SetYaw(_) => false,
-                        AutoMovement::Strafe(strafe_settings) => match strafe_settings.dir {
-                            StrafeDir::Yaw(_) => false,
-                            StrafeDir::Line { .. } => false,
-                            _ => true,
-                        },
+                        AutoMovement::Strafe(strafe_settings) => !matches!(
+                            strafe_settings.dir,
+                            StrafeDir::Yaw(_) | StrafeDir::Line { .. }
+                        ),
                     },
                     None => false,
                 };
@@ -143,13 +142,13 @@ impl FramebulkEditor for YawPitchEditor {
     fn show_minimal(
         &self,
         ui: &Ui,
-        framebulk: &mut FrameBulk,
-        _: &Properties,
-        _: &mut HLTASMenuState,
-        _: &AppOptions,
-        undo_redo_handler: &mut UndoRedoHandler,
+        hltas_info: HLTASInfo,
+        framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
+        let framebulk = hltas_info.framebulk;
+        let undo_redo_handler = framebulk_editor_misc_data.undo_redo_handler;
+
         let width = ui.window_content_region_width() * 0.15;
 
         let yaw = match &mut framebulk.auto_actions.movement {

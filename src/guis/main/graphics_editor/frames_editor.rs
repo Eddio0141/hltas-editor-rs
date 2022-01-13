@@ -1,14 +1,10 @@
 use std::num::NonZeroU32;
 
-use hltas::types::{FrameBulk, Properties};
 use imgui::{Drag, Ui};
 
-use crate::{
-    guis::main::{option_menu::AppOptions, tab::HLTASMenuState, undo_redo_hltas::UndoRedoHandler},
-    helpers::hltas::{fps, frametime},
-};
+use crate::helpers::hltas::{fps, frametime};
 
-use super::framebulk_editor::FramebulkEditor;
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
 
 pub struct FramesEditor;
 
@@ -16,13 +12,12 @@ impl FramebulkEditor for FramesEditor {
     fn show(
         &self,
         ui: &Ui,
-        framebulk: &mut FrameBulk,
-        _: &Properties,
-        _: &mut HLTASMenuState,
-        _: &AppOptions,
-        _: &mut UndoRedoHandler,
+        hltas_info: HLTASInfo,
+        _: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
+        let framebulk = hltas_info.framebulk;
+
         let frametime = framebulk.frame_time.parse::<f32>();
         let mut frame_count = framebulk.frame_count.get();
 
@@ -72,16 +67,7 @@ impl FramebulkEditor for FramesEditor {
         frametime_changed || frame_count_changed
     }
 
-    fn show_minimal(
-        &self,
-        _: &Ui,
-        _: &mut FrameBulk,
-        _: &Properties,
-        _: &mut HLTASMenuState,
-        _: &AppOptions,
-        _: &mut UndoRedoHandler,
-        _: usize,
-    ) -> bool {
+    fn show_minimal(&self, _: &Ui, _: HLTASInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
         false
     }
 }

@@ -1,14 +1,9 @@
 use hltas::types::{
-    FrameBulk, JumpBug, LeaveGroundAction, LeaveGroundActionSpeed, LeaveGroundActionType,
-    Properties, Times,
+    JumpBug, LeaveGroundAction, LeaveGroundActionSpeed, LeaveGroundActionType, Times,
 };
 use imgui::{Selectable, StyleColor, Ui};
 
-use crate::guis::main::{
-    option_menu::AppOptions, tab::HLTASMenuState, undo_redo_hltas::UndoRedoHandler,
-};
-
-use super::framebulk_editor::FramebulkEditor;
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
 
 pub struct JumpEditor;
 
@@ -16,13 +11,13 @@ impl FramebulkEditor for JumpEditor {
     fn show(
         &self,
         ui: &Ui,
-        framebulk: &mut FrameBulk,
-        properties: &Properties,
-        _: &mut HLTASMenuState,
-        options: &AppOptions,
-        _: &mut UndoRedoHandler,
+        hltas_info: HLTASInfo,
+        framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
+        let (framebulk, properties) = (hltas_info.framebulk, hltas_info.properties);
+        let options = framebulk_editor_misc_data.options;
+
         let starting_x = ui.cursor_pos()[0];
 
         let jump_ducktap_selectable_width = 65.0;
@@ -262,16 +257,7 @@ impl FramebulkEditor for JumpEditor {
         duck_tap_changed || autojump_changed || jump_changed || duck_changed
     }
 
-    fn show_minimal(
-        &self,
-        _: &Ui,
-        _: &mut FrameBulk,
-        _: &Properties,
-        _: &mut HLTASMenuState,
-        _: &AppOptions,
-        _: &mut UndoRedoHandler,
-        _: usize,
-    ) -> bool {
+    fn show_minimal(&self, _: &Ui, _: HLTASInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
         false
     }
 }

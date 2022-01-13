@@ -1,15 +1,8 @@
-use hltas::types::{FrameBulk, Properties};
 use imgui::Ui;
 
-use crate::guis::{
-    self,
-    main::{
-        cmd_editor::show_cmd_editor, option_menu::AppOptions, tab::HLTASMenuState,
-        undo_redo_hltas::UndoRedoHandler,
-    },
-};
+use crate::guis::main::cmd_editor::show_cmd_editor;
 
-use super::framebulk_editor::FramebulkEditor;
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
 
 pub struct CommandEditor;
 
@@ -17,13 +10,13 @@ impl FramebulkEditor for CommandEditor {
     fn show(
         &self,
         ui: &Ui,
-        framebulk: &mut FrameBulk,
-        _: &Properties,
-        _: &mut HLTASMenuState,
-        options: &AppOptions,
-        _: &mut UndoRedoHandler,
+        hltas_info: HLTASInfo,
+        framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
+        let framebulk = hltas_info.framebulk;
+        let options = framebulk_editor_misc_data.options;
+
         let locale_lang = options.locale_lang();
 
         ui.text(locale_lang.get_string_from_id("commands"));
@@ -44,16 +37,7 @@ impl FramebulkEditor for CommandEditor {
         }
     }
 
-    fn show_minimal(
-        &self,
-        _: &Ui,
-        _: &mut FrameBulk,
-        _: &Properties,
-        _: &mut guis::main::tab::HLTASMenuState,
-        _: &AppOptions,
-        _: &mut UndoRedoHandler,
-        _: usize,
-    ) -> bool {
+    fn show_minimal(&self, _: &Ui, _: HLTASInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
         false
     }
 }

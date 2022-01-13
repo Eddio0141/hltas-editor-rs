@@ -1,9 +1,7 @@
-use hltas::types::{DuckBeforeCollision, DuckBeforeGround, DuckWhenJump, FrameBulk, Times, Properties};
+use hltas::types::{DuckBeforeCollision, DuckBeforeGround, DuckWhenJump, Times};
 use imgui::Ui;
 
-use crate::guis::main::{tab::HLTASMenuState, option_menu::AppOptions, undo_redo_hltas::UndoRedoHandler};
-
-use super::framebulk_editor::FramebulkEditor;
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
 
 pub struct DuckEditor;
 
@@ -11,13 +9,12 @@ impl FramebulkEditor for DuckEditor {
     fn show(
         &self,
         ui: &Ui,
-        framebulk: &mut FrameBulk,
-        _: &Properties,
-        _: &mut HLTASMenuState,
-        _: &AppOptions,
-        _: &mut UndoRedoHandler,
+        hltas_info: HLTASInfo,
+        _: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
+        let framebulk = hltas_info.framebulk;
+
         let auto_actions = &mut framebulk.auto_actions;
 
         let (mut duck_before_collision, mut duck_before_collision_inc_ceiling) =
@@ -98,16 +95,7 @@ impl FramebulkEditor for DuckEditor {
         before_collision_changed || inc_ceiling_changed || before_ground_changed
     }
 
-    fn show_minimal(
-        &self,
-        _: &Ui,
-        _: &mut FrameBulk,
-        _: &Properties,
-        _: &mut HLTASMenuState,
-        _: &AppOptions,
-        _: &mut UndoRedoHandler,
-        _: usize,
-    ) -> bool {
+    fn show_minimal(&self, _: &Ui, _: HLTASInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
         false
     }
 }

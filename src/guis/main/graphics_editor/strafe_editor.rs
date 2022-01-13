@@ -1,15 +1,12 @@
-use hltas::types::{AutoMovement, FrameBulk, Properties, StrafeDir, StrafeSettings, StrafeType};
+use hltas::types::{AutoMovement, StrafeDir, StrafeSettings, StrafeType};
 use imgui::{StyleVar, Ui};
 
 use crate::{
-    guis::main::{
-        option_menu::AppOptions,
-        tab::{HLTASMenuState, StrafeMenuSelection}, undo_redo_hltas::UndoRedoHandler,
-    },
+    guis::main::tab::StrafeMenuSelection,
     helpers::imgui::{combo_enum::show_combo_enum, list_box_enum::show_list_box_enum},
 };
 
-use super::framebulk_editor::FramebulkEditor;
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
 
 pub struct StrafeEditor;
 
@@ -17,13 +14,13 @@ impl FramebulkEditor for StrafeEditor {
     fn show(
         &self,
         ui: &Ui,
-        framebulk: &mut FrameBulk,
-        _: &Properties,
-        tab_menu_data: &mut HLTASMenuState,
-        _: &AppOptions,
-        _: &mut UndoRedoHandler,
+        hltas_info: HLTASInfo,
+        framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
+        let framebulk = hltas_info.framebulk;
+        let tab_menu_data = framebulk_editor_misc_data.tab_menu_data;
+
         let initial_x_pos = ui.cursor_pos()[0];
 
         let strafe_menu_selection = tab_menu_data.strafe_menu_selection_at_mut(index).unwrap();
@@ -148,13 +145,13 @@ impl FramebulkEditor for StrafeEditor {
     fn show_minimal(
         &self,
         ui: &Ui,
-        framebulk: &mut FrameBulk,
-        _: &Properties,
-        tab_menu_data: &mut HLTASMenuState,
-        _: &AppOptions,
-        _: &mut UndoRedoHandler,
+        hltas_info: HLTASInfo,
+        framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
+        let framebulk = hltas_info.framebulk;
+        let tab_menu_data = framebulk_editor_misc_data.tab_menu_data;
+
         let strafe_menu_selection = tab_menu_data.strafe_menu_selection_at_mut(index).unwrap();
 
         if ui.button(format!("Strafe##{}", index)) {

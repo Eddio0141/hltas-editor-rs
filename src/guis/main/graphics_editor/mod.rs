@@ -29,7 +29,7 @@ use self::{
     action_keys_editor::ActionKeysEditor,
     command_editor::CommandEditor,
     duck_editor::DuckEditor,
-    framebulk_editor::FramebulkEditor,
+    framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo},
     frames_editor::FramesEditor,
     jump_editor::JumpEditor,
     seed_editor::{show_non_shared_seed_editor, show_shared_seed_editor},
@@ -533,21 +533,23 @@ pub fn show_graphics_editor(
                             let edited = if tab_menu_data.simple_view() {
                                 menu.show_minimal(
                                     ui,
-                                    framebulk,
-                                    properties,
-                                    tab_menu_data,
-                                    options,
-                                    undo_redo_handler,
+                                    HLTASInfo::new(framebulk, properties),
+                                    FramebulkEditorMiscData::new(
+                                        tab_menu_data,
+                                        options,
+                                        undo_redo_handler,
+                                    ),
                                     i,
                                 )
                             } else {
                                 menu.show(
                                     ui,
-                                    framebulk,
-                                    properties,
-                                    tab_menu_data,
-                                    options,
-                                    undo_redo_handler,
+                                    HLTASInfo::new(framebulk, properties),
+                                    FramebulkEditorMiscData::new(
+                                        tab_menu_data,
+                                        options,
+                                        undo_redo_handler,
+                                    ),
                                     i,
                                 )
                             };

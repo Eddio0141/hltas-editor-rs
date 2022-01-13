@@ -1,11 +1,6 @@
-use hltas::types::{FrameBulk, Properties};
 use imgui::Ui;
 
-use crate::guis::main::{
-    option_menu::AppOptions, tab::HLTASMenuState, undo_redo_hltas::UndoRedoHandler,
-};
-
-use super::framebulk_editor::FramebulkEditor;
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
 
 pub struct ActionKeysEditor;
 
@@ -13,13 +8,12 @@ impl FramebulkEditor for ActionKeysEditor {
     fn show(
         &self,
         ui: &Ui,
-        framebulk: &mut FrameBulk,
-        _: &Properties,
-        _: &mut HLTASMenuState,
-        _: &AppOptions,
-        _: &mut UndoRedoHandler,
+        hltas_info: HLTASInfo,
+        _: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
+        let framebulk = hltas_info.framebulk;
+
         let action_keys = &mut framebulk.action_keys;
 
         ui.text("action keys");
@@ -34,16 +28,7 @@ impl FramebulkEditor for ActionKeysEditor {
         use_changed || attack1_changed || attack2_changed || reload_changed
     }
 
-    fn show_minimal(
-        &self,
-        _: &Ui,
-        _: &mut FrameBulk,
-        _: &Properties,
-        _: &mut HLTASMenuState,
-        _: &AppOptions,
-        _: &mut UndoRedoHandler,
-        _: usize,
-    ) -> bool {
+    fn show_minimal(&self, _: &Ui, _: HLTASInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
         false
     }
 }

@@ -329,7 +329,7 @@ impl OptionMenu {
                         let mut combo_box_changed = false;
                         for locale in LOCALES.locales() {
                             let selectable_clicked =
-                                Selectable::new(format!("{}##option_menu", locale.to_string()))
+                                Selectable::new(format!("{}##option_menu", locale))
                                     .selected(app_options.locale_lang.get_lang() == *locale)
                                     .build(ui);
 

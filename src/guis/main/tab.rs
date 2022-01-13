@@ -26,9 +26,6 @@ pub struct HLTASFileTab {
     hltas: HLTAS,
     pub tab_menu_data: HLTASMenuState,
     pub undo_redo_handler: UndoRedoHandler,
-    is_modifying_line: bool,
-    modifying_line_backup: Option<(Line, usize)>,
-    modifying_line_edited: bool,
 }
 
 impl<'a> HLTASFileTab {
@@ -78,36 +75,6 @@ impl<'a> HLTASFileTab {
         }
     }
 
-    pub fn is_modifying_something(&self) -> bool {
-        self.is_modifying_line
-    }
-
-    pub fn is_modifying_line(&mut self, index: usize) {
-        if !self.is_modifying_line {
-            self.modifying_line_backup = Some((self.hltas.lines[index].to_owned(), index));
-        } else if let Some((_, index_backup)) = self.modifying_line_backup {
-            if index != index_backup {
-                self.modifying_line_backup = Some((self.hltas.lines[index].to_owned(), index));
-            }
-        }
-        self.is_modifying_line = true;
-    }
-
-    pub fn not_modifying_line(&mut self) {
-        self.is_modifying_line = false;
-        self.modifying_line_edited = false;
-        self.modifying_line_backup = None;
-    }
-
-    pub fn modifying_line_edited(&mut self) {
-        if !self.modifying_line_edited {
-            if let Some((line, index)) = &self.modifying_line_backup {
-                self.undo_redo_handler.edit_line(line.to_owned(), *index);
-                self.modifying_line_edited = true;
-            }
-        }
-    }
-
     pub fn hltas_properties_mut(&mut self) -> &mut Properties {
         &mut self.hltas.properties
     }
@@ -116,13 +83,19 @@ impl<'a> HLTASFileTab {
         &self.hltas.lines
     }
 
-    pub fn hltas_tab_menu_data_mut(
+    pub fn split_fields_mut(
         &mut self,
-    ) -> (&mut [Line], &mut Properties, &mut HLTASMenuState) {
+    ) -> (
+        &mut [Line],
+        &mut Properties,
+        &mut HLTASMenuState,
+        &mut UndoRedoHandler,
+    ) {
         (
             &mut self.hltas.lines,
             &mut self.hltas.properties,
             &mut self.tab_menu_data,
+            &mut self.undo_redo_handler,
         )
     }
 
@@ -245,6 +218,9 @@ pub struct HLTASMenuState {
     got_modified: bool,
     goto_line: Option<usize>,
     simple_view: bool,
+    is_modifying_line: bool,
+    modifying_line_backup: Option<(Line, usize)>,
+    modifying_line_edited: bool,
 }
 
 impl HLTASMenuState {
@@ -262,12 +238,56 @@ impl HLTASMenuState {
             .collect::<Vec<_>>();
 
         Self {
+            is_modifying_line: false,
+            modifying_line_backup: None,
+            modifying_line_edited: false,
             strafe_menu_selections,
             right_click_popup_index: None,
             selected_indexes: vec![false; hltas.lines.len()],
             got_modified: false,
             goto_line: None,
             simple_view: false,
+        }
+    }
+
+    pub fn is_modifying_something(&self) -> bool {
+        self.is_modifying_line
+    }
+
+    pub fn is_modifying_line(&mut self, line: &Line, index: usize) {
+        if !self.is_modifying_line {
+            self.modifying_line_backup = Some((line.to_owned(), index));
+        } else if let Some((_, index_backup)) = self.modifying_line_backup {
+            if index != index_backup {
+                self.modifying_line_backup = Some((line.to_owned(), index));
+            }
+        }
+        self.is_modifying_line = true;
+    }
+
+    pub fn is_modifying_framebulk(&mut self, framebulk: &FrameBulk, index: usize) {
+        if !self.is_modifying_line {
+            self.modifying_line_backup = Some((Line::FrameBulk(framebulk.to_owned()), index));
+        } else if let Some((_, index_backup)) = self.modifying_line_backup {
+            if index != index_backup {
+                self.modifying_line_backup = Some((Line::FrameBulk(framebulk.to_owned()), index));
+            }
+        }
+        self.is_modifying_line = true;
+    }
+
+    pub fn not_modifying_line(&mut self) {
+        self.is_modifying_line = false;
+        self.modifying_line_edited = false;
+        self.modifying_line_backup = None;
+    }
+
+    pub fn modifying_line_edited(&mut self, undo_redo_handler: &mut UndoRedoHandler) {
+        if !self.modifying_line_edited {
+            if let Some((line, index)) = &self.modifying_line_backup {
+                undo_redo_handler.edit_line(line.to_owned(), *index);
+                self.modifying_line_edited = true;
+            }
         }
     }
 

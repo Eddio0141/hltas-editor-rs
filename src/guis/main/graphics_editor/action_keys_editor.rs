@@ -1,5 +1,9 @@
-use hltas::types::FrameBulk;
+use hltas::types::{FrameBulk, Properties};
 use imgui::Ui;
+
+use crate::guis::main::{
+    option_menu::AppOptions, tab::HLTASMenuState, undo_redo_hltas::UndoRedoHandler,
+};
 
 use super::framebulk_editor::FramebulkEditor;
 
@@ -10,9 +14,10 @@ impl FramebulkEditor for ActionKeysEditor {
         &self,
         ui: &Ui,
         framebulk: &mut FrameBulk,
-        _: &hltas::types::Properties,
-        _: &mut crate::guis::main::tab::HLTASMenuState,
-        _: &crate::guis::main::option_menu::AppOptions,
+        _: &Properties,
+        _: &mut HLTASMenuState,
+        _: &AppOptions,
+        _: &mut UndoRedoHandler,
         index: usize,
     ) -> bool {
         let action_keys = &mut framebulk.action_keys;
@@ -33,9 +38,10 @@ impl FramebulkEditor for ActionKeysEditor {
         &self,
         _: &Ui,
         _: &mut FrameBulk,
-        _: &hltas::types::Properties,
-        _: &mut crate::guis::main::tab::HLTASMenuState,
-        _: &crate::guis::main::option_menu::AppOptions,
+        _: &Properties,
+        _: &mut HLTASMenuState,
+        _: &AppOptions,
+        _: &mut UndoRedoHandler,
         _: usize,
     ) -> bool {
         false

@@ -1,5 +1,7 @@
-use hltas::types::{DuckBeforeCollision, DuckBeforeGround, DuckWhenJump, FrameBulk, Times};
+use hltas::types::{DuckBeforeCollision, DuckBeforeGround, DuckWhenJump, FrameBulk, Times, Properties};
 use imgui::Ui;
+
+use crate::guis::main::{tab::HLTASMenuState, option_menu::AppOptions, undo_redo_hltas::UndoRedoHandler};
 
 use super::framebulk_editor::FramebulkEditor;
 
@@ -10,9 +12,10 @@ impl FramebulkEditor for DuckEditor {
         &self,
         ui: &Ui,
         framebulk: &mut FrameBulk,
-        _: &hltas::types::Properties,
-        _: &mut crate::guis::main::tab::HLTASMenuState,
-        _: &crate::guis::main::option_menu::AppOptions,
+        _: &Properties,
+        _: &mut HLTASMenuState,
+        _: &AppOptions,
+        _: &mut UndoRedoHandler,
         index: usize,
     ) -> bool {
         let auto_actions = &mut framebulk.auto_actions;
@@ -99,9 +102,10 @@ impl FramebulkEditor for DuckEditor {
         &self,
         _: &Ui,
         _: &mut FrameBulk,
-        _: &hltas::types::Properties,
-        _: &mut crate::guis::main::tab::HLTASMenuState,
-        _: &crate::guis::main::option_menu::AppOptions,
+        _: &Properties,
+        _: &mut HLTASMenuState,
+        _: &AppOptions,
+        _: &mut UndoRedoHandler,
         _: usize,
     ) -> bool {
         false

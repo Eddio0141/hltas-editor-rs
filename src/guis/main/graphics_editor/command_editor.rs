@@ -1,8 +1,12 @@
 use hltas::types::{FrameBulk, Properties};
 use imgui::Ui;
 
-use crate::guis::main::{
-    cmd_editor::show_cmd_editor, option_menu::AppOptions, tab::HLTASMenuState,
+use crate::guis::{
+    self,
+    main::{
+        cmd_editor::show_cmd_editor, option_menu::AppOptions, tab::HLTASMenuState,
+        undo_redo_hltas::UndoRedoHandler,
+    },
 };
 
 use super::framebulk_editor::FramebulkEditor;
@@ -17,6 +21,7 @@ impl FramebulkEditor for CommandEditor {
         _: &Properties,
         _: &mut HLTASMenuState,
         options: &AppOptions,
+        _: &mut UndoRedoHandler,
         index: usize,
     ) -> bool {
         let locale_lang = options.locale_lang();
@@ -43,9 +48,10 @@ impl FramebulkEditor for CommandEditor {
         &self,
         _: &Ui,
         _: &mut FrameBulk,
-        _: &hltas::types::Properties,
-        _: &mut crate::guis::main::tab::HLTASMenuState,
-        _: &crate::guis::main::option_menu::AppOptions,
+        _: &Properties,
+        _: &mut guis::main::tab::HLTASMenuState,
+        _: &AppOptions,
+        _: &mut UndoRedoHandler,
         _: usize,
     ) -> bool {
         false

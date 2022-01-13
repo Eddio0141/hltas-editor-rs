@@ -4,7 +4,7 @@ use imgui::{StyleVar, Ui};
 use crate::{
     guis::main::{
         option_menu::AppOptions,
-        tab::{HLTASMenuState, StrafeMenuSelection},
+        tab::{HLTASMenuState, StrafeMenuSelection}, undo_redo_hltas::UndoRedoHandler,
     },
     helpers::imgui::{combo_enum::show_combo_enum, list_box_enum::show_list_box_enum},
 };
@@ -21,6 +21,7 @@ impl FramebulkEditor for StrafeEditor {
         _: &Properties,
         tab_menu_data: &mut HLTASMenuState,
         _: &AppOptions,
+        _: &mut UndoRedoHandler,
         index: usize,
     ) -> bool {
         let initial_x_pos = ui.cursor_pos()[0];
@@ -151,6 +152,7 @@ impl FramebulkEditor for StrafeEditor {
         _: &Properties,
         tab_menu_data: &mut HLTASMenuState,
         _: &AppOptions,
+        _: &mut UndoRedoHandler,
         index: usize,
     ) -> bool {
         let strafe_menu_selection = tab_menu_data.strafe_menu_selection_at_mut(index).unwrap();
@@ -184,7 +186,7 @@ impl FramebulkEditor for StrafeEditor {
                     };
 
                     // TODO
-                    let width = ui.push_item_width(140.0);
+                    let width = ui.push_item_width(219.0);
                     let strafe_selection_edited = show_combo_enum(
                         ui,
                         &mut strafe_selection,

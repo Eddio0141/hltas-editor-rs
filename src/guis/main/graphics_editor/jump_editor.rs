@@ -4,7 +4,9 @@ use hltas::types::{
 };
 use imgui::{Selectable, StyleColor, Ui};
 
-use crate::guis::main::{option_menu::AppOptions, tab::HLTASMenuState};
+use crate::guis::main::{
+    option_menu::AppOptions, tab::HLTASMenuState, undo_redo_hltas::UndoRedoHandler,
+};
 
 use super::framebulk_editor::FramebulkEditor;
 
@@ -18,6 +20,7 @@ impl FramebulkEditor for JumpEditor {
         properties: &Properties,
         _: &mut HLTASMenuState,
         options: &AppOptions,
+        _: &mut UndoRedoHandler,
         index: usize,
     ) -> bool {
         let starting_x = ui.cursor_pos()[0];
@@ -266,6 +269,7 @@ impl FramebulkEditor for JumpEditor {
         _: &Properties,
         _: &mut HLTASMenuState,
         _: &AppOptions,
+        _: &mut UndoRedoHandler,
         _: usize,
     ) -> bool {
         false

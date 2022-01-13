@@ -1,9 +1,12 @@
 use std::num::NonZeroU32;
 
-use hltas::types::FrameBulk;
+use hltas::types::{FrameBulk, Properties};
 use imgui::{Drag, Ui};
 
-use crate::helpers::hltas::{fps, frametime};
+use crate::{
+    guis::main::{option_menu::AppOptions, tab::HLTASMenuState, undo_redo_hltas::UndoRedoHandler},
+    helpers::hltas::{fps, frametime},
+};
 
 use super::framebulk_editor::FramebulkEditor;
 
@@ -14,9 +17,10 @@ impl FramebulkEditor for FramesEditor {
         &self,
         ui: &Ui,
         framebulk: &mut FrameBulk,
-        _: &hltas::types::Properties,
-        _: &mut crate::guis::main::tab::HLTASMenuState,
-        _: &crate::guis::main::option_menu::AppOptions,
+        _: &Properties,
+        _: &mut HLTASMenuState,
+        _: &AppOptions,
+        _: &mut UndoRedoHandler,
         index: usize,
     ) -> bool {
         let frametime = framebulk.frame_time.parse::<f32>();
@@ -72,9 +76,10 @@ impl FramebulkEditor for FramesEditor {
         &self,
         _: &Ui,
         _: &mut FrameBulk,
-        _: &hltas::types::Properties,
-        _: &mut crate::guis::main::tab::HLTASMenuState,
-        _: &crate::guis::main::option_menu::AppOptions,
+        _: &Properties,
+        _: &mut HLTASMenuState,
+        _: &AppOptions,
+        _: &mut UndoRedoHandler,
         _: usize,
     ) -> bool {
         false

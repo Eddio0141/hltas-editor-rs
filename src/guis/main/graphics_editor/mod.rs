@@ -433,7 +433,7 @@ pub fn show_graphics_editor(
     let mut new_line_menu_clicked_on_line = false;
     let mut modifying_something = None;
 
-    let (lines, properties, tab_menu_data) = tab.hltas_tab_menu_data_mut();
+    let (lines, properties, tab_menu_data, undo_redo_handler) = tab.split_fields_mut();
     let lines_is_empty = lines.is_empty();
     let goto_line = tab_menu_data.goto_line();
 
@@ -537,10 +537,19 @@ pub fn show_graphics_editor(
                                     properties,
                                     tab_menu_data,
                                     options,
+                                    undo_redo_handler,
                                     i,
                                 )
                             } else {
-                                menu.show(ui, framebulk, properties, tab_menu_data, options, i)
+                                menu.show(
+                                    ui,
+                                    framebulk,
+                                    properties,
+                                    tab_menu_data,
+                                    options,
+                                    undo_redo_handler,
+                                    i,
+                                )
                             };
                             group_token.end();
 
@@ -971,12 +980,12 @@ pub fn show_graphics_editor(
     }
 
     match modifying_something {
-        Some(index) => tab.is_modifying_line(index),
-        None => tab.not_modifying_line(),
+        Some(index) => tab_menu_data.is_modifying_line(&lines[index], index),
+        None => tab_menu_data.not_modifying_line(),
     }
 
-    if tab.is_modifying_something() && lines_edited {
-        tab.modifying_line_edited();
+    if tab_menu_data.is_modifying_something() && lines_edited {
+        tab_menu_data.modifying_line_edited(undo_redo_handler);
     }
 
     if let Some(stale_line) = stale_line {
@@ -985,7 +994,7 @@ pub fn show_graphics_editor(
         tab.remove_line_at_index(stale_line);
     }
 
-    if !tab.is_modifying_something()
+    if !tab.tab_menu_data.is_modifying_something()
         && (keyboard_state.just_pressed(VirtualKeyCode::Delete)
             || keyboard_state.just_pressed(VirtualKeyCode::Back))
     {

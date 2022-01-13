@@ -149,7 +149,7 @@ impl FramebulkEditor for YawPitchEditor {
         let framebulk = hltas_info.framebulk;
         let undo_redo_handler = framebulk_editor_misc_data.undo_redo_handler;
 
-        let width = ui.window_content_region_width() * 0.15;
+        let width = 150.0;
 
         let yaw = match &mut framebulk.auto_actions.movement {
             Some(auto_movement) => match auto_movement {

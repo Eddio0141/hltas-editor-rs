@@ -129,7 +129,7 @@ impl FramebulkEditor for DuckEditor {
             };
 
             if duck_state.is_empty() {
-                "..".to_string()
+                "no auto duck".to_string()
             } else {
                 duck_state.join("/")
             }

@@ -484,6 +484,7 @@ impl FramebulkEditor for JumpEditor {
                     None => (false, false),
                 };
 
+            ui.dummy([0., 5.]);
             let lgagst_changed = Selectable::new(format!("lgagst##jump_menu{}", index))
                 .selected(lgagst_before)
                 .size([selectable_width, 0.0])
@@ -493,6 +494,7 @@ impl FramebulkEditor for JumpEditor {
                     .selected(lgagst_max_spd_before)
                     .size([selectable_width, 0.0])
                     .build(ui);
+            ui.dummy([0., 5.]);
 
             validate_lgagst_state(
                 FramebulkInfo::new(framebulk, properties),
@@ -509,7 +511,7 @@ impl FramebulkEditor for JumpEditor {
 
         if ui.button_with_size(
             format!("{}##jump_menu_open{}", jump_menu_display, index),
-            [150., 0.],
+            [100., 0.],
         ) {
             ui.open_popup(jump_menu_id);
         }

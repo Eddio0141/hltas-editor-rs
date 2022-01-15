@@ -135,7 +135,7 @@ impl FramebulkEditor for DuckEditor {
             }
         };
 
-        let menu_id = "duck_menu_popup";
+        let menu_id = &format!("duck_menu_popup{}", index);
 
         let mut menu_edited = false;
         ui.popup(menu_id, || {

@@ -153,17 +153,27 @@ impl FramebulkEditor for StrafeEditor {
         let tab_menu_data = framebulk_editor_misc_data.tab_menu_data;
 
         let selectable_radius = 13.;
+        let strafe_keys_button_size = [50., 0.];
 
         let strafe_menu_selection = tab_menu_data.strafe_menu_selection_at_mut(index).unwrap();
 
-        if ui.button(format!("Strafe##{}", index)) {
-            *strafe_menu_selection = Some(StrafeMenuSelection::Strafe);
-        }
-
-        ui.same_line();
-
-        if ui.button(format!("Key##{}", index)) {
-            *strafe_menu_selection = Some(StrafeMenuSelection::Keys);
+        match strafe_menu_selection {
+            Some(strafe_menu_selection) => match strafe_menu_selection {
+                StrafeMenuSelection::Strafe => {
+                    if ui.button_with_size(format!("Strafe##{}", index), strafe_keys_button_size) {
+                        *strafe_menu_selection = StrafeMenuSelection::Keys;
+                    }
+                }
+                StrafeMenuSelection::Keys => {
+                    if ui.button_with_size(format!("Key##{}", index), strafe_keys_button_size) {
+                        *strafe_menu_selection = StrafeMenuSelection::Strafe;
+                    }
+                }
+            },
+            None => unreachable!(
+                "strafe_menu_selection at index {} has to be a framebulk so it can't be None",
+                index
+            ),
         }
 
         ui.same_line();

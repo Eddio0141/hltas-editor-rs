@@ -1,5 +1,5 @@
 use hltas::types::{AutoMovement, StrafeDir, StrafeSettings, StrafeType};
-use imgui::{StyleVar, Ui};
+use imgui::{Selectable, Ui};
 
 use crate::{
     guis::main::tab::StrafeMenuSelection,
@@ -51,7 +51,7 @@ impl FramebulkEditor for StrafeEditor {
                     };
 
                     // TODO
-                    let width = ui.push_item_width(140.0);
+                    let width_token = ui.push_item_width(140.0);
 
                     let list_box_changed = show_list_box_enum(
                         ui,
@@ -100,7 +100,7 @@ impl FramebulkEditor for StrafeEditor {
                         }
                     }
 
-                    width.pop(ui);
+                    width_token.pop(ui);
 
                     list_box_changed
                 }
@@ -152,6 +152,8 @@ impl FramebulkEditor for StrafeEditor {
         let framebulk = hltas_info.framebulk;
         let tab_menu_data = framebulk_editor_misc_data.tab_menu_data;
 
+        let selectable_radius = 13.;
+
         let strafe_menu_selection = tab_menu_data.strafe_menu_selection_at_mut(index).unwrap();
 
         if ui.button(format!("Strafe##{}", index)) {
@@ -182,15 +184,16 @@ impl FramebulkEditor for StrafeEditor {
                         _ => None,
                     };
 
-                    // TODO
-                    let width = ui.push_item_width(219.0);
+                    let width_token = ui.push_item_width(
+                        (selectable_radius + ui.clone_style().item_spacing[0]) * 6.,
+                    );
                     let strafe_selection_edited = show_combo_enum(
                         ui,
                         &mut strafe_selection,
                         values,
                         &format!("strafe_selection{}", index),
                     );
-                    width.pop(ui);
+                    width_token.pop(ui);
 
                     if strafe_selection_edited {
                         let prev_yaw = match &framebulk.auto_actions.movement {
@@ -230,27 +233,38 @@ impl FramebulkEditor for StrafeEditor {
                 }
                 StrafeMenuSelection::Keys => {
                     let keys = &mut framebulk.movement_keys;
-                    let no_spacing_token = ui.push_style_var(StyleVar::ItemSpacing([5.0, 0.0]));
 
-                    let forward_edited =
-                        ui.checkbox(format!("w##strafe_menu_editor{}", index), &mut keys.forward);
-                    ui.same_line();
-                    let left_edited =
-                        ui.checkbox(format!("a##strafe_menu_editor{}", index), &mut keys.left);
-                    ui.same_line();
-                    let back_edited =
-                        ui.checkbox(format!("s##strafe_menu_editor{}", index), &mut keys.back);
-                    ui.same_line();
-                    let right_edited =
-                        ui.checkbox(format!("d##strafe_menu_editor{}", index), &mut keys.right);
-                    ui.same_line();
-                    let up_edited =
-                        ui.checkbox(format!("Up##strafe_menu_editor{}", index), &mut keys.up);
-                    ui.same_line();
-                    let down_edited =
-                        ui.checkbox(format!("Dn##strafe_menu_editor{}", index), &mut keys.down);
+                    ui.set_cursor_pos({
+                        let cursor_pos = ui.cursor_pos();
+                        [
+                            cursor_pos[0] + ui.clone_style().item_spacing[0],
+                            cursor_pos[1],
+                        ]
+                    });
 
-                    no_spacing_token.pop();
+                    let forward_edited = Selectable::new(format!("w##key_editor{}", index))
+                        .size([selectable_radius, selectable_radius])
+                        .build_with_ref(ui, &mut keys.forward);
+                    ui.same_line();
+                    let left_edited = Selectable::new(format!("a##key_editor{}", index))
+                        .size([selectable_radius, selectable_radius])
+                        .build_with_ref(ui, &mut keys.left);
+                    ui.same_line();
+                    let back_edited = Selectable::new(format!("s##key_editor{}", index))
+                        .size([selectable_radius, selectable_radius])
+                        .build_with_ref(ui, &mut keys.back);
+                    ui.same_line();
+                    let right_edited = Selectable::new(format!("d##key_editor{}", index))
+                        .size([selectable_radius, selectable_radius])
+                        .build_with_ref(ui, &mut keys.right);
+                    ui.same_line();
+                    let up_edited = Selectable::new(format!("Up##key_editor{}", index))
+                        .size([selectable_radius, selectable_radius])
+                        .build_with_ref(ui, &mut keys.up);
+                    ui.same_line();
+                    let down_edited = Selectable::new(format!("Dn##key_editor{}", index))
+                        .size([selectable_radius, selectable_radius])
+                        .build_with_ref(ui, &mut keys.down);
 
                     forward_edited
                         || up_edited

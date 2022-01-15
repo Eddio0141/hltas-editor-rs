@@ -555,6 +555,7 @@ impl MainGUI {
                             .locale_lang()
                             .get_string_from_id("toggle-simple-view"),
                     )
+                    .shortcut(toggle_simple_view_key.to_string())
                     .build(ui)
                     {
                         if let Some(current_tab) = &self.current_tab {

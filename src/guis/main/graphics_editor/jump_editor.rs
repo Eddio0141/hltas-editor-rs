@@ -544,6 +544,6 @@ impl FramebulkEditor for JumpEditor {
             },
         );
 
-        ducktap_changed || autojump_changed || jump_changed || duck_changed /*  || lgagst_changed */
+        ducktap_changed || autojump_changed || jump_changed || duck_changed || lgagst_edited
     }
 }

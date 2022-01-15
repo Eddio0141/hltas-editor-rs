@@ -54,11 +54,14 @@ fn validate_jump_states(
 
     if changed_state.zero_ms {
         match &mut framebulk.auto_actions.leave_ground_action {
-            Some(leave_ground_action) => {
-                if let LeaveGroundActionType::DuckTap { zero_ms } = &mut leave_ground_action.type_ {
+            Some(leave_ground_action) => match &mut leave_ground_action.type_ {
+                LeaveGroundActionType::DuckTap { zero_ms } => {
                     *zero_ms = !before_state.zero_ms;
                 }
-            }
+                LeaveGroundActionType::Jump => {
+                    leave_ground_action.type_ = LeaveGroundActionType::DuckTap { zero_ms: true }
+                }
+            },
             None => {
                 framebulk.action_keys.jump = false;
                 framebulk.auto_actions.leave_ground_action = Some(LeaveGroundAction {
@@ -357,7 +360,7 @@ impl FramebulkEditor for JumpEditor {
     ) -> bool {
         let (framebulk, properties) = (framebulk_info.framebulk, framebulk_info.properties);
 
-        let selectable_width = 150.;
+        let selectable_width = 130.;
 
         let jump_menu_display = match framebulk.auto_actions.leave_ground_action {
             Some(leave_ground_action) => match leave_ground_action.type_ {

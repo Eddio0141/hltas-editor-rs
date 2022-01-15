@@ -155,19 +155,17 @@ impl FramebulkEditor for YawPitchEditor {
         };
 
         let angles_text = {
-            let mut angles_text = Vec::new();
-
-            angles_text.push(match yaw {
-                Some(yaw) => yaw.to_string(),
-                None => "-".to_string(),
-            });
-
-            angles_text.push("/".to_string());
-
-            angles_text.push(match framebulk.pitch {
-                Some(pitch) => pitch.to_string(),
-                None => "-".to_string(),
-            });
+            let angles_text = vec![
+                match yaw {
+                    Some(yaw) => yaw.to_string(),
+                    None => "-".to_string(),
+                },
+                "/".to_string(),
+                match framebulk.pitch {
+                    Some(pitch) => pitch.to_string(),
+                    None => "-".to_string(),
+                },
+            ];
 
             angles_text.join(" ")
         };

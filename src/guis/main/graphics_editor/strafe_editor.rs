@@ -6,7 +6,7 @@ use crate::{
     helpers::imgui::{combo_enum::show_combo_enum, list_box_enum::show_list_box_enum},
 };
 
-use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
 
 pub struct StrafeEditor;
 
@@ -14,7 +14,7 @@ impl FramebulkEditor for StrafeEditor {
     fn show(
         &self,
         ui: &Ui,
-        hltas_info: HLTASInfo,
+        hltas_info: FramebulkInfo,
         framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
@@ -145,7 +145,7 @@ impl FramebulkEditor for StrafeEditor {
     fn show_minimal(
         &self,
         ui: &Ui,
-        hltas_info: HLTASInfo,
+        hltas_info: FramebulkInfo,
         framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {

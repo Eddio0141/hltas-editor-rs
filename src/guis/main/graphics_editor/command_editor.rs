@@ -2,7 +2,7 @@ use imgui::Ui;
 
 use crate::guis::main::cmd_editor::show_cmd_editor;
 
-use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
 
 pub struct CommandEditor;
 
@@ -10,7 +10,7 @@ impl FramebulkEditor for CommandEditor {
     fn show(
         &self,
         ui: &Ui,
-        hltas_info: HLTASInfo,
+        hltas_info: FramebulkInfo,
         framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
@@ -37,7 +37,7 @@ impl FramebulkEditor for CommandEditor {
         }
     }
 
-    fn show_minimal(&self, _: &Ui, _: HLTASInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
+    fn show_minimal(&self, _: &Ui, _: FramebulkInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
         false
     }
 }

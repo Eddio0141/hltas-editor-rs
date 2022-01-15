@@ -26,7 +26,7 @@ use self::{
     action_keys_editor::ActionKeysEditor,
     command_editor::CommandEditor,
     duck_editor::DuckEditor,
-    framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo},
+    framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo},
     frames_editor::FramesEditor,
     jump_editor::JumpEditor,
     seed_editor::{show_non_shared_seed_editor, show_shared_seed_editor},
@@ -524,7 +524,7 @@ pub fn show_graphics_editor(
                             let edited = if tab_menu_data.simple_view() {
                                 menu.show_minimal(
                                     ui,
-                                    HLTASInfo::new(framebulk, properties),
+                                    FramebulkInfo::new(framebulk, properties),
                                     FramebulkEditorMiscData::new(
                                         tab_menu_data,
                                         options,
@@ -535,7 +535,7 @@ pub fn show_graphics_editor(
                             } else {
                                 menu.show(
                                     ui,
-                                    HLTASInfo::new(framebulk, properties),
+                                    FramebulkInfo::new(framebulk, properties),
                                     FramebulkEditorMiscData::new(
                                         tab_menu_data,
                                         options,

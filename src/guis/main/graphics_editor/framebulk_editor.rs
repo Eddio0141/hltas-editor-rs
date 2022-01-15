@@ -5,12 +5,12 @@ use crate::guis::main::{
     option_menu::AppOptions, tab::HLTASMenuState, undo_redo_hltas::UndoRedoHandler,
 };
 
-pub struct HLTASInfo<'a> {
+pub struct FramebulkInfo<'a> {
     pub framebulk: &'a mut FrameBulk,
     pub properties: &'a Properties,
 }
 
-impl<'a> HLTASInfo<'a> {
+impl<'a> FramebulkInfo<'a> {
     pub fn new(framebulk: &'a mut FrameBulk, properties: &'a Properties) -> Self {
         Self {
             framebulk,
@@ -43,15 +43,15 @@ pub trait FramebulkEditor {
     fn show(
         &self,
         ui: &Ui,
-        hltas_info: HLTASInfo,
-        framebulk_editor_misc_data: FramebulkEditorMiscData,
+        framebulk_info: FramebulkInfo,
+        misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool;
 
     fn show_minimal(
         &self,
         ui: &Ui,
-        hltas_info: HLTASInfo,
+        framebulk_info: FramebulkInfo,
         framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool;

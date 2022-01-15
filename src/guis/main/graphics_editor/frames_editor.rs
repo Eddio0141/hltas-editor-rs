@@ -4,7 +4,7 @@ use imgui::{Drag, Ui};
 
 use crate::helpers::hltas::{fps, frametime};
 
-use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
 
 pub struct FramesEditor;
 
@@ -12,7 +12,7 @@ impl FramebulkEditor for FramesEditor {
     fn show(
         &self,
         ui: &Ui,
-        hltas_info: HLTASInfo,
+        hltas_info: FramebulkInfo,
         _: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
@@ -67,7 +67,7 @@ impl FramebulkEditor for FramesEditor {
         frametime_changed || frame_count_changed
     }
 
-    fn show_minimal(&self, _: &Ui, _: HLTASInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
+    fn show_minimal(&self, _: &Ui, _: FramebulkInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
         false
     }
 }

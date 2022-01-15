@@ -3,7 +3,7 @@ use imgui::{Drag, InputFloat, Slider, StyleVar, Ui};
 
 use crate::guis::x_button::show_x_button;
 
-use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
 
 pub struct YawPitchEditor;
 
@@ -11,7 +11,7 @@ impl FramebulkEditor for YawPitchEditor {
     fn show(
         &self,
         ui: &Ui,
-        hltas_info: HLTASInfo,
+        hltas_info: FramebulkInfo,
         framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
@@ -142,7 +142,7 @@ impl FramebulkEditor for YawPitchEditor {
     fn show_minimal(
         &self,
         ui: &Ui,
-        hltas_info: HLTASInfo,
+        hltas_info: FramebulkInfo,
         framebulk_editor_misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {

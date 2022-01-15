@@ -1,6 +1,6 @@
 use imgui::Ui;
 
-use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
 
 pub struct ActionKeysEditor;
 
@@ -8,7 +8,7 @@ impl FramebulkEditor for ActionKeysEditor {
     fn show(
         &self,
         ui: &Ui,
-        hltas_info: HLTASInfo,
+        hltas_info: FramebulkInfo,
         _: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
@@ -28,7 +28,7 @@ impl FramebulkEditor for ActionKeysEditor {
         use_changed || attack1_changed || attack2_changed || reload_changed
     }
 
-    fn show_minimal(&self, _: &Ui, _: HLTASInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
+    fn show_minimal(&self, _: &Ui, _: FramebulkInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
         false
     }
 }

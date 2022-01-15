@@ -1,7 +1,7 @@
 use hltas::types::{DuckBeforeCollision, DuckBeforeGround, DuckWhenJump, Times};
 use imgui::Ui;
 
-use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, HLTASInfo};
+use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
 
 pub struct DuckEditor;
 
@@ -9,7 +9,7 @@ impl FramebulkEditor for DuckEditor {
     fn show(
         &self,
         ui: &Ui,
-        hltas_info: HLTASInfo,
+        hltas_info: FramebulkInfo,
         _: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
@@ -95,7 +95,7 @@ impl FramebulkEditor for DuckEditor {
         before_collision_changed || inc_ceiling_changed || before_ground_changed
     }
 
-    fn show_minimal(&self, _: &Ui, _: HLTASInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
+    fn show_minimal(&self, _: &Ui, _: FramebulkInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
         false
     }
 }

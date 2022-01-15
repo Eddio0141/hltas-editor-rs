@@ -952,21 +952,25 @@ pub fn show_graphics_editor(
             // TODO find out some better way that doesn't need hardcoded values like this
             ui.dummy([
                 0.0,
-                match line {
-                    Line::FrameBulk(_) => 140.0,
-                    Line::Save(_) => 19.0,
-                    Line::SharedSeed(_) => 19.0,
-                    Line::Buttons(buttons) => match buttons {
-                        Buttons::Reset => 19.0,
-                        Buttons::Set { .. } => 111.0,
-                    },
-                    Line::LGAGSTMinSpeed(_) => 19.0,
-                    Line::Reset { .. } => 19.0,
-                    Line::Comment(_) => 19.0,
-                    Line::VectorialStrafing(_) => 19.0,
-                    Line::VectorialStrafingConstraints(_) => 19.0,
-                    Line::Change(_) => 19.0,
-                    Line::TargetYawOverride(_) => 19.0,
+                if tab_menu_data.simple_view() {
+                    19.
+                } else {
+                    match line {
+                        Line::FrameBulk(_) => 140.0,
+                        Line::Save(_) => 19.0,
+                        Line::SharedSeed(_) => 19.0,
+                        Line::Buttons(buttons) => match buttons {
+                            Buttons::Reset => 19.0,
+                            Buttons::Set { .. } => 111.0,
+                        },
+                        Line::LGAGSTMinSpeed(_) => 19.0,
+                        Line::Reset { .. } => 19.0,
+                        Line::Comment(_) => 19.0,
+                        Line::VectorialStrafing(_) => 19.0,
+                        Line::VectorialStrafingConstraints(_) => 19.0,
+                        Line::Change(_) => 19.0,
+                        Line::TargetYawOverride(_) => 19.0,
+                    }
                 },
             ]);
         }

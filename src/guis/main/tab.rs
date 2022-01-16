@@ -213,6 +213,7 @@ impl<'a> HLTASFileTab {
 #[derive(Clone, Debug, Default)]
 pub struct HLTASMenuState {
     strafe_menu_selections: Vec<Option<StrafeMenuSelection>>,
+    simple_view_show_fps: bool,
     right_click_popup_index: Option<usize>,
     selected_indexes: Vec<bool>,
     got_modified: bool,
@@ -238,6 +239,7 @@ impl HLTASMenuState {
             .collect::<Vec<_>>();
 
         Self {
+            simple_view_show_fps: true,
             is_modifying_line: false,
             modifying_line_backup: None,
             modifying_line_edited: false,
@@ -411,6 +413,14 @@ impl HLTASMenuState {
 
     pub fn simple_view(&self) -> bool {
         self.simple_view
+    }
+
+    pub fn simple_view_show_fps(&self) -> bool {
+        self.simple_view_show_fps
+    }
+
+    pub fn set_simple_view_show_fps(&mut self, simple_view_show_fps: bool) {
+        self.simple_view_show_fps = simple_view_show_fps;
     }
 }
 

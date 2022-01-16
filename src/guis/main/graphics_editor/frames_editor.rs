@@ -147,6 +147,6 @@ impl FramebulkEditor for FramesEditor {
             }
         }
 
-        frametime_changed
+        frametime_changed || frame_count_changed
     }
 }

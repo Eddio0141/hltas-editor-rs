@@ -11,11 +11,11 @@ impl FramebulkEditor for CommandEditor {
         &self,
         ui: &Ui,
         hltas_info: FramebulkInfo,
-        framebulk_editor_misc_data: FramebulkEditorMiscData,
+        misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
         let framebulk = hltas_info.framebulk;
-        let options = framebulk_editor_misc_data.options;
+        let options = misc_data.options;
 
         let locale_lang = options.locale_lang();
 
@@ -37,7 +37,32 @@ impl FramebulkEditor for CommandEditor {
         }
     }
 
-    fn show_minimal(&self, _: &Ui, _: FramebulkInfo, _: FramebulkEditorMiscData, _: usize) -> bool {
-        false
+    fn show_minimal(
+        &self,
+        ui: &Ui,
+        hltas_info: FramebulkInfo,
+        misc_data: FramebulkEditorMiscData,
+        index: usize,
+    ) -> bool {
+        let framebulk = hltas_info.framebulk;
+        let options = misc_data.options;
+
+        let locale_lang = options.locale_lang();
+
+        match &mut framebulk.console_command {
+            Some(cmds) => show_cmd_editor(
+                ui,
+                cmds,
+                &format!("##command_menu_cmds{}", index),
+                locale_lang,
+            ),
+            None => {
+                let button_clicked = ui.button(format!("set commands##{}", index));
+                if button_clicked {
+                    framebulk.console_command = Some(String::from(""));
+                }
+                button_clicked
+            }
+        }
     }
 }

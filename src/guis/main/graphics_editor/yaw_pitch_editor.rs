@@ -12,14 +12,12 @@ impl FramebulkEditor for YawPitchEditor {
         &self,
         ui: &Ui,
         hltas_info: FramebulkInfo,
-        framebulk_editor_misc_data: FramebulkEditorMiscData,
+        misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
         let framebulk = hltas_info.framebulk;
-        let (tab_menu_data, undo_redo_handler) = (
-            framebulk_editor_misc_data.tab_menu_data,
-            framebulk_editor_misc_data.undo_redo_handler,
-        );
+        let (tab_menu_data, undo_redo_handler) =
+            (misc_data.tab_menu_data, misc_data.undo_redo_handler);
 
         let width = 200.;
 
@@ -80,6 +78,7 @@ impl FramebulkEditor for YawPitchEditor {
                         format!("{}##yaw_set_button{}", "set yaw", index),
                         [width, 0.0],
                     ) {
+                        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
                         framebulk.auto_actions.movement = Some(AutoMovement::SetYaw(0.0));
                         edited = true;
                     }
@@ -104,6 +103,14 @@ impl FramebulkEditor for YawPitchEditor {
                     .build(ui, pitch);
                 item_width_token.pop(ui);
 
+                // TODO undo redo for those misc cases
+                // maybe a type that keeps track?????
+                // if ui.is_item_hovered() {
+                //     tab_menu_data.is_hovering_framebulk(framebulk, index);
+                // } else {
+                //     tab_menu_data.not_hovering_line(index);
+                // }
+
                 if pitch_x_clicked {
                     undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
                     framebulk.pitch = None;
@@ -118,6 +125,7 @@ impl FramebulkEditor for YawPitchEditor {
                 );
 
                 if pitch_set_button_clicked {
+                    undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
                     framebulk.pitch = Some(0.0);
                 }
 

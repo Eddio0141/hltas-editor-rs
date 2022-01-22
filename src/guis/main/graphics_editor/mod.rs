@@ -976,14 +976,21 @@ pub fn show_graphics_editor(
         }
     }
 
-    match modifying_something {
-        Some(index) => tab_menu_data.is_modifying_line(&lines[index], index),
-        None => tab_menu_data.not_modifying_line(),
+    if !ui.is_any_item_active() {
+        tab_menu_data.not_modifying_line();
+    }
+
+    if let Some(index) = modifying_something {
+        tab_menu_data.is_modifying_line(&lines[index], index);
     }
 
     if tab_menu_data.is_modifying_something() && lines_edited {
         tab_menu_data.modifying_line_edited(undo_redo_handler);
     }
+
+    // if tab_menu_data.is_hovering_something() && lines_edited {
+    //     tab_menu_data.hovering_line_edited(undo_redo_handler);
+    // }
 
     if let Some(stale_line) = stale_line {
         tab.undo_redo_handler

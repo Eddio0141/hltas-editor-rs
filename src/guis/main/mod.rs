@@ -752,7 +752,7 @@ impl MainGUI {
             if !self.goto_menu.is_opened()
                 && !self.option_menu.is_opened()
                 && self.graphics_editor
-                && !current_tab.borrow().tab_menu_data.is_modifying_something()
+                && !current_tab.borrow().tab_menu_data.is_modifying_line()
             {
                 ui.set_clipboard_text(lines_to_str(
                     current_tab
@@ -771,7 +771,7 @@ impl MainGUI {
             if !self.goto_menu.is_opened()
                 && !self.option_menu.is_opened()
                 && self.graphics_editor
-                && !current_tab.borrow().tab_menu_data.is_modifying_something()
+                && !current_tab.borrow().tab_menu_data.is_modifying_line()
             {
                 current_tab.borrow_mut().select_all_lines();
             }

@@ -53,6 +53,8 @@ pub fn show_graphics_editor(
     options: &AppOptions,
     keyboard_state: &KeyboardState,
 ) {
+    tab.tab_menu_data.tick();
+
     let draw_list = ui.get_window_draw_list();
 
     ui.text(options.locale_lang().get_string_from_id("properties"));
@@ -422,7 +424,6 @@ pub fn show_graphics_editor(
     let mut lines_edited = false;
     let mut stale_line = None;
     let mut new_line_menu_clicked_on_line = false;
-    let mut modifying_something = None;
 
     let (lines, properties, tab_menu_data, undo_redo_handler) = tab.split_fields_mut();
     let lines_is_empty = lines.is_empty();
@@ -707,7 +708,7 @@ pub fn show_graphics_editor(
                                 .build();
 
                         if ui.is_item_active() {
-                            modifying_something = Some(i);
+                            tab_menu_data.set_modifying_line();
                         }
 
                         comment_colour.pop();
@@ -976,18 +977,6 @@ pub fn show_graphics_editor(
         }
     }
 
-    if !ui.is_any_item_active() {
-        tab_menu_data.not_modifying_line();
-    }
-
-    if let Some(index) = modifying_something {
-        tab_menu_data.is_modifying_line(&lines[index], index);
-    }
-
-    if tab_menu_data.is_modifying_something() && lines_edited {
-        tab_menu_data.modifying_line_edited(undo_redo_handler);
-    }
-
     // if tab_menu_data.is_hovering_something() && lines_edited {
     //     tab_menu_data.hovering_line_edited(undo_redo_handler);
     // }
@@ -998,7 +987,7 @@ pub fn show_graphics_editor(
         tab.remove_line_at_index(stale_line);
     }
 
-    if !tab.tab_menu_data.is_modifying_something()
+    if !tab.tab_menu_data.is_modifying_line()
         && (keyboard_state.just_pressed(VirtualKeyCode::Delete)
             || keyboard_state.just_pressed(VirtualKeyCode::Back))
     {

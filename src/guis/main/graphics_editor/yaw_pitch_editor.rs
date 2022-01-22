@@ -49,8 +49,11 @@ impl FramebulkEditor for YawPitchEditor {
                     .build(ui, yaw);
                 item_width_token.pop(ui);
 
-                if ui.is_item_active() {
-                    tab_menu_data.is_modifying_framebulk(framebulk, index);
+                if ui.is_item_activated() {
+                    tab_menu_data.set_framebulk_edit_backup(framebulk, index);
+                }
+                if ui.is_item_deactivated_after_edit() {
+                    tab_menu_data.set_undo_point_with_backup(undo_redo_handler);
                 }
 
                 if x_button_clicked {

@@ -216,12 +216,11 @@ pub struct HLTASMenuState {
     simple_view_show_fps: bool,
     right_click_popup_index: Option<usize>,
     selected_indexes: Vec<bool>,
-    got_modified: bool,
+    hltas_modified: bool,
     goto_line: Option<usize>,
     simple_view: bool,
     is_modifying_line: bool,
-    modifying_line_backup: Option<(Line, usize)>,
-    modifying_line_edited: bool,
+    line_edit_backup: Option<(Line, usize)>,
 }
 
 impl HLTASMenuState {
@@ -239,57 +238,43 @@ impl HLTASMenuState {
             .collect::<Vec<_>>();
 
         Self {
+            line_edit_backup: None,
             simple_view_show_fps: true,
             is_modifying_line: false,
-            modifying_line_backup: None,
-            modifying_line_edited: false,
             strafe_menu_selections,
             right_click_popup_index: None,
             selected_indexes: vec![false; hltas.lines.len()],
-            got_modified: false,
+            hltas_modified: false,
             goto_line: None,
             simple_view: false,
         }
     }
 
-    pub fn is_modifying_something(&self) -> bool {
+    /// Called before rendering / modifying the lines
+    pub fn tick(&mut self) {
+        self.is_modifying_line = false;
+    }
+
+    pub fn is_modifying_line(&self) -> bool {
         self.is_modifying_line
     }
 
-    pub fn is_modifying_line(&mut self, line: &Line, index: usize) {
-        if !self.is_modifying_line {
-            self.modifying_line_backup = Some((line.to_owned(), index));
-        } else if let Some((_, index_backup)) = self.modifying_line_backup {
-            if index != index_backup {
-                self.modifying_line_backup = Some((line.to_owned(), index));
-            }
-        }
+    pub fn set_modifying_line(&mut self) {
         self.is_modifying_line = true;
     }
 
-    pub fn is_modifying_framebulk(&mut self, framebulk: &FrameBulk, index: usize) {
-        if !self.is_modifying_line {
-            self.modifying_line_backup = Some((Line::FrameBulk(framebulk.to_owned()), index));
-        } else if let Some((_, index_backup)) = self.modifying_line_backup {
-            if index != index_backup {
-                self.modifying_line_backup = Some((Line::FrameBulk(framebulk.to_owned()), index));
-            }
-        }
-        self.is_modifying_line = true;
+    pub fn set_framebulk_edit_backup(&mut self, framebulk: &FrameBulk, index: usize) {
+        self.line_edit_backup = Some((Line::FrameBulk(framebulk.to_owned()), index));
     }
 
-    pub fn not_modifying_line(&mut self) {
-        self.is_modifying_line = false;
-        self.modifying_line_edited = false;
-        self.modifying_line_backup = None;
-    }
+    // pub fn set_line_edit_backup(&mut self, line: &Line, index: usize) {
+    //     self.line_edit_backup = Some((line.to_owned(), index));
+    // }
 
-    pub fn modifying_line_edited(&mut self, undo_redo_handler: &mut UndoRedoHandler) {
-        if !self.modifying_line_edited {
-            if let Some((line, index)) = &self.modifying_line_backup {
-                undo_redo_handler.edit_line(line.to_owned(), *index);
-                self.modifying_line_edited = true;
-            }
+    pub fn set_undo_point_with_backup(&mut self, undo_redo_handler: &mut UndoRedoHandler) {
+        if let Some((line, index)) = &self.line_edit_backup {
+            undo_redo_handler.edit_line(line.to_owned(), *index);
+            self.line_edit_backup = None;
         }
     }
 
@@ -378,15 +363,15 @@ impl HLTASMenuState {
     }
 
     pub fn got_modified(&mut self) {
-        self.got_modified = true;
+        self.hltas_modified = true;
     }
 
     pub fn saved_modified(&mut self) {
-        self.got_modified = false;
+        self.hltas_modified = false;
     }
 
     pub fn is_modified(&self) -> bool {
-        self.got_modified
+        self.hltas_modified
     }
 
     pub fn strafe_menu_selection_at_mut(

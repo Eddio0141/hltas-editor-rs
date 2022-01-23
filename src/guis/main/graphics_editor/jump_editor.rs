@@ -1,7 +1,9 @@
 use hltas::types::{
-    JumpBug, LeaveGroundAction, LeaveGroundActionSpeed, LeaveGroundActionType, Times,
+    JumpBug, LeaveGroundAction, LeaveGroundActionSpeed, LeaveGroundActionType, Line, Times,
 };
 use imgui::{Selectable, StyleColor, Ui};
+
+use crate::guis::main::undo_redo_hltas::UndoRedoHandler;
 
 use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
 
@@ -28,12 +30,14 @@ fn validate_jump_states(
     misc_data: FramebulkEditorMiscData,
     before_state: BeforeState,
     changed_state: ChangedState,
+    index: usize,
 ) {
     let (framebulk, properties) = (hltas_info.framebulk, hltas_info.properties);
-    let options = misc_data.options;
+    let (options, undo_redo_handler) = (misc_data.options, misc_data.undo_redo_handler);
 
     // this toggles the ducktap state
     if changed_state.ducktap {
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
         if before_state.ducktap {
             framebulk.auto_actions.leave_ground_action = None;
         } else {
@@ -53,6 +57,7 @@ fn validate_jump_states(
     }
 
     if changed_state.zero_ms {
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
         match &mut framebulk.auto_actions.leave_ground_action {
             Some(leave_ground_action) => match &mut leave_ground_action.type_ {
                 LeaveGroundActionType::DuckTap { zero_ms } => {
@@ -78,6 +83,7 @@ fn validate_jump_states(
 
     // this toggles the jump state
     if changed_state.autojump {
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
         if before_state.autojump {
             framebulk.auto_actions.leave_ground_action = None;
         } else {
@@ -95,6 +101,7 @@ fn validate_jump_states(
 
     // for that single "jump" selectable
     if changed_state.jump {
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
         if !before_state.jump {
             // disable all other jump / ducktap stuff
             framebulk.auto_actions.leave_ground_action = None;
@@ -105,6 +112,7 @@ fn validate_jump_states(
 
     // for that single "duck" selectable
     if changed_state.duck {
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
         if !before_state.duck {
             // disable all other unused stuff
             framebulk.auto_actions.jump_bug = None;
@@ -117,6 +125,7 @@ fn validate_jump_states(
 
     // toggle jumpbug stuff
     if changed_state.jumpbug {
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
         if before_state.jumpbug {
             framebulk.auto_actions.jump_bug = None;
         } else {
@@ -132,8 +141,17 @@ fn validate_jump_states(
     }
 }
 
-fn validate_lgagst_state(hltas_info: FramebulkInfo, lgagst_states: LgagstStates) {
+fn validate_lgagst_state(
+    hltas_info: FramebulkInfo,
+    undo_redo_handler: &mut UndoRedoHandler,
+    lgagst_states: LgagstStates,
+    index: usize,
+) {
     let framebulk = hltas_info.framebulk;
+
+    if lgagst_states.lgagst_changed || lgagst_states.lgagst_max_spd_changed {
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
+    }
 
     if let Some(leave_ground_action) = &mut framebulk.auto_actions.leave_ground_action {
         let lgagst_state = &mut leave_ground_action.speed;
@@ -197,6 +215,11 @@ impl FramebulkEditor for JumpEditor {
         index: usize,
     ) -> bool {
         let (framebulk, properties) = (framebulk_info.framebulk, framebulk_info.properties);
+        let (undo_redo_handler, tab_menu_data, options) = (
+            misc_data.undo_redo_handler,
+            misc_data.tab_menu_data,
+            misc_data.options,
+        );
 
         let starting_x = ui.cursor_pos()[0];
 
@@ -316,12 +339,14 @@ impl FramebulkEditor for JumpEditor {
 
             validate_lgagst_state(
                 FramebulkInfo::new(framebulk, properties),
+                undo_redo_handler,
                 LgagstStates {
                     lgagst_changed,
                     lgagst_before,
                     lgagst_max_spd_changed,
                     lgagst_max_spd_before,
                 },
+                index,
             );
 
             lgagst_edited = lgagst_changed || lgagst_max_spd_changed || jumpbug_changed;
@@ -329,7 +354,11 @@ impl FramebulkEditor for JumpEditor {
 
         validate_jump_states(
             FramebulkInfo::new(framebulk, properties),
-            misc_data,
+            FramebulkEditorMiscData {
+                tab_menu_data,
+                options,
+                undo_redo_handler,
+            },
             BeforeState {
                 ducktap: ducktap_before,
                 zero_ms: zero_ms_before,
@@ -346,6 +375,7 @@ impl FramebulkEditor for JumpEditor {
                 duck: duck_changed,
                 jumpbug: jumpbug_changed,
             },
+            index,
         );
 
         ducktap_changed || autojump_changed || jump_changed || duck_changed || lgagst_edited
@@ -359,6 +389,11 @@ impl FramebulkEditor for JumpEditor {
         index: usize,
     ) -> bool {
         let (framebulk, properties) = (framebulk_info.framebulk, framebulk_info.properties);
+        let (undo_redo_handler, tab_menu_data, options) = (
+            misc_data.undo_redo_handler,
+            misc_data.tab_menu_data,
+            misc_data.options,
+        );
 
         let selectable_width = 130.;
 
@@ -498,12 +533,14 @@ impl FramebulkEditor for JumpEditor {
 
             validate_lgagst_state(
                 FramebulkInfo::new(framebulk, properties),
+                undo_redo_handler,
                 LgagstStates {
                     lgagst_changed,
                     lgagst_before,
                     lgagst_max_spd_changed,
                     lgagst_max_spd_before,
                 },
+                index,
             );
 
             lgagst_edited = lgagst_changed || lgagst_max_spd_changed || jumpbug_changed;
@@ -527,7 +564,11 @@ impl FramebulkEditor for JumpEditor {
 
         validate_jump_states(
             FramebulkInfo::new(framebulk, framebulk_info.properties),
-            misc_data,
+            FramebulkEditorMiscData {
+                tab_menu_data,
+                options,
+                undo_redo_handler,
+            },
             BeforeState {
                 ducktap: ducktap_before,
                 zero_ms: zero_ms_before,
@@ -544,6 +585,7 @@ impl FramebulkEditor for JumpEditor {
                 duck: duck_changed,
                 jumpbug: jumpbug_changed,
             },
+            index,
         );
 
         ducktap_changed || autojump_changed || jump_changed || duck_changed || lgagst_edited

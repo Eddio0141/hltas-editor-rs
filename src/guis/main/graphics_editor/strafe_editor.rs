@@ -3,7 +3,9 @@ use imgui::{Selectable, Ui};
 
 use crate::{
     guis::main::tab::StrafeMenuSelection,
-    helpers::imgui::{combo_enum::show_combo_enum, list_box_enum::show_list_box_enum},
+    helpers::imgui::{
+        combo_enum::show_combo_enum, list_box_enum::show_list_box_enum_undo_redo_framebulk,
+    },
 };
 
 use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
@@ -15,11 +17,12 @@ impl FramebulkEditor for StrafeEditor {
         &self,
         ui: &Ui,
         hltas_info: FramebulkInfo,
-        framebulk_editor_misc_data: FramebulkEditorMiscData,
+        misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
         let framebulk = hltas_info.framebulk;
-        let tab_menu_data = framebulk_editor_misc_data.tab_menu_data;
+        let (tab_menu_data, undo_redo_handler) =
+            (misc_data.tab_menu_data, misc_data.undo_redo_handler);
 
         let initial_x_pos = ui.cursor_pos()[0];
 
@@ -53,7 +56,7 @@ impl FramebulkEditor for StrafeEditor {
                     // TODO
                     let width_token = ui.push_item_width(140.0);
 
-                    let list_box_changed = show_list_box_enum(
+                    let list_box_changed = show_list_box_enum_undo_redo_framebulk(
                         ui,
                         &mut strafe_type_selection,
                         vec![
@@ -64,6 +67,9 @@ impl FramebulkEditor for StrafeEditor {
                             ("None", None),
                         ],
                         &format!("strafe_selector_list_box{}", index),
+                        undo_redo_handler,
+                        framebulk,
+                        index,
                     );
 
                     if list_box_changed {

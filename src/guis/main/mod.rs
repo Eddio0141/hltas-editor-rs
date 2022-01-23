@@ -7,7 +7,7 @@ mod option_menu;
 mod property_some_none_field;
 mod property_string_field;
 mod tab;
-mod undo_redo_hltas;
+pub mod undo_redo_hltas;
 mod zero_ms_editor;
 
 use std::cell::RefCell;

@@ -1,25 +1,30 @@
-use hltas::types::{DuckBeforeCollision, DuckBeforeGround, DuckWhenJump, Times};
+use hltas::types::{DuckBeforeCollision, DuckBeforeGround, DuckWhenJump, Line, Times};
 use imgui::Ui;
+
+use crate::guis::main::undo_redo_hltas::UndoRedoHandler;
 
 use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
 
 pub struct DuckEditor;
 
-fn auto_duck_menu(ui: &Ui, framebulk_info: FramebulkInfo, index: usize) -> bool {
+fn auto_duck_menu(
+    ui: &Ui,
+    framebulk_info: FramebulkInfo,
+    undo_redo_handler: &mut UndoRedoHandler,
+    index: usize,
+) -> bool {
     let framebulk = framebulk_info.framebulk;
 
-    let auto_actions = &mut framebulk.auto_actions;
-
     let (mut duck_before_collision, mut duck_before_collision_inc_ceiling) =
-        if let Some(dbc) = &auto_actions.duck_before_collision {
+        if let Some(dbc) = &framebulk.auto_actions.duck_before_collision {
             (true, dbc.including_ceilings)
         } else {
             (false, false)
         };
 
-    let mut duck_before_ground = auto_actions.duck_before_ground.is_some();
+    let mut duck_before_ground = framebulk.auto_actions.duck_before_ground.is_some();
 
-    let mut duck_when_jump = auto_actions.duck_when_jump.is_some();
+    let mut duck_when_jump = framebulk.auto_actions.duck_when_jump.is_some();
 
     let before_collision_changed = ui.checkbox(
         format!("before collision##{}", index),
@@ -44,42 +49,48 @@ fn auto_duck_menu(ui: &Ui, framebulk_info: FramebulkInfo, index: usize) -> bool 
     let when_jump_changed = ui.checkbox(format!("when jump##{}", index), &mut duck_when_jump);
 
     if before_collision_changed {
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
         if duck_before_collision {
             framebulk.action_keys.duck = false;
-            auto_actions.duck_before_collision = Some(DuckBeforeCollision {
+            framebulk.auto_actions.duck_before_collision = Some(DuckBeforeCollision {
                 times: Times::UnlimitedWithinFrameBulk,
                 including_ceilings: duck_before_collision_inc_ceiling,
             });
         } else {
-            auto_actions.duck_before_collision = None;
+            framebulk.auto_actions.duck_before_collision = None;
         }
     }
 
     if duck_before_collision && inc_ceiling_changed {
-        if let Some(dbc) = &mut auto_actions.duck_before_collision {
+        if framebulk.auto_actions.duck_before_collision.is_some() {
+            undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
+        }
+        if let Some(dbc) = &mut framebulk.auto_actions.duck_before_collision {
             dbc.including_ceilings = duck_before_collision_inc_ceiling;
         }
     }
 
     if before_ground_changed {
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
         if duck_before_ground {
             framebulk.action_keys.duck = false;
-            auto_actions.duck_before_ground = Some(DuckBeforeGround {
+            framebulk.auto_actions.duck_before_ground = Some(DuckBeforeGround {
                 times: Times::UnlimitedWithinFrameBulk,
             });
         } else {
-            auto_actions.duck_before_ground = None;
+            framebulk.auto_actions.duck_before_ground = None;
         }
     }
 
     if when_jump_changed {
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
         if duck_when_jump {
             framebulk.action_keys.duck = false;
-            auto_actions.duck_when_jump = Some(DuckWhenJump {
+            framebulk.auto_actions.duck_when_jump = Some(DuckWhenJump {
                 times: Times::UnlimitedWithinFrameBulk,
             });
         } else {
-            auto_actions.duck_when_jump = None;
+            framebulk.auto_actions.duck_when_jump = None;
         }
     }
 
@@ -91,23 +102,30 @@ impl FramebulkEditor for DuckEditor {
         &self,
         ui: &Ui,
         framebulk_info: FramebulkInfo,
-        _: FramebulkEditorMiscData,
+        misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
         let (framebulk, properties) = (framebulk_info.framebulk, framebulk_info.properties);
+        let undo_redo_handler = misc_data.undo_redo_handler;
 
         ui.text("auto duck");
-        auto_duck_menu(ui, FramebulkInfo::new(framebulk, properties), index)
+        auto_duck_menu(
+            ui,
+            FramebulkInfo::new(framebulk, properties),
+            undo_redo_handler,
+            index,
+        )
     }
 
     fn show_minimal(
         &self,
         ui: &Ui,
         framebulk_info: FramebulkInfo,
-        _: FramebulkEditorMiscData,
+        misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
         let (framebulk, properties) = (framebulk_info.framebulk, framebulk_info.properties);
+        let undo_redo_handler = misc_data.undo_redo_handler;
 
         let menu_button_size = [120., 0.];
 
@@ -139,7 +157,12 @@ impl FramebulkEditor for DuckEditor {
 
         let mut menu_edited = false;
         ui.popup(menu_id, || {
-            menu_edited = auto_duck_menu(ui, FramebulkInfo::new(framebulk, properties), index);
+            menu_edited = auto_duck_menu(
+                ui,
+                FramebulkInfo::new(framebulk, properties),
+                undo_redo_handler,
+                index,
+            );
         });
 
         if ui.button_with_size(

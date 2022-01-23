@@ -1,4 +1,4 @@
-use hltas::types::{AutoMovement, StrafeDir, StrafeSettings, StrafeType};
+use hltas::types::{AutoMovement, Line, StrafeDir, StrafeSettings, StrafeType};
 use imgui::{Selectable, Ui};
 
 use crate::{
@@ -135,6 +135,39 @@ impl FramebulkEditor for StrafeEditor {
                     );
                     let back_edited =
                         ui.checkbox(format!("Back##strafe_menu_editor{}", index), &mut keys.back);
+
+                    if forward_edited {
+                        let mut framebulk_before = framebulk.to_owned();
+                        framebulk_before.movement_keys.forward =
+                            !framebulk_before.movement_keys.forward;
+                        undo_redo_handler.edit_line(Line::FrameBulk(framebulk_before), index);
+                    }
+                    if up_edited {
+                        let mut framebulk_before = framebulk.to_owned();
+                        framebulk_before.movement_keys.up = !framebulk_before.movement_keys.up;
+                        undo_redo_handler.edit_line(Line::FrameBulk(framebulk_before), index);
+                    }
+                    if left_edited {
+                        let mut framebulk_before = framebulk.to_owned();
+                        framebulk_before.movement_keys.left = !framebulk_before.movement_keys.left;
+                        undo_redo_handler.edit_line(Line::FrameBulk(framebulk_before), index);
+                    }
+                    if down_edited {
+                        let mut framebulk_before = framebulk.to_owned();
+                        framebulk_before.movement_keys.down = !framebulk_before.movement_keys.down;
+                        undo_redo_handler.edit_line(Line::FrameBulk(framebulk_before), index);
+                    }
+                    if right_edited {
+                        let mut framebulk_before = framebulk.to_owned();
+                        framebulk_before.movement_keys.right =
+                            !framebulk_before.movement_keys.right;
+                        undo_redo_handler.edit_line(Line::FrameBulk(framebulk_before), index);
+                    }
+                    if back_edited {
+                        let mut framebulk_before = framebulk.to_owned();
+                        framebulk_before.movement_keys.back = !framebulk_before.movement_keys.back;
+                        undo_redo_handler.edit_line(Line::FrameBulk(framebulk_before), index);
+                    }
 
                     forward_edited
                         || up_edited

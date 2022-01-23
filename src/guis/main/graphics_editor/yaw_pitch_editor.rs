@@ -1,5 +1,5 @@
 use hltas::types::{AutoMovement, Line, StrafeDir};
-use imgui::{Drag, Slider, StyleVar, Ui};
+use imgui::{Drag, StyleVar, Ui};
 
 use crate::guis::x_button::show_x_button;
 
@@ -101,18 +101,23 @@ impl FramebulkEditor for YawPitchEditor {
                 item_width_token.pop();
 
                 let item_width_token = ui.push_item_width(width - x_button_width);
-                let pitch_set_changed = Slider::new(format!("##pitch_set{}", index), -89.0, 89.0)
+                // let pitch_set_changed = Slider::new(format!("##pitch_set{}", index), -89.0, 89.0)
+                //     .display_format("pitch: %f")
+                //     .build(ui, pitch);
+                let pitch_set_changed = Drag::new(format!("##pitch_set{}", index))
                     .display_format("pitch: %f")
+                    .speed(0.1)
+                    .range(-89.0, 89.0)
                     .build(ui, pitch);
-                item_width_token.pop(ui);
 
-                // TODO undo redo for those misc cases
-                // maybe a type that keeps track?????
-                // if ui.is_item_hovered() {
-                //     tab_menu_data.is_hovering_framebulk(framebulk, index);
-                // } else {
-                //     tab_menu_data.not_hovering_line(index);
-                // }
+                if ui.is_item_activated() {
+                    tab_menu_data.set_framebulk_edit_backup(framebulk, index);
+                }
+                if ui.is_item_deactivated_after_edit() {
+                    tab_menu_data.set_undo_point_with_backup(undo_redo_handler);
+                }
+
+                item_width_token.pop(ui);
 
                 if pitch_x_clicked {
                     undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);

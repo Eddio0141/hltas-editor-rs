@@ -1,15 +1,45 @@
-use hltas::types::ActionKeys;
+use hltas::types::{FrameBulk, Line};
 use imgui::Ui;
+
+use crate::guis::main::undo_redo_hltas::UndoRedoHandler;
 
 use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
 
 pub struct ActionKeysEditor;
 
-fn show_action_keys_menu(ui: &Ui, action_keys: &mut ActionKeys, index: usize) -> bool {
+fn show_action_keys_menu(
+    ui: &Ui,
+    framebulk: &mut FrameBulk,
+    undo_redo_handler: &mut UndoRedoHandler,
+    index: usize,
+) -> bool {
+    let action_keys = &mut framebulk.action_keys;
+
     let use_changed = ui.checkbox(format!("use##{}", index), &mut action_keys.use_);
     let attack1_changed = ui.checkbox(format!("attack 1##{}", index), &mut action_keys.attack_1);
     let attack2_changed = ui.checkbox(format!("attack 2##{}", index), &mut action_keys.attack_2);
     let reload_changed = ui.checkbox(format!("reload##{}", index), &mut action_keys.reload);
+
+    if use_changed {
+        let mut framebulk_before = framebulk.to_owned();
+        framebulk_before.action_keys.use_ = !framebulk_before.action_keys.use_;
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk_before), index);
+    }
+    if attack1_changed {
+        let mut framebulk_before = framebulk.to_owned();
+        framebulk_before.action_keys.attack_1 = !framebulk_before.action_keys.attack_1;
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk_before), index);
+    }
+    if attack2_changed {
+        let mut framebulk_before = framebulk.to_owned();
+        framebulk_before.action_keys.attack_2 = !framebulk_before.action_keys.attack_2;
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk_before), index);
+    }
+    if reload_changed {
+        let mut framebulk_before = framebulk.to_owned();
+        framebulk_before.action_keys.reload = !framebulk_before.action_keys.reload;
+        undo_redo_handler.edit_line(Line::FrameBulk(framebulk_before), index);
+    }
 
     use_changed || attack1_changed || attack2_changed || reload_changed
 }
@@ -19,26 +49,26 @@ impl FramebulkEditor for ActionKeysEditor {
         &self,
         ui: &Ui,
         hltas_info: FramebulkInfo,
-        _: FramebulkEditorMiscData,
+        misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
         let framebulk = hltas_info.framebulk;
-
-        let action_keys = &mut framebulk.action_keys;
+        let undo_redo_handler = misc_data.undo_redo_handler;
 
         ui.text("action keys");
 
-        show_action_keys_menu(ui, action_keys, index)
+        show_action_keys_menu(ui, framebulk, undo_redo_handler, index)
     }
 
     fn show_minimal(
         &self,
         ui: &Ui,
         framebulk_info: FramebulkInfo,
-        _: FramebulkEditorMiscData,
+        misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
         let framebulk = framebulk_info.framebulk;
+        let undo_redo_handler = misc_data.undo_redo_handler;
 
         let action_keys = &mut framebulk.action_keys;
 
@@ -70,7 +100,7 @@ impl FramebulkEditor for ActionKeysEditor {
         let action_keys_popup_id = &format!("action_keys_popup{}", index);
         let mut action_keys_edited = false;
         ui.popup(action_keys_popup_id, || {
-            action_keys_edited = show_action_keys_menu(ui, action_keys, index);
+            action_keys_edited = show_action_keys_menu(ui, framebulk, undo_redo_handler, index);
         });
 
         if ui.button_with_size(

@@ -1,6 +1,7 @@
 use std::num::NonZeroU32;
 
-use imgui::{Drag, Ui};
+use hltas::types::Line;
+use imgui::{Drag, SliderFlags, Ui};
 
 use crate::helpers::hltas::{fps, frametime};
 
@@ -13,10 +14,12 @@ impl FramebulkEditor for FramesEditor {
         &self,
         ui: &Ui,
         hltas_info: FramebulkInfo,
-        _: FramebulkEditorMiscData,
+        misc_data: FramebulkEditorMiscData,
         index: usize,
     ) -> bool {
         let framebulk = hltas_info.framebulk;
+        let (tab_menu_data, undo_redo_handler) =
+            (misc_data.tab_menu_data, misc_data.undo_redo_handler);
 
         let frametime = framebulk.frame_time.parse::<f32>();
         let mut frame_count = framebulk.frame_count.get();
@@ -31,15 +34,36 @@ impl FramebulkEditor for FramesEditor {
 
             frametime_changed = Drag::new(format!("##frames_menu_frametime_drag{}", index))
                 .range(frametime::MAX_STRAFE, frametime::MIN)
+                .flags(SliderFlags::LOGARITHMIC)
                 .speed(0.0001)
                 .display_format("frametime: %.6f")
                 .build(ui, &mut frametime);
+            if ui.is_item_activated() {
+                tab_menu_data.set_framebulk_edit_backup(framebulk, index);
+            }
+            if ui.is_item_deactivated_after_edit() {
+                tab_menu_data.set_undo_point_with_backup(undo_redo_handler);
+            }
 
             let fps_changed = Drag::new(format!("##frames_menu_fps_drag{}", index))
                 .range(fps::MIN, fps::MAX_STRAFE)
                 .speed(0.01)
                 .display_format("fps: %.2f")
                 .build(ui, &mut fps);
+            if ui.is_item_activated() {
+                tab_menu_data.set_framebulk_edit_backup(framebulk, index);
+            }
+            if ui.is_item_deactivated_after_edit() {
+                if let Some(backup_line) = tab_menu_data.get_line_edit_backup() {
+                    if let Line::FrameBulk(backup_framebulk) = &backup_line.0 {
+                        if framebulk.frame_time == backup_framebulk.frame_time {
+                            tab_menu_data.clear_framebulk_edit_backup();
+                        } else {
+                            tab_menu_data.set_undo_point_with_backup(undo_redo_handler);
+                        }
+                    }
+                }
+            }
 
             if frametime_changed {
                 framebulk.frame_time = frametime.to_string();
@@ -55,6 +79,12 @@ impl FramebulkEditor for FramesEditor {
             .speed(0.1)
             .display_format("frames: %u")
             .build(ui, &mut frame_count);
+        if ui.is_item_activated() {
+            tab_menu_data.set_framebulk_edit_backup(framebulk, index);
+        }
+        if ui.is_item_deactivated_after_edit() {
+            tab_menu_data.set_undo_point_with_backup(undo_redo_handler);
+        }
 
         if frame_count_changed {
             if let Some(frame_count) = NonZeroU32::new(frame_count) {

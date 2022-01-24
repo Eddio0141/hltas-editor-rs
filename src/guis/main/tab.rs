@@ -267,6 +267,10 @@ impl HLTASMenuState {
         self.line_edit_backup = Some((Line::FrameBulk(framebulk.to_owned()), index));
     }
 
+    pub fn clear_framebulk_edit_backup(&mut self) {
+        self.line_edit_backup = None;
+    }
+
     // pub fn set_line_edit_backup(&mut self, line: &Line, index: usize) {
     //     self.line_edit_backup = Some((line.to_owned(), index));
     // }
@@ -276,6 +280,10 @@ impl HLTASMenuState {
             undo_redo_handler.edit_line(line.to_owned(), *index);
             self.line_edit_backup = None;
         }
+    }
+
+    pub fn get_line_edit_backup(&self) -> &Option<(Line, usize)> {
+        &self.line_edit_backup
     }
 
     // pub fn enable_simple_view(&mut self) {

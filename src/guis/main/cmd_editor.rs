@@ -31,13 +31,15 @@ pub fn show_cmd_editor_undo_redo_line(
             .hint(locale_lang.get_string_from_id("commands"))
             .build();
 
+        if ui.is_item_active() {
+            tab_menu_data.set_modifying_line();
+        }
+
         // TODO fix this
         if ui.is_item_activated() {
-            println!("activated");
             tab_menu_data.set_framebulk_edit_backup(framebulk, index)
         }
         if ui.is_item_deactivated_after_edit() {
-            println!("deactivated");
             tab_menu_data.set_undo_point_with_backup(undo_redo_handler)
         }
 

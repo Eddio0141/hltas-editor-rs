@@ -38,6 +38,10 @@ impl FramebulkEditor for FramesEditor {
                 .speed(0.0001)
                 .display_format("frametime: %.6f")
                 .build(ui, &mut frametime);
+
+            if ui.is_item_active() {
+                tab_menu_data.set_modifying_line();
+            }
             if ui.is_item_activated() {
                 tab_menu_data.set_framebulk_edit_backup(framebulk, index);
             }
@@ -50,6 +54,10 @@ impl FramebulkEditor for FramesEditor {
                 .speed(0.01)
                 .display_format("fps: %.2f")
                 .build(ui, &mut fps);
+
+            if ui.is_item_active() {
+                tab_menu_data.set_modifying_line();
+            }
             if ui.is_item_activated() {
                 tab_menu_data.set_framebulk_edit_backup(framebulk, index);
             }
@@ -79,6 +87,10 @@ impl FramebulkEditor for FramesEditor {
             .speed(0.1)
             .display_format("frames: %u")
             .build(ui, &mut frame_count);
+
+        if ui.is_item_active() {
+            tab_menu_data.set_modifying_line();
+        }
         if ui.is_item_activated() {
             tab_menu_data.set_framebulk_edit_backup(framebulk, index);
         }
@@ -144,6 +156,10 @@ impl FramebulkEditor for FramesEditor {
                     .speed(0.01)
                     .display_format("fps: %.2f")
                     .build(ui, &mut fps);
+
+                if ui.is_item_active() {
+                    tab_menu_data.set_modifying_line();
+                }
                 if ui.is_item_activated() {
                     tab_menu_data.set_framebulk_edit_backup(framebulk, index);
                 }
@@ -168,6 +184,10 @@ impl FramebulkEditor for FramesEditor {
                     .speed(0.0001)
                     .display_format("frametime: %.6f")
                     .build(ui, &mut frametime);
+
+                if ui.is_item_active() {
+                    tab_menu_data.set_modifying_line();
+                }
                 if ui.is_item_activated() {
                     tab_menu_data.set_framebulk_edit_backup(framebulk, index);
                 }
@@ -191,6 +211,10 @@ impl FramebulkEditor for FramesEditor {
             .display_format("frames: %u")
             .build(ui, &mut frame_count);
         width_token.pop(ui);
+
+        if ui.is_item_active() {
+            tab_menu_data.set_modifying_line();
+        }
 
         if frame_count_changed {
             if let Some(frame_count) = NonZeroU32::new(frame_count) {

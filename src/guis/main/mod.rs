@@ -401,12 +401,16 @@ impl MainGUI {
             };
             let undo = || {
                 if let Some(current_tab) = &self.current_tab {
-                    current_tab.borrow_mut().undo_hltas();
+                    if !current_tab.borrow().tab_menu_data.is_modifying_line() {
+                        current_tab.borrow_mut().undo_hltas();
+                    }
                 }
             };
             let redo = || {
                 if let Some(current_tab) = &self.current_tab {
-                    current_tab.borrow_mut().redo_hltas();
+                    if !current_tab.borrow().tab_menu_data.is_modifying_line() {
+                        current_tab.borrow_mut().redo_hltas();
+                    }
                 }
             };
 

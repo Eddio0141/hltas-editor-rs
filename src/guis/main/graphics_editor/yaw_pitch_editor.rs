@@ -49,6 +49,9 @@ impl FramebulkEditor for YawPitchEditor {
                     .build(ui, yaw);
                 item_width_token.pop(ui);
 
+                if ui.is_item_active() {
+                    tab_menu_data.set_modifying_line();
+                }
                 if ui.is_item_activated() {
                     tab_menu_data.set_framebulk_edit_backup(framebulk, index);
                 }
@@ -110,6 +113,9 @@ impl FramebulkEditor for YawPitchEditor {
                     .range(-89.0, 89.0)
                     .build(ui, pitch);
 
+                if ui.is_item_active() {
+                    tab_menu_data.set_modifying_line();
+                }
                 if ui.is_item_activated() {
                     tab_menu_data.set_framebulk_edit_backup(framebulk, index);
                 }

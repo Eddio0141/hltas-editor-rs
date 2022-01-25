@@ -1,7 +1,7 @@
 use hltas::types::Line;
 use imgui::Ui;
 
-use crate::guis::main::cmd_editor::{show_cmd_editor, show_cmd_editor_undo_redo_line};
+use crate::guis::main::cmd_editor::show_cmd_editor_undo_redo_line;
 
 use super::framebulk_editor::{FramebulkEditor, FramebulkEditorMiscData, FramebulkInfo};
 
@@ -52,16 +52,19 @@ impl FramebulkEditor for CommandEditor {
         index: usize,
     ) -> bool {
         let framebulk = hltas_info.framebulk;
-        let options = misc_data.options;
-
-        let locale_lang = options.locale_lang();
+        let (tab_menu_data, options, undo_redo_handler) = (
+            misc_data.tab_menu_data,
+            misc_data.options,
+            misc_data.undo_redo_handler,
+        );
 
         match &mut framebulk.console_command {
-            Some(cmds) => show_cmd_editor(
+            Some(_) => show_cmd_editor_undo_redo_line(
                 ui,
-                cmds,
+                framebulk,
                 &format!("##command_menu_cmds{}", index),
-                locale_lang,
+                FramebulkEditorMiscData::new(tab_menu_data, options, undo_redo_handler),
+                index,
             ),
             None => {
                 let button_clicked = ui.button(format!("set commands##{}", index));

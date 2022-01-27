@@ -1,7 +1,7 @@
-use hltas::types::FrameBulk;
+use hltas::types::{FrameBulk, Line};
 use imgui::{InputText, Ui};
 
-use crate::helpers::locale::locale_lang::LocaleLang;
+use crate::{guis::x_button::show_x_button, helpers::locale::locale_lang::LocaleLang};
 
 use super::graphics_editor::framebulk_editor::FramebulkEditorMiscData;
 
@@ -27,6 +27,8 @@ pub fn show_cmd_editor_undo_redo_line(
             misc_data.undo_redo_handler,
         );
 
+        let x_button = show_x_button(ui, &format!("close_cmd_editor{}", index));
+        ui.same_line();
         let edited = InputText::new(ui, label, cmds)
             .hint(locale_lang.get_string_from_id("commands"))
             .build();
@@ -34,7 +36,6 @@ pub fn show_cmd_editor_undo_redo_line(
         if ui.is_item_active() {
             tab_menu_data.set_modifying_line();
         }
-
         // TODO fix this
         if ui.is_item_activated() {
             tab_menu_data.set_framebulk_edit_backup(framebulk, index)
@@ -43,7 +44,12 @@ pub fn show_cmd_editor_undo_redo_line(
             tab_menu_data.set_undo_point_with_backup(undo_redo_handler)
         }
 
-        edited
+        if x_button {
+            undo_redo_handler.edit_line(Line::FrameBulk(framebulk.to_owned()), index);
+            framebulk.console_command = None;
+        }
+
+        edited || x_button
     } else {
         false
     }

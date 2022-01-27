@@ -397,25 +397,37 @@ impl FramebulkEditor for JumpEditor {
 
         let selectable_width = 130.;
 
-        let jump_menu_display = match framebulk.auto_actions.leave_ground_action {
-            Some(leave_ground_action) => match leave_ground_action.type_ {
-                LeaveGroundActionType::Jump => "Auto Jump",
-                LeaveGroundActionType::DuckTap { zero_ms } => {
-                    if zero_ms {
-                        "0ms Ducktap"
-                    } else {
-                        "Ducktap"
+        let jump_menu_display = {
+            let mut text = Vec::new();
+
+            match framebulk.auto_actions.leave_ground_action {
+                Some(leave_ground_action) => match leave_ground_action.type_ {
+                    LeaveGroundActionType::Jump => text.push("Auto Jump"),
+                    LeaveGroundActionType::DuckTap { zero_ms } => {
+                        if zero_ms {
+                            text.push("0ms Ducktap");
+                        } else {
+                            text.push("Ducktap");
+                        }
+                    }
+                },
+                None => {
+                    if framebulk.action_keys.jump {
+                        text.push("Jump");
+                    } else if framebulk.auto_actions.jump_bug.is_some() {
+                        text.push("Jump Bug");
                     }
                 }
-            },
-            None => {
-                if framebulk.action_keys.jump {
-                    "Jump"
-                } else if framebulk.auto_actions.jump_bug.is_some() {
-                    "Jump Bug"
-                } else {
-                    "None"
-                }
+            }
+
+            if framebulk.action_keys.duck {
+                text.push("Duck");
+            }
+
+            if text.is_empty() {
+                "None".to_string()
+            } else {
+                text.join("+")
             }
         };
 
@@ -548,7 +560,7 @@ impl FramebulkEditor for JumpEditor {
 
         if ui.button_with_size(
             format!("{}##jump_menu_open{}", jump_menu_display, index),
-            [100., 0.],
+            [120., 0.],
         ) {
             ui.open_popup(jump_menu_id);
         }

@@ -44,9 +44,7 @@ use super::{
     zero_ms_editor::show_zero_ms_editor,
 };
 
-// TODO drag speed variables stored somewhere in the function for convinience
 // TODO am I suppose to have translation for those? maybe for some, not all
-// TODO minimal view to limit each line to be easier to read with shortcut
 pub fn show_graphics_editor(
     ui: &Ui,
     tab: &mut HLTASFileTab,

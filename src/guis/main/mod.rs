@@ -332,16 +332,19 @@ impl MainGUI {
                         if let Some(clipboard) = str_to_lines(&clipboard) {
                             let mut current_tab = current_tab.borrow_mut();
 
-                            if let Some(last_selected_index) = current_tab
+                            if let Some(mut last_selected_index) = current_tab
                                 .tab_menu_data
                                 .selected_indexes_collection()
                                 .last()
+                                .cloned()
                             {
+                                last_selected_index += 1;
+
                                 current_tab.undo_redo_handler.add_lines(
                                     clipboard
                                         .iter()
                                         .enumerate()
-                                        .map(|(i, _)| i + *last_selected_index)
+                                        .map(|(i, _)| i + last_selected_index)
                                         .collect::<Vec<_>>(),
                                 );
 
@@ -349,7 +352,7 @@ impl MainGUI {
                                     current_tab
                                         .insert_line(last_selected_index + i, line.to_owned());
                                 }
-                            } else if current_tab.hltas_lines().is_empty() {
+                            } else {
                                 current_tab.undo_redo_handler.add_lines(
                                     clipboard
                                         .iter()

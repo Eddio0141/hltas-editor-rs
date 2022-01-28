@@ -221,6 +221,7 @@ pub struct HLTASMenuState {
     simple_view: bool,
     is_modifying_line: bool,
     line_edit_backup: Option<(Line, usize)>,
+    zero_index_selected: bool,
 }
 
 impl HLTASMenuState {
@@ -247,6 +248,7 @@ impl HLTASMenuState {
             hltas_modified: false,
             goto_line: None,
             simple_view: false,
+            zero_index_selected: false,
         }
     }
 
@@ -414,6 +416,14 @@ impl HLTASMenuState {
 
     pub fn set_simple_view_show_fps(&mut self, simple_view_show_fps: bool) {
         self.simple_view_show_fps = simple_view_show_fps;
+    }
+
+    pub fn set_zero_index_selected(&mut self, zero_index_selected: bool) {
+        self.zero_index_selected = zero_index_selected;
+    }
+
+    pub fn zero_index_selected(&self) -> bool {
+        self.zero_index_selected
     }
 }
 

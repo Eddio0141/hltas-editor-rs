@@ -427,6 +427,75 @@ pub fn show_graphics_editor(
     let lines_is_empty = lines.is_empty();
     let goto_line = tab_menu_data.goto_line();
 
+    // TODO option
+    let grab_area_size = 20.;
+
+    {
+        // 0 index selection
+        ui.dummy([grab_area_size, grab_area_size]);
+        draw_list
+            .add_rect(
+                ui.item_rect_min(),
+                ui.item_rect_max(),
+                ui.style_color(StyleColor::Button),
+            )
+            .filled(true)
+            .build();
+
+        ui.same_line();
+
+        let line_thickness = grab_area_size / 2.;
+        let rect_start = {
+            let screen_pos = ui.cursor_screen_pos();
+            [screen_pos[0], screen_pos[1] + line_thickness / 2.]
+        };
+
+        ui.new_line();
+
+        if ui.is_item_clicked()
+            && (keyboard_state.held(VirtualKeyCode::LControl)
+                || keyboard_state.held(VirtualKeyCode::RControl))
+        {
+            tab_menu_data.set_zero_index_selected(!tab_menu_data.zero_index_selected());
+        } else if tab_menu_data
+            .selected_indexes()
+            .iter()
+            .filter(|&i| *i)
+            .count()
+            == 1
+            && ui.is_item_clicked()
+            && (keyboard_state.held(VirtualKeyCode::LShift)
+                || keyboard_state.held(VirtualKeyCode::RShift))
+        {
+            let selected_index = tab_menu_data.selected_indexes_collection()[0];
+            let (start_index, end_index) = if 0 < selected_index {
+                (0, selected_index)
+            } else {
+                (selected_index, 1)
+            };
+
+            tab_menu_data.select_index_range(start_index..end_index, true);
+            tab_menu_data.set_zero_index_selected(true);
+        } else if ui.is_item_clicked() {
+            let is_selected = tab_menu_data.zero_index_selected();
+            tab_menu_data.reset_selected_indexes();
+            tab_menu_data.set_zero_index_selected(!is_selected);
+        }
+
+        draw_list
+            .add_rect(
+                rect_start,
+                [ui.window_size()[0], rect_start[1] + line_thickness],
+                if tab_menu_data.zero_index_selected() {
+                    [0.678, 0.847, 0.901, 0.2]
+                } else {
+                    [0.501, 0.501, 0.501, 0.25]
+                },
+            )
+            .filled(tab_menu_data.zero_index_selected())
+            .build();
+    }
+
     for (i, line) in lines.iter_mut().enumerate() {
         if let Some(goto_line) = goto_line {
             if i == goto_line {
@@ -448,8 +517,7 @@ pub fn show_graphics_editor(
             ui.same_line();
 
             // grab area
-            // TODO option for area size
-            ui.dummy([20.0, 20.0]);
+            ui.dummy([grab_area_size, grab_area_size]);
             ui.same_line();
             draw_list
                 .add_rect(
@@ -465,17 +533,24 @@ pub fn show_graphics_editor(
                     || keyboard_state.held(VirtualKeyCode::RControl))
             {
                 tab_menu_data.change_selected_index(i, !tab_menu_data.is_index_selected(i));
-            } else if tab_menu_data
+            } else if (tab_menu_data
                 .selected_indexes()
                 .iter()
                 .filter(|&i| *i)
                 .count()
                 == 1
+                || tab_menu_data.zero_index_selected())
                 && ui.is_item_clicked()
                 && (keyboard_state.held(VirtualKeyCode::LShift)
                     || keyboard_state.held(VirtualKeyCode::RShift))
             {
-                let selected_index = tab_menu_data.selected_indexes_collection()[0];
+                let selected_index = {
+                    if tab_menu_data.zero_index_selected() {
+                        0
+                    } else {
+                        tab_menu_data.selected_indexes_collection()[0]
+                    }
+                };
                 let (start_index, end_index) = if i < selected_index {
                     (i, selected_index)
                 } else {
@@ -487,9 +562,8 @@ pub fn show_graphics_editor(
                 let is_selected = tab_menu_data.is_index_selected(i);
                 tab_menu_data.reset_selected_indexes();
                 tab_menu_data.change_selected_index(i, !is_selected);
+                tab_menu_data.set_zero_index_selected(false);
             }
-
-            if keyboard_state.just_pressed(VirtualKeyCode::Delete) {}
 
             // TODO translation
             let mut line_edited = false;

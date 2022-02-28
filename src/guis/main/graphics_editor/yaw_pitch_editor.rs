@@ -211,7 +211,11 @@ impl FramebulkEditor for YawPitchEditor {
         ui.same_line();
         if ui.button_with_size(
             format!("{}##angles_menu_open{}", angles_text, index),
-            [150., 0.],
+            if yaw.is_none() && framebulk.pitch.is_none() {
+                [0., 0.]
+            } else {
+                [150., 0.]
+            },
         ) {
             ui.open_popup(yaw_pitch_popup_id);
         }

@@ -194,19 +194,18 @@ impl FramebulkEditor for StrafeEditor {
             (misc_data.tab_menu_data, misc_data.undo_redo_handler);
 
         let selectable_radius = 13.;
-        let strafe_keys_button_size = [50., 0.];
 
         let strafe_menu_selection = tab_menu_data.strafe_menu_selection_at_mut(index).unwrap();
 
         match strafe_menu_selection {
             Some(strafe_menu_selection) => match strafe_menu_selection {
                 StrafeMenuSelection::Strafe => {
-                    if ui.button_with_size(format!("Strafe##{}", index), strafe_keys_button_size) {
+                    if ui.button(format!("Strafe##{}", index)) {
                         *strafe_menu_selection = StrafeMenuSelection::Keys;
                     }
                 }
                 StrafeMenuSelection::Keys => {
-                    if ui.button_with_size(format!("Key##{}", index), strafe_keys_button_size) {
+                    if ui.button(format!("Key##{}", index)) {
                         *strafe_menu_selection = StrafeMenuSelection::Strafe;
                     }
                 }
@@ -236,7 +235,25 @@ impl FramebulkEditor for StrafeEditor {
                     };
 
                     let width_token = ui.push_item_width(
-                        (selectable_radius + ui.clone_style().item_spacing[0]) * 6.,
+                        // (selectable_radius + ui.clone_style().item_spacing[0]) * 6.,
+                        {
+                            let text_size = ui.calc_text_size(
+                                values
+                                    .iter()
+                                    .find_map(|(text, value)| {
+                                        if *value == strafe_selection {
+                                            Some(text)
+                                        } else {
+                                            None
+                                        }
+                                    })
+                                    .unwrap(),
+                            );
+
+                            let style = ui.clone_style();
+
+                            text_size[0] + style.frame_padding[0] + 23.
+                        },
                     );
                     // show_list_box_enum_undo_redo_framebulk
                     let strafe_selection_edited = show_combo_enum_undo_redo_framebulk(
